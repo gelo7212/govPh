@@ -1,0 +1,158 @@
+import { SOSRepository } from '../sos/sos.repository';
+import { SOS, SOSStatus } from '../sos/sos.model';
+import { eventEmitter, SOSEvent } from '../../services/eventEmitter';
+
+/**
+ * Status Machine Service
+ * Handles automatic status transitions based on business logic
+ */
+export class StatusMachineService {
+  private ARRIVAL_THRESHOLD_METERS = 20;
+
+  constructor(private repository: SOSRepository) {}
+
+  /**
+   * Handles status transition when rescuer is assigned
+   * Sets status to EN_ROUTE automatically
+   */
+  async handleRescuerAssignment(sosId: string, cityId: string, rescuerId: string): Promise<SOS | null> {
+    const sos = await this.repository.findById(sosId, cityId);
+    if (!sos) return null;
+
+    // Only transition from ACTIVE to EN_ROUTE
+    if (sos.status !== 'ACTIVE') {
+      console.warn(`Cannot assign rescuer to SOS in ${sos.status} status`);
+      return sos;
+    }
+
+    const updated = await this.repository.update(cityId, sosId, {
+      status: 'EN_ROUTE',
+      assignedRescuerId: rescuerId,
+    });
+
+    // Publish event
+    this.publishStatusChange(updated, 'EN_ROUTE', cityId);
+
+    return updated;
+  }
+
+  /**
+   * Checks distance between rescuer and SOS target location
+   * Auto-transitions to ARRIVED if within threshold
+   */
+  async handleRescuerLocation(
+    sosId: string,
+    cityId: string,
+    rescuerLat: number,
+    rescuerLng: number,
+  ): Promise<SOS | null> {
+    const sos = await this.repository.findById(sosId, cityId);
+    if (!sos || !sos.assignedRescuerId) return null;
+
+    // Only check distance if in EN_ROUTE status
+    if (sos.status !== 'EN_ROUTE') {
+      return sos;
+    }
+
+    const distance = this.calculateDistance(
+      rescuerLat,
+      rescuerLng,
+      sos.lastKnownLocation.coordinates[1],
+      sos.lastKnownLocation.coordinates[0],
+    );
+
+    // Auto-transition to ARRIVED if close enough
+    if (distance <= this.ARRIVAL_THRESHOLD_METERS) {
+      const updated = await this.repository.update(cityId, sosId, {
+        status: 'ARRIVED',
+      });
+
+      this.publishStatusChange(updated, 'ARRIVED', cityId);
+      return updated;
+    }
+
+    return sos;
+  }
+
+  /**
+   * Cancel SOS (only allowed from ACTIVE status)
+   */
+  async cancelSOS(sosId: string, cityId: string): Promise<SOS | null> {
+    const sos = await this.repository.findById(sosId, cityId);
+    if (!sos) return null;
+
+    if (sos.status !== 'ACTIVE') {
+      throw new Error(`Cannot cancel SOS in ${sos.status} status`);
+    }
+
+    const updated = await this.repository.update(cityId, sosId, {
+      status: 'CANCELLED',
+    });
+
+    eventEmitter.publishSOSEvent({
+      type: 'SOS_CANCELLED',
+      sosId: updated.id,
+      cityId,
+      timestamp: new Date(),
+      data: { sosId: updated.id },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Close/Resolve SOS (admin only)
+   */
+  async closeSOS(sosId: string, cityId: string, resolutionNote?: string): Promise<SOS | null> {
+    const sos = await this.repository.findById(sosId, cityId);
+    if (!sos) return null;
+
+    const updated = await this.repository.update(cityId, sosId, {
+      status: 'RESOLVED',
+      notes: resolutionNote || sos.notes,
+    });
+
+    eventEmitter.publishSOSEvent({
+      type: 'SOS_RESOLVED',
+      sosId: updated.id,
+      cityId,
+      timestamp: new Date(),
+      data: { sosId: updated.id, resolutionNote },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Calculate distance in meters using Haversine formula
+   */
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  /**
+   * Publish status change event
+   */
+  private publishStatusChange(sos: SOS, newStatus: SOSStatus, cityId: string): void {
+    eventEmitter.publishSOSEvent({
+      type: 'STATUS_CHANGED',
+      sosId: sos.id,
+      cityId,
+      timestamp: new Date(),
+      data: {
+        sosId: sos.id,
+        previousStatus: sos.status,
+        status: newStatus,
+      },
+    });
+  }
+}

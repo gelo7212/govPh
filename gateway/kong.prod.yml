@@ -1,0 +1,51 @@
+_format_version: "3.0"
+
+services:
+  # -------- PUBLIC (login, register) --------
+  - name: bff-public
+    url: http://bff:3000
+    routes:
+      - name: auth
+        paths: ["/api/auth"]
+        strip_path: false
+
+  # -------- PROTECTED (everything else) --------
+  - name: bff-protected
+    url: http://bff:3000
+    routes:
+      - name: api
+        paths: ["/api"]
+        strip_path: false
+
+plugins:
+  # Strict CORS
+  - name: cors
+    config:
+      origins:
+        - https://ecitizen.gov.ph
+        - https://*.ecitizen.gov.ph
+      methods: ["GET","POST","PUT","PATCH","DELETE"]
+      headers: ["Authorization","Content-Type"]
+      exposed_headers: ["X-Request-Id"]
+      credentials: false
+
+  # JWT – applied ONLY to protected routes
+  - name: jwt
+    service: bff-protected
+    config:
+      claims_to_verify: ["exp"]
+      key_claim_name: iss
+
+  # Rate limit – real protection
+  - name: rate-limiting
+    service: bff-protected
+    config:
+      minute: 120
+      policy: local
+
+consumers:
+  - username: gov-ph-identity
+    jwt_secrets:
+      - key: gov-ph
+        secret: ${JWT_SECRET}
+        algorithm: HS256

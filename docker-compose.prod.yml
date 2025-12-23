@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  kong:
+    image: kong:3.6
+    volumes:
+      - ./gateway/kong.prod.yml:/kong/declarative/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8000:8000"
+
+  bff:
+    build: ./bff
+    environment:
+      NODE_ENV: production

@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  kong:
+    image: kong:3.6
+    container_name: govph-kong
+    volumes:
+      - ./gateway/kong.local.yml:/kong/declarative/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+    ports:
+      - "8000:8000"
+
+  bff:
+    build: ./bff
+    container_name: govph-bff
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: local
+
+  sos-service:
+    build: ./services/sos-service
+    container_name: govph-sos
+    ports:
+      - "3001:3000"
+    environment:
+      PORT: 3000
+
+  identity-service:
+    build: ./services/identity-service
+    container_name: govph-identity
+    ports:
+      - "3002:3000"
+    environment:
+      PORT: 3000
+
+  geo-service:
+    build: ./services/geo-service
+    container_name: govph-geo
+    ports:
+      - "3003:3000"
+    environment:
+      PORT: 3000

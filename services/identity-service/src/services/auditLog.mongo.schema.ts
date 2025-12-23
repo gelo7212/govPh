@@ -3,7 +3,7 @@ import * as mongoose from 'mongoose';
 const AuditLogSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now, index: true },
+    timestamp: { type: Date, default: Date.now },
     actorUserId: { type: String, required: true, index: true },
     actorRole: {
       type: String,

@@ -4,6 +4,66 @@
 export type UserRole = 'app_admin' | 'city_admin' | 'sos_admin' | 'citizen';
 
 /**
+ * Context Type for JWT Token Claims
+ */
+export type ContextType = 'USER' | 'ADMIN' | 'ANON' | 'RESCUER';
+
+/**
+ * JWT Token Payload
+ * Standard claims + custom application claims
+ */
+export interface JwtPayload {
+  // Standard JWT claims
+  iss: string; // Issuer: "identity.e-citizen"
+  aud: string; // Audience: "e-citizen"
+  exp: number; // Expiration time (Unix timestamp)
+  iat?: number; // Issued at (Unix timestamp)
+
+  // Custom claims
+  contextType: ContextType;
+
+  userId: string; // USER-123 format
+  firebaseUid: string; // Firebase UID
+
+  sosId?: string; // SOS incident ID (optional)
+  rescuerId?: string; // Rescuer ID (optional, null for non-rescuer)
+
+  cityCode: string; // Municipality code (CALUMPIT)
+
+  scopes: string[]; // Permission scopes
+}
+
+/**
+ * Token Response
+ */
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number; // Seconds until expiration
+  tokenType: 'Bearer';
+}
+
+/**
+ * Token Validation Result
+ */
+export interface TokenValidationResult {
+  valid: boolean;
+  payload?: JwtPayload;
+  error?: string;
+}
+
+/**
+ * Revoked Token Entry (for blacklist)
+ */
+export interface RevokedToken {
+  id: string;
+  tokenHash: string; // SHA256 hash of token
+  userId: string;
+  revokedAt: Date;
+  expiresAt: Date;
+}
+
+/**
  * Registration Status - User account lifecycle states
  */
 export type RegistrationStatus = 'pending' | 'active' | 'suspended' | 'archived';

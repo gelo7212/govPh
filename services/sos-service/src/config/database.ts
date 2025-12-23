@@ -4,17 +4,35 @@ let mongoConnection: Connection | null = null;
 
 export const connectMongoDB = async (): Promise<Connection> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/sos-service';
+    const mongoUri = process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'sos-service'}`;
+    console.log('MONGODB_URI =', process.env.MONGODB_URI);
 
     if (mongoConnection) {
       console.log('MongoDB already connected');
       return mongoConnection;
     }
+    console.info('Attempting to connect to MongoDB');
 
     await mongoose.connect(mongoUri, {
       retryWrites: true,
       w: 'majority',
     });
+
+    const adminDb = mongoose.connection.getClient().db('admin');
+    const databases = await adminDb.admin().listDatabases();
+    if(databases.databases == null) {
+      console.info('No databases found on the server.');
+    }
+
+    const dbExists = databases.databases.some(db => db!.name === (process.env.MICROSERVICE_NAME || 'sos-service'));
+
+    if (!dbExists) {
+      console.info('Creating sos-service database');
+      const targetDb = mongoose.connection.getClient().db(process.env.MICROSERVICE_NAME || 'sos-service');
+      // Create a system collection to ensure database is created
+      await targetDb.createCollection('__init__');
+      await targetDb.collection('__init__').deleteMany({});
+    }
 
     mongoConnection = mongoose.connection;
     console.log('MongoDB connected successfully');

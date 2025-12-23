@@ -24,10 +24,13 @@ const logger = createLogger('UserController');
  * User Controller - Handles user-related HTTP requests
  */
 export class UserController {
-  private auditLogger: AuditLoggerService;
+  private auditLogger: AuditLoggerService | null = null;
 
-  constructor() {
-    this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+  private getAuditLogger(): AuditLoggerService {
+    if (!this.auditLogger) {
+      this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+    }
+    return this.auditLogger;
   }
 
   /**
@@ -142,7 +145,7 @@ export class UserController {
 
       // Log the action
       await logStatusChange(
-        this.auditLogger,
+        this.getAuditLogger(),
         req.user.userId,
         req.user.role,
         userId,

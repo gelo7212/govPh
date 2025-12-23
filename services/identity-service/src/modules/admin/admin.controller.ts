@@ -25,10 +25,13 @@ const logger = createLogger('AdminController');
  * Enforces strict authority rules
  */
 export class AdminController {
-  private auditLogger: AuditLoggerService;
+  private auditLogger: AuditLoggerService | null = null;
 
-  constructor() {
-    this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+  private getAuditLogger(): AuditLoggerService {
+    if (!this.auditLogger) {
+      this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+    }
+    return this.auditLogger;
   }
 
   /**
@@ -126,7 +129,7 @@ export class AdminController {
 
       // Log the creation
       await logUserCreated(
-        this.auditLogger,
+        this.getAuditLogger(),
         req.user.userId,
         req.user.role,
         userId,
@@ -186,7 +189,7 @@ export class AdminController {
       }
 
       // Log the action
-      await this.auditLogger.log(
+      await this.getAuditLogger().log(
         req.user.userId,
         req.user.role,
         'view_users',
@@ -219,7 +222,7 @@ export class AdminController {
 
       const { startDate, endDate, limit } = req.query;
 
-      const logs = await this.auditLogger.getAuditLogs({
+      const logs = await this.getAuditLogger().getAuditLogs({
         municipalityCode:
           req.user.role === 'app_admin'
             ? undefined

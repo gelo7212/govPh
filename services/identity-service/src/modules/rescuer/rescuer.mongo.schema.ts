@@ -6,7 +6,7 @@ const RescuerMissionSchema = new mongoose.Schema(
     sosId: { type: String, required: true, index: true },
     municipalityCode: { type: String, required: true, index: true },
     token: { type: String, required: true, unique: true },
-    expiresAt: { type: Date, required: true, index: true },
+    expiresAt: { type: Date, required: true },
     permissions: [
       {
         type: String,

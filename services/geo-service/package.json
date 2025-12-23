@@ -7,6 +7,8 @@
     "build": "tsc",
     "dev": "ts-node src/server.ts",
     "start": "node dist/server.js",
+    "seed": "ts-node src/seed.ts",
+    "seed:build": "npm run build && node dist/seed.js",
     "test": "jest",
     "lint": "eslint src/**/*.ts"
   },

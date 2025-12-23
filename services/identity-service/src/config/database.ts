@@ -11,12 +11,13 @@ let mongoConnection: Connection | null = null;
 export const connectMongoDB = async (): Promise<Connection> => {
   try {
     const mongoUri =
-      process.env.MONGODB_URI || 'mongodb://localhost:27017/identity-service';
+      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'identity-service'}`;
 
     if (mongoConnection) {
       logger.info('MongoDB already connected');
       return mongoConnection;
     }
+    logger.info('Attempting to connect to MongoDB');
 
     await mongoose.connect(mongoUri, {
       retryWrites: true,
@@ -24,6 +25,19 @@ export const connectMongoDB = async (): Promise<Connection> => {
     });
 
     mongoConnection = mongoose.connection;
+
+    // Database existence check and creation (after connection is established)
+    const adminDb = mongoose.connection.getClient().db('admin');
+    const databases = await adminDb.admin().listDatabases();
+    const dbExists = databases.databases.some(db => db.name === (process.env.MICROSERVICE_NAME || 'identity-service'));
+
+    if (!dbExists) {
+      logger.info('Creating identity-service database');
+      const targetDb = mongoose.connection.getClient().db(process.env.MICROSERVICE_NAME || 'identity-service');
+      // Create a system collection to ensure database is created
+      await targetDb.createCollection('__init__');
+      await targetDb.collection('__init__').deleteMany({});
+    }
 
     // Register schemas
     mongoConnection.model('users', UserSchema);

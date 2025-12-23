@@ -16,7 +16,7 @@ export class BoundariesController {
    */
   async getAllProvinces(req: Request, res: Response): Promise<void> {
     try {
-      const provinces = this.service.getAllProvinces();
+      const provinces = await this.service.getAllProvinces();
 
       const response: ApiResponse<Province[]> = {
         success: true,
@@ -57,7 +57,7 @@ export class BoundariesController {
         return;
       }
 
-      const municipalities = this.service.getMunicipalitiesByProvinceName(
+      const municipalities = await this.service.getMunicipalitiesByProvinceName(
         province
       );
 

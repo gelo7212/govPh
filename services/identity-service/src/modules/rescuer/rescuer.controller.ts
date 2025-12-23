@@ -21,10 +21,13 @@ const logger = createLogger('RescuerController');
  * Rescuers are NOT users - they are mission-based with limited scope
  */
 export class RescuerController {
-  private auditLogger: AuditLoggerService;
+  private auditLogger: AuditLoggerService | null = null;
 
-  constructor() {
-    this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+  private getAuditLogger(): AuditLoggerService {
+    if (!this.auditLogger) {
+      this.auditLogger = new AuditLoggerService(getCollection('audit_logs'));
+    }
+    return this.auditLogger;
   }
 
   /**
@@ -67,7 +70,7 @@ export class RescuerController {
 
       // Log the action
       await logRescuerMissionCreated(
-        this.auditLogger,
+        this.getAuditLogger(),
         req.user.userId,
         req.user.role,
         sosId,
@@ -147,7 +150,7 @@ export class RescuerController {
 
         // Log the action
         await logRescuerMissionRevoked(
-          this.auditLogger,
+          this.getAuditLogger(),
           req.user.userId,
           req.user.role,
           sosId,

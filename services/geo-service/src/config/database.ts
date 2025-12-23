@@ -1,32 +1,68 @@
-import mongoose from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 
-let isConnected = false;
 
-export const connectDatabase = async (): Promise<void> => {
-  if (isConnected) {
-    console.log('Already connected to MongoDB');
-    return;
-  }
+let mongoConnection: Connection | null = null;
 
+export const connectDatabase = async (): Promise<Connection> => {
   try {
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/geo-service';
+    const mongoUri = process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'geo-service'}`;
+    console.log('MongoDB URI:', mongoUri);
+    if (mongoConnection) {
+      console.log('Already connected to MongoDB');
+      return mongoConnection;
+    }
 
-    await mongoose.connect(mongoUri);
+    console.log('Attempting to connect to MongoDB');
+    await mongoose.connect(mongoUri, {
+      retryWrites: true,
+      w: 'majority',
+    });
 
-    isConnected = true;
-    console.log('Connected to MongoDB successfully');
+    mongoConnection = mongoose.connection;
+
+    // Database existence check and creation (after connection is established)
+    const adminDb = mongoose.connection.getClient().db('admin');
+    const databases = await adminDb.admin().listDatabases();
+    const dbExists = databases.databases.some(db => db.name === (process.env.MICROSERVICE_NAME || 'geo-service'));
+
+    if (!dbExists) {
+      console.log('Creating geo-service database');
+      const targetDb = mongoose.connection.getClient().db(process.env.MICROSERVICE_NAME || 'geo-service');
+      // Create a system collection to ensure database is created
+      await targetDb.createCollection('__init__');
+      await targetDb.collection('__init__').deleteMany({});
+    }
+
+    console.log('MongoDB connected successfully');
+
+    return mongoConnection;
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
-    process.exit(1);
+    throw error;
   }
 };
 
 export const disconnectDatabase = async (): Promise<void> => {
-  if (isConnected) {
-    await mongoose.disconnect();
-    isConnected = false;
-    console.log('Disconnected from MongoDB');
+  try {
+    if (mongoConnection) {
+      await mongoose.disconnect();
+      mongoConnection = null;
+      console.log('MongoDB disconnected');
+    }
+  } catch (error) {
+    console.error('MongoDB disconnection failed:', error);
+    throw error;
   }
 };
 
-export const getMongooseConnection = () => mongoose;
+export const getMongoConnection = (): Connection => {
+  if (!mongoConnection) {
+    throw new Error('MongoDB not connected. Call connectDatabase first.');
+  }
+  return mongoConnection;
+};
+
+export const getCollection = (collectionName: string) => {
+  const connection = getMongoConnection();
+  return connection.collection(collectionName);
+};

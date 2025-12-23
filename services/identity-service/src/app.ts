@@ -3,6 +3,7 @@ import { connectMongoDB } from './config/database';
 import { RequestUser, ApiResponse } from './types';
 import { getErrorResponse } from './errors';
 import { createLogger } from './utils/logger';
+import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import rescuerRoutes from './modules/rescuer/rescuer.routes';
@@ -50,6 +51,7 @@ export const createApp = (): Express => {
   });
 
   // Routes
+  app.use('/auth', authRoutes);
   app.use('/users', userRoutes);
   app.use('/admin', adminRoutes);
   app.use('/rescuer', rescuerRoutes);

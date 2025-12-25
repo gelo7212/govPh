@@ -1,12 +1,20 @@
 _format_version: "3.0"
 
 services:
-  - name: bff
-    url: http://bff:3000
+  - name: bff-citizen
+    url: http://bff-citizen:3000
     routes:
-      - name: api
+      - name: citizen-api
         paths:
           - /api
+        strip_path: false
+
+  - name: bff-admin
+    url: http://bff-admin:3000
+    routes:
+      - name: admin-api
+        paths:
+          - /admin
         strip_path: false
 
 plugins:

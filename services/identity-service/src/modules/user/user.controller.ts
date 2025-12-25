@@ -10,6 +10,7 @@ import {
   DatabaseError,
   UnauthorizedError,
   CannotCreateAdminError,
+  UserNotRegisteredError,
 } from '../../errors';
 import {
   validateEmail,
@@ -52,7 +53,7 @@ export class UserController {
       const user: UserEntity = {
         id: userId,
         firebaseUid: req.user.firebaseUid,
-        role: 'citizen',
+        role: 'CITIZEN',
         municipalityCode,
         registrationStatus: 'active',
         createdAt: new Date(),
@@ -61,7 +62,7 @@ export class UserController {
 
       // Validate municipality if provided
       if (municipalityCode) {
-        validateMunicipalityForRole('citizen', municipalityCode);
+        validateMunicipalityForRole('CITIZEN', municipalityCode);
       }
 
       const created = await userService.createUser(user);
@@ -162,6 +163,47 @@ export class UserController {
       logger.error('Failed to update user status', error);
       throw error;
     }
+  }
+
+  async getUserByFirebaseUid(req: Request, res: Response): Promise<void> {
+    try {
+      const { firebaseUid } = req.params;
+      if (!firebaseUid) {
+        throw new ValidationError('Missing required parameter: firebaseUid');
+      }
+      const user = await userService.getUserByFirebaseUid(firebaseUid);
+      if (!user) {
+        throw new UserNotRegisteredError(firebaseUid);
+      }
+      res.status(200).json({
+        success: true,
+        data: user,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logger.error('Failed to get user by Firebase UID', error);
+      throw error;
+    }
+  }
+
+  async checkFirebaseUidExists(req: Request, res: Response): Promise<void> {
+    try {
+      const { firebaseUid } = req.params;
+      if (!firebaseUid) {
+        throw new ValidationError('Missing required parameter: firebaseUid');
+      }
+      const exists = await userService.getUserByFirebaseUid(firebaseUid);
+      res.status(200).json({
+        success: true,
+        data: { exists },
+        timestamp: new Date(),
+      });
+    }
+    catch (error) {
+      logger.error('Failed to check Firebase UID existence', error);
+      throw error;
+    }
+
   }
 }
 

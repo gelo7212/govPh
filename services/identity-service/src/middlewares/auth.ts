@@ -51,16 +51,17 @@ export const authMiddleware = async (
 
     // Attach payload to request
     req.user = {
-      userId: validation.payload.userId,
-      firebaseUid: validation.payload.firebaseUid,
-      role: 'citizen', // Map contextType to role if needed
-      municipalityCode: validation.payload.cityCode,
+      userId: validation.payload.identity?.userId || '',
+      firebaseUid: validation.payload.identity?.firebaseUid || '',
+      role: validation.payload.identity?.role || 'CITIZEN',
+      municipalityCode: validation.payload.actor.cityCode,
     };
 
     // Also attach full JWT payload for detailed access
     (req as any).jwtPayload = validation.payload;
 
-    logger.info(`Authenticated user ${validation.payload.userId}`);
+    const userId = validation.payload.identity?.userId || 'anonymous';
+    logger.info(`Authenticated user ${userId}`);
     return next();
   } catch (error) {
     logger.error('Auth middleware error', error);
@@ -96,13 +97,14 @@ export const optionalAuthMiddleware = async (
 
     if (validation.valid && validation.payload) {
       req.user = {
-        userId: validation.payload.userId,
-        firebaseUid: validation.payload.firebaseUid,
-        role: 'citizen',
-        municipalityCode: validation.payload.cityCode,
+        userId: validation.payload.identity?.userId || '',
+        firebaseUid: validation.payload.identity?.firebaseUid || '',
+        role: validation.payload.identity?.role || 'CITIZEN',
+        municipalityCode: validation.payload.actor.cityCode,
       };
       (req as any).jwtPayload = validation.payload;
-      logger.info(`Authenticated user ${validation.payload.userId}`);
+      const userId = validation.payload.identity?.userId || 'anonymous';
+      logger.info(`Authenticated user ${userId}`);
     }
 
     next();
@@ -152,9 +154,9 @@ export const requireScopes = (requiredScopes: string[]) => {
 
 /**
  * Context type validator middleware
- * Checks if user has one of the required context types
+ * Checks if user has one of the required actor types
  */
-export const requireContextTypes = (types: string[]) => {
+export const requireActorTypes = (types: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const payload = (req as any).jwtPayload;
 
@@ -169,12 +171,12 @@ export const requireContextTypes = (types: string[]) => {
       } as ApiResponse);
     }
 
-    if (!types.includes(payload.contextType)) {
+    if (!types.includes(payload.actor.actorType)) {
       return res.status(403).json({
         success: false,
         error: {
           code: 'FORBIDDEN',
-          message: `Invalid context type. Required: ${types.join(', ')}`,
+          message: `Invalid actor type. Required: ${types.join(', ')}`,
         },
         timestamp: new Date(),
       } as ApiResponse);

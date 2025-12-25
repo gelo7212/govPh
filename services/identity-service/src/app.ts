@@ -25,21 +25,21 @@ export const createApp = (): Express => {
 
   // Firebase authentication middleware (simplified)
   // In production, verify Firebase token here
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    // TODO: Verify Firebase token from Authorization header
-    // For now, accept any bearer token as a placeholder
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      // In production, verify and decode token
-      req.user = {
-        userId: `user_${token.substring(0, 8)}`,
-        firebaseUid: token,
-        role: 'citizen',
-      };
-    }
-    next();
-  });
+  // app.use((req: Request, _res: Response, next: NextFunction) => {
+  //   // TODO: Verify Firebase token from Authorization header
+  //   // For now, accept any bearer token as a placeholder
+  //   const authHeader = req.headers.authorization;
+  //   if (authHeader && authHeader.startsWith('Bearer ')) {
+  //     const token = authHeader.substring(7);
+  //     // In production, verify and decode token
+  //     req.user = {
+  //       userId: `user_${token.substring(0, 8)}`,
+  //       firebaseUid: token,
+  //       role: 'citizen',
+  //     };
+  //   }
+  //   next();
+  // });
 
   // Health check endpoint
   app.get('/health', (req: Request, res: Response) => {

@@ -45,7 +45,7 @@ export function validateMunicipalityForRole(
   role: UserRole,
   municipalityCode?: string
 ): void {
-  if ((role === 'city_admin' || role === 'sos_admin') && !municipalityCode) {
+  if ((role === 'CITY_ADMIN' || role === 'SOS_ADMIN') && !municipalityCode) {
     throw new MissingMunicipalityCodeError(role);
   }
 

@@ -16,6 +16,15 @@ export { SosAggregator } from './sos/sos.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
 
 /**
+ * Error Handling Utilities - Central export point
+ */
+export {
+  handleServiceError,
+  sendErrorResponse,
+  type ErrorInfo,
+} from './utils/errorHandler';
+
+/**
  * Shared Types - Central export point
  */
 export type {

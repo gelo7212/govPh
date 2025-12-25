@@ -14,7 +14,7 @@ export class IdentityAggregator {
   /**
    * Get token for user with   const { userId, firebaseUid, contextType, cityCode, scopes, sosId, rescuerId } = req.body;
    */
-  async getToken(firebaseUid: string) {
+  async getToken(firebaseUid: string, userId: string) {
     const result = await this.identityClient.authenticateUser(firebaseUid);
     return result;
   }
@@ -33,5 +33,24 @@ export class IdentityAggregator {
   async validateToken(token: string) {
     const result = await this.identityClient.validateToken(token);
     return result;
+  }
+
+  /**
+   * Get user by Firebase UID
+   */
+  async getUserByFirebaseUid(firebaseUid: string) {
+   try {
+      console.log(`Fetching user by Firebase UID: ${firebaseUid}`);
+      const user = await this.identityClient.getUserByFirebaseUid(firebaseUid);
+      return user;
+   } catch (error) {
+      console.error('Error fetching user by Firebase UID:', {
+        firebaseUid,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      
+      throw error;
+   }
   }
 }

@@ -7,6 +7,7 @@ import { BaseClient } from './base.client';
 export class IdentityServiceClient extends BaseClient {
   constructor(baseURL: string) {
     super(baseURL);
+    console.log(`IdentityServiceClient initialized with baseURL: ${baseURL}`);
   }
 
   async getUserProfile(userId: string) {
@@ -27,9 +28,9 @@ export class IdentityServiceClient extends BaseClient {
     }
   }
 
-  async authenticateUser(firebaseUid: string) {
+  async authenticateUser(firebaseUid: string, userId?: string) {
     try {
-      const response = await this.client.post('/auth/token', { firebaseUid });
+      const response = await this.client.post('/auth/token', { firebaseUid, userId });
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -77,6 +78,16 @@ export class IdentityServiceClient extends BaseClient {
       const response = await this.client.post('/users', data);
       return response.data;
     } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getUserByFirebaseUid(firebaseUid: string) {
+    try {
+      const response = await this.client.get(`/users/firebase/${firebaseUid}`);
+      return response.data;
+    } catch (error) {
+      console.log('Error in getUserByFirebaseUid:', error);
       return this.handleError(error);
     }
   }

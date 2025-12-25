@@ -7,6 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { JwtPayload, ApiResponse } from '../../types';
 import { createLogger } from '../../utils/logger';
+import { userService } from '../user/user.service';
 
 const logger = createLogger('AuthController');
 
@@ -21,22 +22,91 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { userId, firebaseUid, contextType, cityCode, scopes, sosId, rescuerId } = req.body;
+      const { userId, firebaseUid, sosId, rescuerId ,requestMissionId , contextType, cityCode } = req.body;
 
-      // Validate required fields
-      if (!userId || !firebaseUid || !contextType || !cityCode || !scopes) {
-        res.status(400).json({
+      let scopes: string[] = [];
+
+      if (contextType === 'ANON_CITIZEN') {
+        const token = AuthService.generateAnonCitizenToken(
+          cityCode  , scopes,{
+            sosId: sosId,
+          }
+        );
+
+        res.status(200).json(
+          {
+            success: true,
+            data: token,
+            timestamp: new Date(),
+          } as ApiResponse
+        );
+      }
+      
+      if(contextType === 'ANON_RESCUER'){
+        if(sosId){
+          scopes.push('respond_to_sos');
+          
+          const token = AuthService.generateAnonRescuerToken(
+            sosId,
+            requestMissionId,
+            scopes,
+            cityCode,
+          );
+
+          res.status(200).json(
+            {
+              success: true,
+              data: token,
+              timestamp: new Date(),
+            } as ApiResponse
+          );
+
+          logger.info(`Generated anon rescuer token for SOS ${sosId}`);
+          scopes = [];
+          return;
+        }
+      }
+
+      
+      const user = await userService.getUserByFirebaseUid(firebaseUid);
+
+      if (!user) {
+        res.status(404).json({
           success: false,
           error: {
-            code: 'INVALID_REQUEST',
-            message: 'Missing required fields: userId, firebaseUid, contextType, cityCode, scopes',
+            code: 'NOT_FOUND',
+            message: 'User not found',
           },
           timestamp: new Date(),
         } as ApiResponse);
         return;
       }
 
-      const tokens = AuthService.generateTokenPair(userId, firebaseUid, contextType, cityCode, scopes, {
+      if(user.id !== userId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_REQUEST',
+            message: 'User ID invalid for the provided Firebase UID',
+          },
+          timestamp: new Date(),
+        } as ApiResponse);
+        return;
+      }
+      // error when user has no municipality code  when not app admin.
+      if(!user.municipalityCode &&  user.role !== 'APP_ADMIN') {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_USER',
+            message: 'User does not have a municipality code assigned',
+          },
+          timestamp: new Date(),
+        } as ApiResponse);
+        return;
+      }
+      
+      const tokens = AuthService.generateTokenPair(userId, firebaseUid, user.role, user.municipalityCode || '', scopes, {
         sosId,
         rescuerId,
       });
@@ -98,7 +168,8 @@ export class AuthController {
         timestamp: new Date(),
       } as ApiResponse);
 
-      logger.info(`Validated token for user ${result.payload?.userId}`);
+      const userId = result.payload?.identity?.userId || 'anonymous';
+      logger.info(`Validated token for user ${userId}`);
     } catch (error) {
       next(error);
     }
@@ -140,13 +211,9 @@ export class AuthController {
 
       const payload = validation.payload;
       const newAccessToken = AuthService.generateAccessToken({
-        contextType: payload.contextType,
-        userId: payload.userId,
-        firebaseUid: payload.firebaseUid,
-        cityCode: payload.cityCode,
-        scopes: payload.scopes,
-        sosId: payload.sosId,
-        rescuerId: payload.rescuerId,
+        identity: payload.identity,
+        actor: payload.actor,
+        mission: payload.mission,
       });
 
       res.status(200).json({
@@ -159,7 +226,7 @@ export class AuthController {
         timestamp: new Date(),
       } as ApiResponse);
 
-      logger.info(`Refreshed access token for user ${payload.userId}`);
+      logger.info(`Refreshed access token for user ${payload.identity?.userId || 'anonymous'}`);
     } catch (error) {
       next(error);
     }
@@ -186,7 +253,7 @@ export class AuthController {
       }
 
       const decoded = AuthService.decodeTokenUnsafe(token) as JwtPayload | null;
-      if (!decoded?.userId) {
+      if (!decoded) {
         res.status(400).json({
           success: false,
           error: {
@@ -198,7 +265,7 @@ export class AuthController {
         return;
       }
 
-      await AuthService.revokeToken(token, decoded.userId);
+      await AuthService.revokeToken(token);
 
       res.status(200).json({
         success: true,
@@ -206,7 +273,8 @@ export class AuthController {
         timestamp: new Date(),
       } as ApiResponse);
 
-      logger.info(`Revoked token for user ${decoded.userId}`);
+      const userId = decoded.identity?.userId || 'anonymous';
+      logger.info(`Revoked token for user ${userId}`);
     } catch (error) {
       next(error);
     }

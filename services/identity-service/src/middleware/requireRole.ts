@@ -50,21 +50,21 @@ export function requireMunicipalityScope() {
     const targetMunicipality = req.params.municipalityCode || req.query.municipalityCode;
 
     // app_admin can access all municipalities
-    if (req.user.role === 'app_admin') {
+    if (req.user.role === 'APP_ADMIN') {
       next();
       return;
     }
 
     // city_admin and sos_admin must match their scoped municipality
-    if (req.user.role === 'city_admin' || req.user.role === 'sos_admin') {
+    if (req.user.role === 'CITY_ADMIN' || req.user.role === 'SOS_ADMIN') {
       if (targetMunicipality && targetMunicipality !== req.user.municipalityCode) {
         throw new Error('MUNICIPALITY_ACCESS_DENIED');
       }
     }
 
     // citizens and rescuers: no admin access
-    if (req.user.role === 'citizen') {
-      throw new InsufficientPermissionError('city_admin', 'citizen');
+    if (req.user.role === 'CITIZEN') {
+      throw new InsufficientPermissionError('CITY_ADMIN', 'CITIZEN');
     }
 
     next();
@@ -75,21 +75,21 @@ export function requireMunicipalityScope() {
  * App Admin Only - Strongest restriction
  */
 export function requireAppAdmin() {
-  return requireRole(['app_admin']);
+  return requireRole(['APP_ADMIN']);
 }
 
 /**
  * City Admin or higher
  */
 export function requireCityAdmin() {
-  return requireRole(['app_admin', 'city_admin']);
+  return requireRole(['APP_ADMIN', 'CITY_ADMIN']);
 }
 
 /**
  * SOS Admin or higher
  */
 export function requireSOSAdmin() {
-  return requireRole(['app_admin', 'city_admin', 'sos_admin']);
+  return requireRole(['APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN']);
 }
 
 /**

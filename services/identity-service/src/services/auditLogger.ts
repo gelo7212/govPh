@@ -138,9 +138,9 @@ export async function logUserCreated(
   createdUserRole: UserRole,
   municipalityCode?: string
 ): Promise<void> {
-  const action = createdUserRole === 'city_admin'
+  const action = createdUserRole === 'CITY_ADMIN'
     ? 'create_city_admin'
-    : createdUserRole === 'sos_admin'
+    : createdUserRole === 'SOS_ADMIN'
     ? 'create_sos_admin'
     : 'create_user';
 

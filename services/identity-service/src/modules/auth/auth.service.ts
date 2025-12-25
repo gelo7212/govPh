@@ -1,11 +1,16 @@
 /**
- * Auth Service
+ * Auth Service (Module Level)
  * Handles JWT token generation, validation, and revocation
+ * 
+ * Token Design Principle:
+ * "Who is this request acting as, RIGHT NOW?"
+ * 
+ * Identity (optional) | Actor (required) | Mission (optional)
  */
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { JwtPayload, TokenResponse, TokenValidationResult, ContextType } from '../../types';
+import { JwtPayload, TokenResponse, TokenValidationResult, UserRole, ActorType, IdentityClaims, ActorContext, MissionContext } from '../../types';
 import { authConfig } from '../../config/auth';
 import { RevokedTokenModel } from './auth.mongo.schema';
 import { createLogger } from '../../utils/logger';
@@ -35,7 +40,8 @@ export class AuthService {
         noTimestamp: true, // We set iat explicitly
       });
 
-      logger.info(`Generated access token for user ${payload.userId}`);
+      const userId = payload.identity?.userId || 'anonymous';
+      logger.info(`Generated access token for user ${userId} as ${payload.actor.type}`);
       return token;
     } catch (error) {
       logger.error('Failed to generate access token', error);
@@ -65,7 +71,8 @@ export class AuthService {
         noTimestamp: true,
       });
 
-      logger.info(`Generated refresh token for user ${payload.userId}`);
+      const userId = payload.identity?.userId || 'anonymous';
+      logger.info(`Generated refresh token for user ${userId}`);
       return token;
     } catch (error) {
       logger.error('Failed to generate refresh token', error);
@@ -74,28 +81,36 @@ export class AuthService {
   }
 
   /**
-   * Generate Token Pair
+   * Generate Authenticated User Token Pair
+   * For users who have logged in (have identity)
+   * 
+   * Scope Requirements:
+   * - CITIZEN: scopes OPTIONAL (can be empty)
+   * - RESCUER, APP_ADMIN, CITY_ADMIN, SOS_ADMIN: scopes REQUIRED
+   * 
    * Returns both access and refresh tokens
    */
-  static generateTokenPair(
+  static generateAuthenticatedUserTokens(
     userId: string,
     firebaseUid: string,
-    contextType: ContextType,
+    userRole: UserRole,
     cityCode: string,
     scopes: string[],
     options?: {
       sosId?: string;
-      rescuerId?: string;
     }
   ): TokenResponse {
     const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
-      contextType,
-      userId,
-      firebaseUid,
-      cityCode,
-      scopes,
-      sosId: options?.sosId,
-      rescuerId: options?.rescuerId,
+      identity: {
+        userId,
+        firebaseUid,
+        role: userRole,
+      },
+      actor: {
+        type: 'USER',
+        cityCode,
+      },
+      mission: options?.sosId ? { sosId: options.sosId } : undefined,
     };
 
     const accessToken = this.generateAccessToken(basePayload);
@@ -107,6 +122,88 @@ export class AuthService {
       expiresIn: authConfig.jwt.accessTokenExpiry,
       tokenType: 'Bearer',
     };
+  }
+
+  /**
+   * Generate Anonymous Citizen Token
+   * For anonymous users reporting SOS
+   * 
+   * No identity block (anonymous)
+   * Actor type: ANON
+   * Scopes optional and placed in mission context if SOS present
+   */
+  static generateAnonCitizenToken(
+    cityCode: string,
+    scopes?: string[],
+    options?: {
+      sosId?: string;
+    }
+  ): string {
+    const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
+      // No identity block (anonymous)
+      identity:{
+        role: 'CITIZEN',
+      },
+      actor: {
+        type: 'ANON',
+        cityCode,
+      },
+      mission: options?.sosId ? { sosId: options.sosId, scopes } : undefined,
+    };
+
+    return this.generateAccessToken(basePayload);
+  }
+
+  /**
+   * Generate Anonymous Rescuer Token (Mission-Based)
+   * For walk-in / volunteer rescuers (no pre-existing identity)
+   * 
+   * No identity block
+   * Actor type: ANON
+   * Mission context required (SOS + RescuerMissionId)
+   * Scopes in mission context (REQUIRED for rescuers)
+   */
+  static generateAnonRescuerToken(
+    sosId: string,
+    rescuerMissionId: string,
+    scopes: string[],
+    cityCode?: string,
+  ): string {
+    const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
+      // No identity block (no pre-existing rescuer identity)
+      actor: {
+        type: 'ANON',
+        cityCode : cityCode || 'UNKNOWN',
+      },
+      mission: {
+        sosId,
+        rescuerMissionId,
+        scopes,
+      },
+    };
+
+    return this.generateAccessToken(basePayload);
+  }
+
+  /**
+   * Deprecated: Legacy method for backward compatibility
+   * Use generateAuthenticatedUserTokens() or generateAnonCitizenToken() instead
+   */
+  static generateTokenPair(
+    userId: string,
+    firebaseUid: string,
+    userRole: UserRole,
+    cityCode: string,
+    scopes: string[],
+    options?: {
+      sosId?: string;
+      rescuerId?: string;
+    }
+  ): TokenResponse {
+    // Routes to new method
+    return this.generateAuthenticatedUserTokens(userId, firebaseUid, userRole, cityCode, scopes, {
+      sosId: options?.sosId,
+    });
   }
 
   /**
@@ -133,7 +230,9 @@ export class AuthService {
         audience: authConfig.jwt.audience,
       }) as JwtPayload;
 
-      logger.info(`Validated access token for user ${payload.userId}`);
+      const userId = payload.identity?.userId || 'anonymous';
+      const actorType = payload.actor.type;
+      logger.info(`Validated access token for ${actorType}: ${userId}`);
       return {
         valid: true,
         payload,
@@ -172,7 +271,9 @@ export class AuthService {
         audience: authConfig.jwt.audience,
       }) as JwtPayload;
 
-      logger.info(`Validated refresh token for user ${payload.userId}`);
+      const userId = payload.identity?.userId || 'anonymous';
+      logger.info(`Validated refresh token for user ${userId}`);
+      
       return {
         valid: true,
         payload,
@@ -191,7 +292,7 @@ export class AuthService {
    * Revoke Token
    * Adds token to revocation blacklist
    */
-  static async revokeToken(token: string, userId: string): Promise<void> {
+  static async revokeToken(token: string): Promise<void> {
     try {
       // Decode to get expiration without verifying signature
       const decoded = jwt.decode(token) as JwtPayload | null;
@@ -199,6 +300,7 @@ export class AuthService {
         throw new Error('Cannot extract expiration from token');
       }
 
+      const userId = decoded.identity?.userId || 'anonymous';
       const tokenHash = this.hashToken(token);
       const expiresAt = new Date(decoded.exp * 1000);
 

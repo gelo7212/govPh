@@ -85,6 +85,16 @@ export class MissingMunicipalityCodeError extends IdentityServiceError {
   }
 }
 
+export class UserNotRegisteredError extends IdentityServiceError {
+  constructor(public firebaseUid: string) {
+    super(
+      'USER_NOT_REGISTERED',
+      `No user registered with Firebase UID: ${firebaseUid}`,
+      404
+    );
+  }
+}
+
 /**
  * Resource Errors
  */

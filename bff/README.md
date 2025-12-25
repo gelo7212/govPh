@@ -53,6 +53,7 @@ Create a `.env` file in each service directory:
 
 ```
 IDENTITY_SERVICE_URL=http://localhost:3002
+IDENTITY_SERVICE_URL=http://identity-service:3000
 SOS_SERVICE_URL=http://localhost:3003
 GEO_SERVICE_URL=http://localhost:3004
 PORT=3000

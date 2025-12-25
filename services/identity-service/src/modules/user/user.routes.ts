@@ -42,4 +42,26 @@ router.patch(
     userController.updateUserStatus(req, res).catch(next)
 );
 
+/**
+ * GET /users/firebase/:firebaseUid
+ * Get user by Firebase UID
+ */
+router.get(
+  '/firebase/:firebaseUid',
+  // requireAuth(),
+  (req, res, next) =>
+    userController.getUserByFirebaseUid(req, res).catch(next)
+);
+
+/**
+ * GET 
+ * Check if firebase UID is already registered
+ */
+router.get( 
+  '/exists/:firebaseUid',
+  // requireAuth(),
+  (req, res, next) =>
+    userController.checkFirebaseUidExists(req, res).catch(next)
+);
+
 export default router;

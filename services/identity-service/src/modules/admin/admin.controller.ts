@@ -85,7 +85,7 @@ export class AdminController {
 
       // Municipality scope check (city_admin cannot cross boundaries)
       if (
-        req.user.role === 'city_admin' &&
+        req.user.role === 'CITY_ADMIN' &&
         municipalityCode !== req.user.municipalityCode
       ) {
         throw new MunicipalityAccessDeniedError(
@@ -171,12 +171,12 @@ export class AdminController {
 
       let users: UserEntity[] = [];
 
-      if (req.user.role === 'app_admin') {
+      if (req.user.role === 'APP_ADMIN') {
         // App admin sees all users - not implemented yet for full scope
         users = [];
       } else if (
-        req.user.role === 'city_admin' ||
-        req.user.role === 'sos_admin'
+        req.user.role === 'CITY_ADMIN' ||
+        req.user.role === 'SOS_ADMIN'
       ) {
         // City admin and SOS admin see users in their municipality
         if (!req.user.municipalityCode) {
@@ -224,7 +224,7 @@ export class AdminController {
 
       const logs = await this.getAuditLogger().getAuditLogs({
         municipalityCode:
-          req.user.role === 'app_admin'
+          req.user.role === 'APP_ADMIN'
             ? undefined
             : req.user.municipalityCode,
         startDate: startDate ? new Date(startDate as string) : undefined,

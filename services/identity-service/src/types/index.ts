@@ -1,36 +1,83 @@
 /**
  * User Role Types - Authoritative role definitions
+ * Only exists in authenticated identity context
  */
-export type UserRole = 'app_admin' | 'city_admin' | 'sos_admin' | 'citizen';
+export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
 
 /**
- * Context Type for JWT Token Claims
+ * Actor Type - WHO IS ACTING RIGHT NOW?
+ * Simple determination: is there an authenticated identity or not?
+ * 
+ * USER: Has identity + role (role distinguishes CITIZEN/RESCUER/ADMIN)
+ * ANON: No identity, no role (scopes come from mission context)
+ * SYSTEM: Internal service calls (identity optional)
  */
-export type ContextType = 'USER' | 'ADMIN' | 'ANON' | 'RESCUER';
+export type ActorType = 'USER' | 'ANON' | 'SYSTEM';
+
+/**
+ * Identity Claims Block (OPTIONAL in token, but REQUIRED fields when present)
+ * Only present for authenticated users with actorType: 'USER'
+ * If absent → user is anonymous (actorType: 'ANON')
+ * 
+ * When identity exists, userId + firebaseUid + role are all REQUIRED
+ */
+export interface IdentityClaims {
+  userId?: string;      // USER-UUID (must exist if identity block present)
+  firebaseUid?: string; // Firebase UID (must exist if identity block present)
+  role: UserRole;      // Role ALWAYS exists when identity block present
+}
+
+/**
+ * Actor Context Block (REQUIRED in every token)
+ * Simple context: WHO IS ACTING (authenticated vs anonymous) and WHERE (cityCode)
+ */
+export interface ActorContext {
+  type: ActorType; // USER (has identity+role) | ANON (no identity) | SYSTEM
+  cityCode: string; // Municipality code (CALUMPIT, APALIT, etc) - always needed for ACL
+}
+
+/**
+ * Mission Context Block (OPTIONAL)
+ * Present ONLY when token is bound to SOS or rescue operation
+ * Scopes moved here - they only matter in mission/SOS context
+ */
+export interface MissionContext {
+  sosId: string;                // Active SOS incident (REQUIRED if mission block present)
+  rescuerMissionId?: string;    // RMT ID (NOT rescuer identity, mission-scoped)
+  scopes?: string[];            // Resolved permissions for mission context (OPTIONAL)
+}
 
 /**
  * JWT Token Payload
- * Standard claims + custom application claims
+ * Clean separation: Identity | Actor | Mission
+ * 
+ * PRINCIPLE: "WHO IS THIS REQUEST ACTING AS, RIGHT NOW?"
+ * 
+ * RULES:
+ * - actor.type: 'USER' REQUIRES identity block with userId + firebaseUid + role
+ * - actor.type: 'ANON' MUST NOT have identity block
+ * - actor.type: 'SYSTEM' may or may not have identity
+ * - mission block REQUIRES sosId, may include rescuerMissionId and scopes
  */
 export interface JwtPayload {
   // Standard JWT claims
   iss: string; // Issuer: "identity.e-citizen"
   aud: string; // Audience: "e-citizen"
   exp: number; // Expiration time (Unix timestamp)
-  iat?: number; // Issued at (Unix timestamp)
+  iat: number; // Issued at (Unix timestamp)
 
-  // Custom claims
-  contextType: ContextType;
+  // Identity Block (OPTIONAL)
+  // Present only for authenticated users (actor.type: 'USER')
+  // When present, MUST include userId, firebaseUid, and role
+  identity?: IdentityClaims;
 
-  userId: string; // USER-123 format
-  firebaseUid: string; // Firebase UID
+  // Actor Context Block (REQUIRED)
+  // Answers: "Is this authenticated? Where are they from?"
+  actor: ActorContext;
 
-  sosId?: string; // SOS incident ID (optional)
-  rescuerId?: string; // Rescuer ID (optional, null for non-rescuer)
-
-  cityCode: string; // Municipality code (CALUMPIT)
-
-  scopes: string[]; // Permission scopes
+  // Mission Context Block (OPTIONAL)
+  // Present only when token is bound to SOS/rescue incident
+  mission?: MissionContext;
 }
 
 /**
@@ -87,7 +134,7 @@ export interface UserEntity {
   phone?: string;
   displayName?: string;
 
-  // LGU-specific: REQUIRED for city_admin & sos_admin
+  // LGU-specific: REQUIRED for CITY_ADMIN & SOS_ADMIN
   municipalityCode?: string;
   department?: Department;
 
@@ -184,20 +231,33 @@ export interface ApiResponse<T = unknown> {
  * Dictates who can create/manage whom
  */
 export const AUTHORITY_RULES: Record<UserRole, Readonly<UserRole[]>> = {
-  app_admin: ['city_admin', 'sos_admin'],
-  city_admin: ['sos_admin'],
-  sos_admin: [],
-  citizen: [],
+  APP_ADMIN: ['CITY_ADMIN', 'SOS_ADMIN'],
+  CITY_ADMIN: ['SOS_ADMIN'],
+  SOS_ADMIN: [],
+  CITIZEN: [],
+  RESCUER: []
 };
 
 /**
- * Permission Matrix - Feature access by role
+ * All Available Permissions - Single source of truth
  */
-export const PERMISSION_MATRIX: Record<
-  UserRole,
-  Record<string, boolean>
-> = {
-  app_admin: {
+export const ALL_PERMISSIONS = [
+  'manage_cities',
+  'manage_admins',
+  'view_all_sos',
+  'assign_rescuer',
+  'respond_to_sos',
+  'create_sos',
+] as const;
+
+export type Permission = (typeof ALL_PERMISSIONS)[number];
+
+/**
+ * Permission Matrix - Feature access by role
+ * Every role must have every permission explicitly defined
+ */
+export const PERMISSION_MATRIX: Record<UserRole, Record<Permission, boolean>> = {
+  APP_ADMIN: {
     manage_cities: true,
     manage_admins: true,
     view_all_sos: true,
@@ -205,15 +265,15 @@ export const PERMISSION_MATRIX: Record<
     respond_to_sos: false,
     create_sos: false,
   },
-  city_admin: {
+  CITY_ADMIN: {
     manage_cities: false,
-    manage_admins: true, // SOS only
+    manage_admins: true,
     view_all_sos: true,
     assign_rescuer: true,
     respond_to_sos: false,
     create_sos: false,
   },
-  sos_admin: {
+  SOS_ADMIN: {
     manage_cities: false,
     manage_admins: false,
     view_all_sos: true,
@@ -221,7 +281,7 @@ export const PERMISSION_MATRIX: Record<
     respond_to_sos: false,
     create_sos: false,
   },
-  citizen: {
+  CITIZEN: {
     manage_cities: false,
     manage_admins: false,
     view_all_sos: false,
@@ -229,4 +289,12 @@ export const PERMISSION_MATRIX: Record<
     respond_to_sos: false,
     create_sos: true,
   },
+  RESCUER: {
+    manage_cities: false,
+    manage_admins: false,
+    view_all_sos: false,
+    assign_rescuer: false,
+    respond_to_sos: true,
+    create_sos: false,
+  }
 };

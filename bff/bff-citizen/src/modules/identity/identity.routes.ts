@@ -6,7 +6,7 @@ import { IdentityServiceClient } from '@gov-ph/bff-core';
 export const identityRoutes = Router();
 
 // Initialize dependencies
-const identityClient = new IdentityServiceClient(process.env.IDENTITY_SERVICE_URL || 'http://localhost:3002');
+const identityClient = new IdentityServiceClient(process.env.IDENTITY_SERVICE_URL || 'http://identity-service:3000');
 const identityAggregator = new IdentityAggregator(identityClient);
 const identityController = new IdentityController(identityAggregator);
 
@@ -14,3 +14,4 @@ const identityController = new IdentityController(identityAggregator);
 identityRoutes.post('/token', (req, res) => identityController.getToken(req, res));
 identityRoutes.get('/profile', (req, res) => identityController.getProfile(req, res));
 identityRoutes.post('/logout', (req, res) => identityController.logout(req, res));
+identityRoutes.get('/firebase/:firebaseUid', (req, res) => identityController.getFirebaseAccount(req, res));

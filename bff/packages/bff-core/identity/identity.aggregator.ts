@@ -11,8 +11,8 @@ export class IdentityAggregator {
   /**
    * Authenticate user with email and password
    */
-  async login(email: string, password: string): Promise<LoginResponse> {
-    const result = await this.identityClient.authenticateUser(email, password);
+  async firebaseLogin(firebaseUid: string): Promise<LoginResponse> {
+    const result = await this.identityClient.authenticateUser(firebaseUid);
     return result;
   }
 

@@ -16,6 +16,7 @@
     "axios": "^1.6.0",
     "bff-core": "*",
     "express": "^4.18.0",
+    "firebase-admin": "^12.7.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

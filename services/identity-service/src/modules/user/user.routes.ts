@@ -15,7 +15,6 @@ const router = Router();
  */
 router.post(
   '/register',
-  requireAuth(),
   (req, res, next) =>
     userController.registerCitizen(req, res).catch(next)
 );

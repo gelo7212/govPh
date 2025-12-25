@@ -1,5 +1,4 @@
 import { GeoServiceClient } from '../clients';
-import { Boundary, BoundarySearchResult } from '../types';
 
 /**
  * Geo Aggregator - Shared orchestration layer
@@ -9,49 +8,26 @@ export class GeoAggregator {
   constructor(private geoClient: GeoServiceClient) {}
 
   /**
-   * Get boundaries with optional filters
+   * Get all provinces
    */
-  async getBoundaries(filters?: any): Promise<Boundary[]> {
-    const boundaries = await this.geoClient.getBoundaries(filters);
-    return boundaries;
+  async getAllProvinces() {
+    const provinces = await this.geoClient.getAllProvinces();
+    return provinces;
   }
 
   /**
-   * Get boundary by ID
+   * Get municipalities by province name
    */
-  async getBoundaryById(boundaryId: string): Promise<Boundary> {
-    const boundary = await this.geoClient.getBoundaryById(boundaryId);
-    return boundary;
+  async getMunicipalitiesByProvince(province: string) {
+    const municipalities = await this.geoClient.getMunicipalitiesByProvince(province);
+    return municipalities;
   }
 
   /**
-   * Search boundaries by query
+   * Get barangays by municipality code
    */
-  async searchBoundaries(query: string): Promise<BoundarySearchResult[]> {
-    const results = await this.geoClient.searchBoundaries(query);
-    return results;
-  }
-
-  /**
-   * Create new boundary (admin only)
-   */
-  async createBoundary(data: Partial<Boundary>): Promise<Boundary> {
-    const boundary = await this.geoClient.createBoundary(data);
-    return boundary;
-  }
-
-  /**
-   * Update boundary (admin only)
-   */
-  async updateBoundary(boundaryId: string, data: Partial<Boundary>): Promise<Boundary> {
-    const updated = await this.geoClient.updateBoundary(boundaryId, data);
-    return updated;
-  }
-
-  /**
-   * Delete boundary (admin only)
-   */
-  async deleteBoundary(boundaryId: string): Promise<void> {
-    await this.geoClient.deleteBoundary(boundaryId);
+  async getBarangaysByMunicipality(municipalityCode: string) {
+    const barangays = await this.geoClient.getBarangaysByMunicipality(municipalityCode);
+    return barangays;
   }
 }

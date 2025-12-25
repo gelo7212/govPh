@@ -9,54 +9,43 @@ export class GeoServiceClient extends BaseClient {
     super(baseURL);
   }
 
-  async getBoundaries(filters?: any) {
+  /**
+   * Get all provinces
+   * GET /boundaries/provinces
+   */
+  async getAllProvinces() {
     try {
-      const response = await this.client.get('/boundaries', { params: filters });
+      const response = await this.client.get('/geo/boundaries/provinces');
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async getBoundaryById(boundaryId: string) {
+  /**
+   * Get municipalities by province name
+   * GET /boundaries/municipalities?province=<province_name>
+   */
+  async getMunicipalitiesByProvince(province: string) {
     try {
-      const response = await this.client.get(`/boundaries/${boundaryId}`);
+      const response = await this.client.get('/geo/boundaries/municipalities', {
+        params: { province },
+      });
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async searchBoundaries(query: string) {
+  /**
+   * Get barangays by municipality code
+   * GET /boundaries/barangays?municipalityCode=<code>
+   */
+  async getBarangaysByMunicipality(municipalityCode: string) {
     try {
-      const response = await this.client.get('/boundaries/search', { params: { q: query } });
-      return response.data;
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  async createBoundary(data: any) {
-    try {
-      const response = await this.client.post('/boundaries', data);
-      return response.data;
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  async updateBoundary(boundaryId: string, data: any) {
-    try {
-      const response = await this.client.patch(`/boundaries/${boundaryId}`, data);
-      return response.data;
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  async deleteBoundary(boundaryId: string) {
-    try {
-      const response = await this.client.delete(`/boundaries/${boundaryId}`);
+      const response = await this.client.get('/geo/boundaries/barangays', {
+        params: { municipalityCode },
+      });
       return response.data;
     } catch (error) {
       return this.handleError(error);

@@ -8,34 +8,50 @@ export class GeoController {
     this.aggregator = aggregator;
   }
 
-  async getBoundaries(req: Request, res: Response): Promise<void> {
+  /**
+   * GET /geo/provinces
+   * Get all provinces
+   */
+  async getAllProvinces(req: Request, res: Response): Promise<void> {
     try {
-      const boundaries = await this.aggregator.getBoundaries(req.query);
-      res.json(boundaries);
+      const provinces = await this.aggregator.getAllProvinces();
+      res.json(provinces);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
   }
 
-  async getBoundaryById(req: Request, res: Response): Promise<void> {
+  /**
+   * GET /geo/municipalities?province=<province_name>
+   * Get municipalities by province name
+   */
+  async getMunicipalitiesByProvince(req: Request, res: Response): Promise<void> {
     try {
-      const { boundaryId } = req.params;
-      const boundary = await this.aggregator.getBoundaryById(boundaryId);
-      res.json(boundary);
-    } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
-    }
-  }
-
-  async searchBoundaries(req: Request, res: Response): Promise<void> {
-    try {
-      const { query } = req.query;
-      if (!query) {
-        res.status(400).json({ error: 'Query parameter is required' });
+      const { province } = req.query;
+      if (!province || typeof province !== 'string') {
+        res.status(400).json({ error: 'Province name is required' });
         return;
       }
-      const results = await this.aggregator.searchBoundaries(query as string);
-      res.json(results);
+      const municipalities = await this.aggregator.getMunicipalitiesByProvince(province);
+      res.json(municipalities);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  /**
+   * GET /geo/barangays?municipalityCode=<code>
+   * Get barangays by municipality code
+   */
+  async getBarangaysByMunicipality(req: Request, res: Response): Promise<void> {
+    try {
+      const { municipalityCode } = req.query;
+      if (!municipalityCode || typeof municipalityCode !== 'string') {
+        res.status(400).json({ error: 'Municipality code is required' });
+        return;
+      }
+      const barangays = await this.aggregator.getBarangaysByMunicipality(municipalityCode);
+      res.json(barangays);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }

@@ -35,6 +35,36 @@ export class IdentityController {
     }
   }
 
+  async registerCitizen(req: Request, res: Response): Promise<void> {
+    try {
+      // Require Authorization header with Firebase token
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
+        return;
+      }
+
+      // Get authenticated user from context (set by authContextMiddleware)
+      const user = req.context?.user;
+      if (!user) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid or expired Firebase token');
+        return;
+      }
+
+      const registrationData = req.body;
+      const newUser = await this.aggregator.registerCitizenUser(registrationData, user);
+      res.status(201).json({
+        success: true,
+        data: newUser,
+        message: 'Citizen user registered successfully',
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to register citizen user');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
+
   async getToken(req: Request, res: Response): Promise<void> {
     try {
       const { firebaseUid } = req.body;

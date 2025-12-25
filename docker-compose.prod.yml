@@ -16,3 +16,4 @@ services:
     build: ./bff
     environment:
       NODE_ENV: production
+      FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}

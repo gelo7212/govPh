@@ -15,3 +15,4 @@ identityRoutes.post('/token', (req, res) => identityController.getToken(req, res
 identityRoutes.get('/profile', (req, res) => identityController.getProfile(req, res));
 identityRoutes.post('/logout', (req, res) => identityController.logout(req, res));
 identityRoutes.get('/firebase/:firebaseUid', (req, res) => identityController.getFirebaseAccount(req, res));
+identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));

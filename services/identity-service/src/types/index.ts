@@ -125,7 +125,7 @@ export type Department = 'MDRRMO' | 'PNP' | 'BFP' | 'LGU';
  * Governs all identity and access control decisions
  */
 export interface UserEntity {
-  id: string;
+  id?: string;
   firebaseUid: string;
 
   role: UserRole;
@@ -142,6 +142,14 @@ export interface UserEntity {
 
   createdAt: Date;
   updatedAt: Date;
+  address?: {
+    street?: string;
+    city: string;
+    barangay: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  };
 }
 
 /**

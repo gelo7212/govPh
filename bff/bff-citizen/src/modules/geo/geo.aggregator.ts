@@ -2,7 +2,7 @@ import { GeoServiceClient } from '@gov-ph/bff-core';
 
 /**
  * Geo Aggregator - Orchestrates geographic operations
- * This aggregator handles boundary searches and geographic data retrieval
+ * This aggregator handles province, municipality, and barangay data retrieval
  */
 export class GeoAggregator {
   private geoClient: GeoServiceClient;
@@ -12,26 +12,26 @@ export class GeoAggregator {
   }
 
   /**
-   * Get boundaries with optional filters
+   * Get all provinces
    */
-  async getBoundaries(filters?: any) {
-    const boundaries = await this.geoClient.getBoundaries(filters);
-    return boundaries;
+  async getAllProvinces() {
+    const provinces = await this.geoClient.getAllProvinces();
+    return provinces;
   }
 
   /**
-   * Get boundary by ID
+   * Get municipalities by province name
    */
-  async getBoundaryById(boundaryId: string) {
-    const boundary = await this.geoClient.getBoundaryById(boundaryId);
-    return boundary;
+  async getMunicipalitiesByProvince(province: string) {
+    const municipalities = await this.geoClient.getMunicipalitiesByProvince(province);
+    return municipalities;
   }
 
   /**
-   * Search boundaries by query
+   * Get barangays by municipality code
    */
-  async searchBoundaries(query: string) {
-    const results = await this.geoClient.searchBoundaries(query);
-    return results;
+  async getBarangaysByMunicipality(municipalityCode: string) {
+    const barangays = await this.geoClient.getBarangaysByMunicipality(municipalityCode);
+    return barangays;
   }
 }

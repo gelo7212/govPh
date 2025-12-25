@@ -1,27 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { RequestContext } from '../types/context';
+import { getAuth } from '../config/firebase';
 
 /**
  * Middleware to extract and attach authentication context to request
+ * Validates Firebase tokens from Authorization header
  */
-export function authContextMiddleware(
+export async function authContextMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const requestId = uuidv4();
   
-  // Extract user from JWT token or session
+  // Extract Firebase token from Authorization header
   const authHeader = req.headers.authorization;
   let user = undefined;
 
-  if (authHeader) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
-      // TODO: Parse JWT token and extract user info
-      // For now, just extract from header
       const token = authHeader.replace('Bearer ', '');
-      // Decode logic would go here
+      // Validate Firebase token asynchronously
+      const auth = getAuth();
+      const decodedToken = await auth.verifyIdToken(token);
+      user = {
+        id: decodedToken.uid,
+        email: decodedToken.email || '',
+        roles: (decodedToken.roles as string[]) || [],
+      };
+
+      req.context = {
+        user,
+        requestId,
+        timestamp: new Date(),
+      };
+      next();
+      return;
     } catch (error) {
       console.error('Failed to parse auth token', error);
     }
@@ -31,7 +45,7 @@ export function authContextMiddleware(
     user,
     requestId,
     timestamp: new Date(),
-  } as RequestContext;
+  };
 
   next();
 }

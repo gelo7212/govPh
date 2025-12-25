@@ -2,6 +2,26 @@
  * Shared Type Definitions
  */
 
+/**
+ * Citizen Registration Data Structure
+ */
+export interface CitizenRegistrationData {
+  email: string;
+  phone: string;
+  displayName: string;
+  firebaseUid: string;
+  address: {
+    street: string;
+    city: string;
+    barangay: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  };
+  user?: {
+    id: string;
+  };
+}
 // Identity Types
 export interface User {
   id: string;

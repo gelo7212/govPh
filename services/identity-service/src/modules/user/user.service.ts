@@ -36,7 +36,7 @@ export class UserService {
       }
 
       const result = await collection.insertOne({
-        _id: new mongoose.Types.ObjectId(user.id),
+        _id: new mongoose.Types.ObjectId(),
         firebaseUid: user.firebaseUid,
         role: user.role,
         email: user.email,

@@ -23,6 +23,7 @@ services:
     environment:
       NODE_ENV: local
       PORT: 3000
+      FIREBASE_SERVICE_ACCOUNT_KEY: /repo/bff/bff-citizen/src/firebase-service-account.json
 
   # =====================
   # BFF – Admin (Web)

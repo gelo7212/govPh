@@ -1,4 +1,5 @@
 import { IdentityServiceClient } from '@gov-ph/bff-core';
+import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
 
 /**
  * Identity Aggregator - Orchestrates identity-related operations
@@ -52,5 +53,15 @@ export class IdentityAggregator {
       
       throw error;
    }
+  }
+
+  async registerCitizenUser(data: CitizenRegistrationData, user?: any) {
+    // Pass user context to identity service
+    const payload = {
+      ...data,
+      ...(user && { authenticatedUser: user }),
+    };
+    const registered = await this.identityClient.registerCitizenUser(payload);
+    return registered;
   }
 }

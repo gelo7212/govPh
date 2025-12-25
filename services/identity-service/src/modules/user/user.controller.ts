@@ -41,23 +41,30 @@ export class UserController {
    */
   async registerCitizen(req: Request, res: Response): Promise<void> {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('User not authenticated');
-      }
-
       const { municipalityCode } = req.body;
 
       // Citizens can register for their municipality
       const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       const user: UserEntity = {
+        email: req.body.email,
+        phone: req.body.phone,
+        displayName: req.body.displayName,
         id: userId,
-        firebaseUid: req.user.firebaseUid,
+        firebaseUid: req.body.firebaseUid,
         role: 'CITIZEN',
         municipalityCode,
         registrationStatus: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
+        address: {
+          street: req.body.street,
+          city: req.body.city,
+          barangay: req.body.barangay,
+          province: req.body.province,
+          postalCode: req.body.postalCode,
+          country: req.body.country,
+        },
       };
 
       // Validate municipality if provided

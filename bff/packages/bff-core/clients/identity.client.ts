@@ -1,3 +1,4 @@
+import { CitizenRegistrationData } from '../types';
 import { BaseClient } from './base.client';
 
 /**
@@ -76,6 +77,15 @@ export class IdentityServiceClient extends BaseClient {
   async createUser(data: any) {
     try {
       const response = await this.client.post('/users', data);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async registerCitizenUser(data: CitizenRegistrationData) {
+    try {
+      const response = await this.client.post('/users/register', data);
       return response.data;
     } catch (error) {
       return this.handleError(error);

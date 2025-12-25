@@ -1,5 +1,5 @@
 import { IdentityServiceClient, SosServiceClient, GeoServiceClient } from '../clients';
-import { User, LoginResponse, AuthToken } from '../types';
+import { User, LoginResponse, AuthToken, CitizenRegistrationData } from '../types';
 
 /**
  * Identity Aggregator - Shared orchestration layer
@@ -70,4 +70,12 @@ export class IdentityAggregator {
     const created = await this.identityClient.createUser(userData);
     return created;
   }
+
+  /**
+   * Register citizen user
+   */
+  async registerCitizenUser(data: CitizenRegistrationData): Promise<User> {
+    const registered = await this.identityClient.registerCitizenUser(data);
+    return registered;
+  } 
 }

@@ -1,5 +1,6 @@
 /**
  * Logger Utility
+ * Provides structured logging with timestamps and context
  */
 
 export enum LogLevel {
@@ -9,39 +10,52 @@ export enum LogLevel {
   ERROR = 'ERROR',
 }
 
-class Logger {
-  private level: LogLevel;
+export class Logger {
+  constructor(private context: string) {}
 
-  constructor() {
-    this.level = (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO;
+  private log(level: LogLevel, message: string, data?: unknown) {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      level,
+      context: this.context,
+      message,
+      ...(data === undefined ? {} : { data }),
+    };
+
+    const output = JSON.stringify(logEntry);
+
+    switch (level) {
+      case LogLevel.DEBUG:
+        console.debug(output);
+        break;
+      case LogLevel.INFO:
+        console.log(output);
+        break;
+      case LogLevel.WARN:
+        console.warn(output);
+        break;
+      case LogLevel.ERROR:
+        console.error(output);
+        break;
+    }
   }
 
-  debug(message: string, data?: any) {
+  debug(message: string, data?: unknown) {
     this.log(LogLevel.DEBUG, message, data);
   }
 
-  info(message: string, data?: any) {
+  info(message: string, data?: unknown) {
     this.log(LogLevel.INFO, message, data);
   }
 
-  warn(message: string, data?: any) {
+  warn(message: string, data?: unknown) {
     this.log(LogLevel.WARN, message, data);
   }
 
-  error(message: string, error?: any) {
-    this.log(LogLevel.ERROR, message, error);
-  }
-
-  private log(level: LogLevel, message: string, data?: any) {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] [${level}] ${message}`;
-
-    if (data) {
-      console.log(logMessage, data);
-    } else {
-      console.log(logMessage);
-    }
+  error(message: string, data?: unknown) {
+    this.log(LogLevel.ERROR, message, data);
   }
 }
 
-export const logger = new Logger();
+export const createLogger = (context: string): Logger => new Logger(context);

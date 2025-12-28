@@ -15,8 +15,8 @@ export class IdentityAggregator {
   /**
    * Get token for user with   const { userId, firebaseUid, contextType, cityCode, scopes, sosId, rescuerId } = req.body;
    */
-  async getToken(firebaseUid: string, userId: string) {
-    const result = await this.identityClient.authenticateUser(firebaseUid);
+  async getToken(firebaseUid: string, userId: string, sosId?: string) {
+    const result = await this.identityClient.authenticateUser(firebaseUid, userId, sosId);
     return result;
   }
 
@@ -33,6 +33,14 @@ export class IdentityAggregator {
    */
   async validateToken(token: string) {
     const result = await this.identityClient.validateToken(token);
+    return result;
+  }
+
+  /**
+   * Refresh token
+   */
+  async refreshToken(refreshToken: string, sosId?: string) {
+    const result = await this.identityClient.refreshToken(refreshToken, sosId);
     return result;
   }
 
@@ -55,11 +63,12 @@ export class IdentityAggregator {
    }
   }
 
-  async registerCitizenUser(data: CitizenRegistrationData, user?: any) {
+  async registerCitizenUser(data: CitizenRegistrationData, user?: any, municipalityCode?: string) {
     // Pass user context to identity service
     const payload = {
       ...data,
       ...(user && { authenticatedUser: user }),
+      ...(municipalityCode && { municipalityCode }),
     };
     const registered = await this.identityClient.registerCitizenUser(payload);
     return registered;

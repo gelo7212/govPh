@@ -37,7 +37,7 @@ export class AuthService {
       };
 
       const token = jwt.sign(fullPayload, authConfig.getAccessTokenSecret(), {
-        algorithm: 'HS256',
+        algorithm: 'RS256',
         noTimestamp: true, // We set iat explicitly
       });
 
@@ -68,7 +68,7 @@ export class AuthService {
       };
 
       const token = jwt.sign(fullPayload, authConfig.getRefreshTokenSecret(), {
-        algorithm: 'HS256',
+        algorithm: 'RS256',
         noTimestamp: true,
       });
 
@@ -120,11 +120,14 @@ export class AuthService {
         cityCode,
       },
       mission: options?.sosId ? { sosId: options.sosId } : undefined,
+      tokenType: 'access',
     };
 
     const accessToken = this.generateAccessToken(basePayload);
-    const refreshToken = this.generateRefreshToken(basePayload);
-
+    const refreshToken = this.generateRefreshToken({
+      ...basePayload,
+      tokenType: 'refresh',
+    });
     return {
       accessToken,
       refreshToken,
@@ -155,6 +158,7 @@ export class AuthService {
         cityCode,
       },
       mission: options?.sosId ? { sosId: options.sosId, scopes } : undefined,
+      tokenType: 'access',
     };
 
     return this.generateAccessToken(basePayload);
@@ -194,6 +198,7 @@ export class AuthService {
         rescuerMissionId,
         scopes,
       },
+      tokenType: 'access'
     };
 
     return this.generateAccessToken(basePayload);
@@ -238,8 +243,8 @@ export class AuthService {
       }
 
       // Verify and decode token
-      const payload = jwt.verify(token, authConfig.getAccessTokenSecret(), {
-        algorithms: ['HS256'],
+      const payload = jwt.verify(token, authConfig.getAccessTokenPublicKey(), {
+        algorithms: ['RS256'],
         issuer: authConfig.jwt.issuer,
         audience: authConfig.jwt.audience,
       }) as JwtPayload;
@@ -280,8 +285,8 @@ export class AuthService {
       }
 
       // Verify and decode token
-      const payload = jwt.verify(token, authConfig.getRefreshTokenSecret(), {
-        algorithms: ['HS256'],
+      const payload = jwt.verify(token, authConfig.getRefreshTokenPublicKey(), {
+        algorithms: ['RS256'],
         issuer: authConfig.jwt.issuer,
         audience: authConfig.jwt.audience,
       }) as JwtPayload;

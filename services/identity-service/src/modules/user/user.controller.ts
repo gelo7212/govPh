@@ -43,14 +43,11 @@ export class UserController {
     try {
       const { municipalityCode } = req.body;
 
-      // Citizens can register for their municipality
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       const user: UserEntity = {
         email: req.body.email,
         phone: req.body.phone,
         displayName: req.body.displayName,
-        id: userId,
         firebaseUid: req.body.firebaseUid,
         role: 'CITIZEN',
         municipalityCode,
@@ -58,12 +55,12 @@ export class UserController {
         createdAt: new Date(),
         updatedAt: new Date(),
         address: {
-          street: req.body.street,
-          city: req.body.city,
-          barangay: req.body.barangay,
-          province: req.body.province,
-          postalCode: req.body.postalCode,
-          country: req.body.country,
+          street: req.body?.address?.street,
+          city: req.body?.address?.city,
+          barangay: req.body?.address?.barangay,
+          province: req.body?.address?.province,
+          postalCode: req.body?.address?.postalCode,
+          country: req.body?.address?.country,
         },
       };
 

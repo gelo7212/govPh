@@ -1,98 +1,208 @@
-import { BaseClient } from './base.client';
+import { BaseClient, UserContext } from './base.client';
+import { SosResponse } from '../types';
 
 /**
  * SOS Service Client
  * Shared client for communicating with the sos-service microservice
  */
 export class SosServiceClient extends BaseClient {
-  constructor(baseURL: string) {
-    super(baseURL);
+  constructor(baseURL: string, userContext?: UserContext) {
+    super(baseURL, userContext);
   }
 
-  async createSosRequest(data: any) {
+  // ==================== SOS Endpoints ====================
+
+  /**
+   * Create a new SOS request
+   */
+  async createSosRequest(data: any): Promise<SosResponse> {
     try {
-      const response = await this.client.post('/sos', data);
+    
+      const response = await this.client.post('/api/sos', data, { headers: { 'x-device-id': data.deviceId } });
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
+  async updateTag(sosId: string, tag: string): Promise<SosResponse> {
+    try {
+      const response = await this.client.patch(`/api/sos/${sosId}/tag`, { tag });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Get active SOS request for a citizen
+   */
+  async getActiveSosByCitizen(citizenId: string, cityId: string): Promise<SosResponse | null> {
+    try {
+      const response = await this.client.get('/api/sos/citizen/active', { params: { citizenId } , headers: { 'x-city-id': cityId } });
+      return response.data;
+    }
+    catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Get a specific SOS request by ID
+   */
   async getSosRequest(sosId: string) {
     try {
-      const response = await this.client.get(`/sos/${sosId}`);
+      const response = await this.client.get(`/api/sos/${sosId}`);
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async getSosRequestsByUser(userId: string) {
-    try {
-      const response = await this.client.get(`/sos/user/${userId}`);
-      return response.data;
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
+  /**
+   * Get all SOS requests with optional filters
+   */
   async getAllSosRequests(filters?: any) {
     try {
-      const response = await this.client.get('/sos', { params: filters });
+      const response = await this.client.get('/api/sos', { params: filters });
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async getUserSosRequests(userId: string) {
+  /**
+   * Update citizen location for an active SOS request
+   */
+  async updateLocation(sosId: string, location: any) {
     try {
-      const response = await this.client.get(`/sos/user/${userId}`);
+      const response = await this.client.post(`/api/sos/${sosId}/location`, location);
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async updateSosRequest(sosId: string, data: any) {
+   /**
+   * Send a message to an SOS conversation
+   * POST /:sosId/messages
+   */
+  async sendMessage(sosId: string, data: {
+    senderType: 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
+    senderId?: string | null;
+    senderDisplayName: string;
+    contentType?: 'text' | 'system';
+    content: string;
+  }) {
     try {
-      const response = await this.client.patch(`/sos/${sosId}`, data);
+      const response = await this.client.post(`/api/sos/${sosId}/messages`, data);
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async updateSosStatus(sosId: string, status: string) {
+  /**
+   * Get a specific message by ID
+   * GET /message/:messageId
+   */
+  async getMessage(messageId: string) {
     try {
-      const response = await this.client.patch(`/sos/${sosId}/status`, { status });
+      const response = await this.client.get(`/api/sos/message/${messageId}`);
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
+  /**
+   * Get messages for a specific SOS with pagination
+   * GET /:sosId/messages
+   */
+  async getMessagesBySosId(sosId: string, skip: number = 0, limit: number = 50) {
+    try {
+      const response = await this.client.get(`/api/sos/${sosId}/messages`, {
+        params: { skip, limit },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Cancel an SOS request
+   */
   async cancelSosRequest(sosId: string) {
     try {
-      const response = await this.client.delete(`/sos/${sosId}`);
+      const response = await this.client.post(`/api/sos/${sosId}/cancel`);
       return response.data;
     } catch (error) {
       return this.handleError(error);
     }
   }
 
+  /**
+   * Close/Resolve an SOS request
+   */
+  async closeSosRequest(sosId: string, data: any) {
+    try {
+      const response = await this.client.post(`/api/sos/${sosId}/close`, data);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Save location snapshot from realtime service
+   */
+  async saveLocationSnapshot(sosId: string, data: any) {
+    try {
+      const response = await this.client.post(`/api/sos/${sosId}/location-snapshot`, data);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  // ==================== Rescuer Endpoints ====================
+
+  /**
+   * Get assigned SOS for a rescuer
+   */
+  async getRescuerAssignment() {
+    try {
+      const response = await this.client.get('/api/rescuer/assignment');
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Update rescuer location
+   */
+  async updateRescuerLocation(location: any) {
+    try {
+      const response = await this.client.post('/api/rescuer/location', location);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  // ==================== Internal Dispatch Endpoints ====================
+
+  /**
+   * Assign a rescuer to an SOS request (internal endpoint)
+   */
   async assignRescuer(sosId: string, rescuerId: string) {
     try {
-      const response = await this.client.post(`/sos/${sosId}/assign`, { rescuerId });
-      return response.data;
-    } catch (error) {
-      return this.handleError(error);
-    }
-  }
-
-  async trackSosRequest(sosId: string) {
-    try {
-      const response = await this.client.get(`/sos/${sosId}/tracking`);
+      const response = await this.client.post('/api/internal/dispatch/assign', {
+        sosId,
+        rescuerId,
+      });
       return response.data;
     } catch (error) {
       return this.handleError(error);

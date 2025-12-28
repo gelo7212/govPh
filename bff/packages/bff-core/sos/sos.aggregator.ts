@@ -11,7 +11,7 @@ export class SosAggregator {
   /**
    * Create a new SOS request
    */
-  async createSosRequest(data: CreateSosRequest): Promise<SosRequest> {
+  async createSosRequest(data: CreateSosRequest){
     const result = await this.sosClient.createSosRequest(data);
     return result;
   }
@@ -25,14 +25,6 @@ export class SosAggregator {
   }
 
   /**
-   * Get all SOS requests for a specific user
-   */
-  async getUserSosRequests(userId: string): Promise<SosRequest[]> {
-    const requests = await this.sosClient.getSosRequestsByUser(userId);
-    return requests;
-  }
-
-  /**
    * Get all SOS requests (admin only)
    */
   async getAllSosRequests(filters?: any): Promise<SosRequest[]> {
@@ -41,19 +33,19 @@ export class SosAggregator {
   }
 
   /**
-   * Update SOS request
+   * Update citizen location for an active SOS request
    */
-  async updateSosRequest(sosId: string, data: Partial<SosRequest>): Promise<SosRequest> {
-    const updated = await this.sosClient.updateSosRequest(sosId, data);
+  async updateLocation(sosId: string, location: any): Promise<SosRequest> {
+    const updated = await this.sosClient.updateLocation(sosId, location);
     return updated;
   }
 
   /**
-   * Update SOS request status
+   * Send a message in an SOS conversation
    */
-  async updateSosStatus(sosId: string, status: string): Promise<SosRequest> {
-    const updated = await this.sosClient.updateSosStatus(sosId, status);
-    return updated;
+  async sendMessage(sosId: string, data: any): Promise<any> {
+    const result = await this.sosClient.sendMessage(sosId, data);
+    return result;
   }
 
   /**
@@ -65,7 +57,23 @@ export class SosAggregator {
   }
 
   /**
-   * Assign rescuer to SOS request (admin/dispatch only)
+   * Close/Resolve an SOS request
+   */
+  async closeSosRequest(sosId: string, data: any): Promise<SosRequest> {
+    const updated = await this.sosClient.closeSosRequest(sosId, data);
+    return updated;
+  }
+
+  /**
+   * Save location snapshot from realtime service
+   */
+  async saveLocationSnapshot(sosId: string, data: any): Promise<any> {
+    const result = await this.sosClient.saveLocationSnapshot(sosId, data);
+    return result;
+  }
+
+  /**
+   * Assign rescuer to SOS request (internal dispatch endpoint)
    */
   async assignRescuer(sosId: string, rescuerId: string): Promise<SosRequest> {
     const assigned = await this.sosClient.assignRescuer(sosId, rescuerId);
@@ -73,10 +81,33 @@ export class SosAggregator {
   }
 
   /**
-   * Track SOS request location and status
+   * Get assigned SOS for a rescuer
    */
-  async trackSosRequest(sosId: string): Promise<any> {
-    const tracking = await this.sosClient.trackSosRequest(sosId);
-    return tracking;
+  async getRescuerAssignment(): Promise<SosRequest> {
+    const assignment = await this.sosClient.getRescuerAssignment();
+    return assignment;
   }
+
+  /**
+   * Update rescuer location
+   */
+  async updateRescuerLocation(location: any): Promise<any> {
+    const result = await this.sosClient.updateRescuerLocation(location);
+    return result;
+  }
+
+  /**
+   * Get active SOS request for a citizen
+   */
+  async getActiveSosByCitizen(citizenId: string, cityId: string){
+    const result = await this.sosClient.getActiveSosByCitizen(citizenId, cityId);
+    return result;
+  }
+  /**
+   * Update SOS tag
+   */
+  async updateTag(sosId: string, tag: string) {
+    const updated = await this.sosClient.updateTag(sosId, tag);
+    return updated;
+  } 
 }

@@ -1,9 +1,12 @@
-export interface Message {
+import { Types } from 'mongoose';
+
+export interface SosMessage {
   id: string;
-  cityId: string;
   sosId: string;
-  senderId: string;
-  senderRole: 'citizen' | 'rescuer' | 'admin';
+  senderType: 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
+  senderId?: Types.ObjectId | null;
+  senderDisplayName: string;
+  contentType: 'text' | 'system';
   content: string;
   createdAt: Date;
 }

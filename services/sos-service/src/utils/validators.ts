@@ -10,6 +10,15 @@ export const createSOSSchema = Joi.object({
     .required(),
   message: Joi.string().min(1).max(500).required(),
   silent: Joi.boolean().default(false),
+  location: Joi.object({
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required(),
+    accuracy: Joi.number().min(0).optional(),
+  }).optional(),
+  address: Joi.object({
+    city: Joi.string().max(100).optional(),
+    barangay: Joi.string().max(100).optional(),
+  }).optional(),
 });
 
 export const updateLocationSchema = Joi.object({
@@ -54,7 +63,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
       return res.status(400).json({ error: 'Validation failed', details });
     }
 
-    req.validatedBody = value;
+    req.body = value;
     next();
   };
 };

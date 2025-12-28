@@ -12,7 +12,9 @@ export interface SOS {
   status: SOSStatus;
   assignedRescuerId?: string;
   lastKnownLocation: GeoJsonPoint;
-  notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  type: string;
+  message: string;
+  soNo: string;
 }

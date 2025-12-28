@@ -50,25 +50,13 @@ export const createApp = (): Express => {
     });
   });
 
-  // Routes
+  // Routes - Register all routes first
   app.use('/auth', authRoutes);
   app.use('/users', userRoutes);
   app.use('/admin', adminRoutes);
   app.use('/rescuer', rescuerRoutes);
 
-  // 404 handler
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({
-      success: false,
-      error: {
-        code: 'NOT_FOUND',
-        message: `Route ${req.method} ${req.path} not found`,
-      },
-      timestamp: new Date(),
-    });
-  });
-
-  // Error handler middleware
+  // Error handler middleware (before 404 handler)
   app.use(
     (err: unknown, req: Request, res: Response, _next: NextFunction) => {
       const errorResponse = getErrorResponse(err);
@@ -85,6 +73,18 @@ export const createApp = (): Express => {
       });
     }
   );
+
+  // 404 handler (last middleware)
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: `Route ${req.method} ${req.path} not found`,
+      },
+      timestamp: new Date(),
+    });
+  });
 
   return app;
 };

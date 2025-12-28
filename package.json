@@ -1,7 +1,10 @@
 {
     "private": true,
     "workspaces": [
-        "bff/*",
-        "bff/packages/*"
-    ]
+        "bff/packages/*",
+        "bff/*"
+    ],
+    "devDependencies": {
+        "prettier": "^3.7.4"
+    }
 }

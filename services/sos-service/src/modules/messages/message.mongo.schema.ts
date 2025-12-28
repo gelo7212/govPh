@@ -1,35 +1,40 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 
-export interface IMessage extends Document {
-  cityId: string;
+export interface ISosMessage extends Document {
   sosId: string;
-  senderId: string;
-  senderRole: 'citizen' | 'rescuer' | 'admin';
+  senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER';
+  senderId?: Types.ObjectId | null;
+  senderDisplayName: string;
+  contentType: 'text' | 'system';
   content: string;
   createdAt: Date;
 }
 
-const messageSchema = new Schema<IMessage>(
+const sosMessageSchema = new Schema<ISosMessage>(
   {
-    cityId: {
-      type: String,
-      required: true,
-      index: true,
-    },
     sosId: {
       type: String,
       required: true,
       index: true,
     },
-    senderId: {
+    senderType: {
       type: String,
+      enum: ['SOS_ADMIN', 'CITIZEN', 'RESCUER'],
       required: true,
-      index: true,
     },
-    senderRole: {
+    senderId: {
+      type: Schema.Types.ObjectId,
+      required: false,
+      default: null,
+    },
+    senderDisplayName: {
       type: String,
-      enum: ['citizen', 'rescuer', 'admin'],
-      required: true,
+      required: false,
+    },
+    contentType: {
+      type: String,
+      enum: ['text', 'system'],
+      default: 'text',
     },
     content: {
       type: String,
@@ -43,12 +48,6 @@ const messageSchema = new Schema<IMessage>(
 );
 
 // Compound index for efficient message retrieval by SOS and time
-messageSchema.index({ sosId: 1, createdAt: -1 });
+sosMessageSchema.index({ sosId: 1, createdAt: 1 });
 
-// Index for city-based message queries
-messageSchema.index({ cityId: 1, createdAt: -1 });
-
-// Index for sender queries
-messageSchema.index({ senderId: 1, createdAt: -1 });
-
-export const MessageModel = model<IMessage>('Message', messageSchema);
+export const SosMessageModel = model<ISosMessage>('sos_messages', sosMessageSchema);

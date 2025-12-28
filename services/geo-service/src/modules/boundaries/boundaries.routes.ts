@@ -21,6 +21,14 @@ router.get('/municipalities', (req, res) =>
 );
 
 /**
+ * GET /geo/boundaries/municipalities/:municipalityCode
+ * Get municipality by municipality code
+*/
+router.get('/municipalities/:municipalityCode', (req, res) =>
+  controller.getMunicipalityByCode(req, res)
+);
+
+/**
  * GET /geo/boundaries/barangays?municipalityCode=030140001
  * Get barangays by municipality code
  */

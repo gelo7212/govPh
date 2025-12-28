@@ -1,13 +1,13 @@
-import { CitizenRegistrationData } from '../types';
-import { BaseClient } from './base.client';
+import { CitizenRegistrationData, UserProfileResponse } from '../types';
+import { BaseClient, UserContext } from './base.client';
 
 /**
  * Identity Service Client
  * Shared client for communicating with the identity-service microservice
  */
 export class IdentityServiceClient extends BaseClient {
-  constructor(baseURL: string) {
-    super(baseURL);
+  constructor(baseURL: string, userContext?: UserContext) {
+    super(baseURL, userContext);
     console.log(`IdentityServiceClient initialized with baseURL: ${baseURL}`);
   }
 
@@ -29,11 +29,21 @@ export class IdentityServiceClient extends BaseClient {
     }
   }
 
-  async authenticateUser(firebaseUid: string, userId?: string) {
+  async authenticateUser(firebaseUid: string, userId?: string, sosId?: string) {
     try {
-      const response = await this.client.post('/auth/token', { firebaseUid, userId });
+      const response = await this.client.post('/auth/token', { firebaseUid, userId, sosId });
       return response.data;
     } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async refreshToken(refreshToken: string, sosId?: string) {
+    try {
+      const response = await this.client.post('/auth/refresh', { refreshToken, sosId });
+      return response.data;
+    }
+    catch (error) {
       return this.handleError(error);
     }
   }
@@ -92,7 +102,7 @@ export class IdentityServiceClient extends BaseClient {
     }
   }
 
-  async getUserByFirebaseUid(firebaseUid: string) {
+  async getUserByFirebaseUid(firebaseUid: string): Promise<UserProfileResponse> {
     try {
       const response = await this.client.get(`/users/firebase/${firebaseUid}`);
       return response.data;

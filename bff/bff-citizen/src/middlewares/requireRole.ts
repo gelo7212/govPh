@@ -12,7 +12,7 @@ export function requireRoleMiddleware(requiredRoles: string[]) {
       return;
     }
 
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
+    const hasRole = requiredRoles.includes(user.role || '');
 
     if (!hasRole) {
       res.status(403).json({ error: 'Forbidden' });

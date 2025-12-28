@@ -81,6 +81,53 @@ export class BoundariesController {
   }
 
   /**
+   * Get municipalities details by municipality code and or name
+   * GET /geo/boundaries/municipalities/:municipalityCode
+  */
+  async getMunicipalityByCode(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { municipalityCode } = req.params;  
+      if (!municipalityCode) {
+        const response: ApiResponse<null> = {
+          success: false,
+          message: 'Municipality code is required',
+          error: 'Missing municipalityCode parameter',
+        };
+        res.status(400).json(response);
+        return;
+      }
+      const municipality = await this.service.getMunicipalityByCode(municipalityCode);
+      if (!municipality) {
+        const response: ApiResponse<null> = {
+          success: false,
+          message: 'Municipality not found',
+          error: 'No municipality found for the provided code',
+        };
+        res.status(404).json(response);
+        return;
+      }
+      const response: ApiResponse<Municipality> = {
+        success: true,
+        message: 'Municipality retrieved successfully',
+        data: municipality,
+      };
+      res.status(200).json(response);
+    }
+    catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const response: ApiResponse<null> = {
+        success: false,
+        message: 'Failed to retrieve municipality',
+        error: message,
+      };
+      res.status(500).json(response);
+    }
+  }
+
+  /**
    * GET /geo/boundaries/barangays?municipalityCode=030140001
    * Get barangays by municipality code
    * If not in DB, load from static data and save to DB

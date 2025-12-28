@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import http from 'http';
 import https from 'https';
 
@@ -19,13 +19,26 @@ export class ServiceError extends Error {
 }
 
 /**
+ * User context to be passed through service calls
+ */
+export interface UserContext {
+  userId?: string;
+  role?: string;
+  cityId?: string;
+  requestId?: string;
+  actorType?: string;
+}
+
+/**
  * Base HTTP Client
  * Provides common functionality for all service clients
  */
 export abstract class BaseClient {
   protected client: AxiosInstance;
+  protected userContext?: UserContext;
 
-  constructor(baseURL: string) {
+  constructor(baseURL: string, userContext?: UserContext) {
+    this.userContext = userContext;
     this.client = axios.create({
       baseURL,
       timeout: 10000,
@@ -33,8 +46,35 @@ export abstract class BaseClient {
       httpsAgent: new https.Agent({ family: 4 }),
       headers: {
         'Authorization': 'Bearer service-token',
+        'x-internal-token': process.env.INTERNAL_AUTH_TOKEN || '',
       },
     });
+
+    // Add interceptor to include user context headers
+    this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+      if (this.userContext) {
+        if (this.userContext.userId) {
+          config.headers['x-user-id'] = this.userContext.userId;
+        }
+        if (this.userContext.role) {
+          config.headers['x-user-role'] = this.userContext.role;
+        }
+        if (this.userContext.cityId) {
+          config.headers['x-city-id'] = this.userContext.cityId;
+        }
+        if (this.userContext.requestId) {
+          config.headers['x-request-id'] = this.userContext.requestId;
+        }
+      }
+      return config;
+    });
+  }
+
+  /**
+   * Set or update user context for subsequent requests
+   */
+  setUserContext(context?: UserContext): void {
+    this.userContext = context;
   }
 
   protected async handleError(error: any): Promise<never> {
@@ -45,6 +85,8 @@ export abstract class BaseClient {
       const status = error.response?.status || 500;
       const statusText = error.response?.statusText || '';
       const data = error.response?.data;
+
+      console.log('Error response data:', data);
 
       // Extract error details from response
       let errorCode = 'SERVICE_ERROR';

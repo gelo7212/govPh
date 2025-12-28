@@ -3,9 +3,14 @@
  */
 
 export interface User {
-  id: string;
-  email: string;
-  roles: string[];
+  id: string; // userId from identity.userId
+  email?: string;
+  role?: string; // Single role from identity.role
+  firebaseUid?: string; // Firebase UID from identity.firebaseUid
+  actor?: {
+    type: string; // USER, ANON, etc.
+    cityCode: string;
+  };
 }
 
 

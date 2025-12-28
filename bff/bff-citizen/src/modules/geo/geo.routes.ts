@@ -6,7 +6,7 @@ import { GeoServiceClient } from '@gov-ph/bff-core';
 export const geoRoutes = Router();
 
 // Initialize dependencies
-const geoClient = new GeoServiceClient(process.env.GEO_SERVICE_URL || 'http://geo-service:3000');
+const geoClient = new GeoServiceClient(process.env.GEO_SERVICE_URL || 'http://govph-geo:3000');
 const geoAggregator = new GeoAggregator(geoClient);
 const geoController = new GeoController(geoAggregator);
 
@@ -28,3 +28,10 @@ geoRoutes.get('/municipalities', (req, res) => geoController.getMunicipalitiesBy
  * Get barangays by municipality code
  */
 geoRoutes.get('/barangays', (req, res) => geoController.getBarangaysByMunicipality(req, res));
+
+/**
+ * GET /geo/reverse-geocode?lat=15.0339584&lon=120.6878208
+ * Reverse geocode coordinates to address
+ * Optional: zoom=18, addressDetails=true
+ */
+geoRoutes.get('/reverse-geocode', (req, res) => geoController.reverseGeocode(req, res));

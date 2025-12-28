@@ -82,7 +82,7 @@ export class AuthController {
         return;
       }
 
-      if(user.id !== userId) {
+      if(user.id?.toString() !== userId) {
         res.status(400).json({
           success: false,
           error: {
@@ -177,11 +177,16 @@ export class AuthController {
 
   /**
    * POST /auth/refresh
-   * Exchange refresh token for new access token
+   * Exchange refresh token for new tokens with rotation
+   * 
+   * Implements refresh token rotation for security:
+   * - Old refresh token is revoked after successful validation
+   * - New refresh token is issued with new access token
+   * - Prevents token hijacking by limiting exposure window
    */
   static async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken, sosId } = req.body;
 
       if (!refreshToken) {
         res.status(400).json({
@@ -210,23 +215,46 @@ export class AuthController {
       }
 
       const payload = validation.payload;
+
+      if (sosId && payload.mission) {
+        payload.mission.sosId = sosId;
+      }
+
+      // Generate new tokens
       const newAccessToken = AuthService.generateAccessToken({
         identity: payload.identity,
         actor: payload.actor,
         mission: payload.mission,
+        tokenType: 'access',
       });
+
+      const newRefreshToken = AuthService.generateRefreshToken({
+        identity: payload.identity,
+        actor: payload.actor,
+        mission: payload.mission,
+        tokenType: 'refresh',
+      });
+
+      // Revoke old refresh token to prevent reuse (token rotation security)
+      try {
+        await AuthService.revokeToken(refreshToken);
+      } catch (revokeError) {
+        // Log but don't fail - tokens should still be issued
+        logger.warn(`Failed to revoke old refresh token: ${revokeError instanceof Error ? revokeError.message : 'Unknown error'}`);
+      }
 
       res.status(200).json({
         success: true,
         data: {
           accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
           expiresIn: 15 * 60,
           tokenType: 'Bearer',
         },
         timestamp: new Date(),
       } as ApiResponse);
 
-      logger.info(`Refreshed access token for user ${payload.identity?.userId || 'anonymous'}`);
+      logger.info(`Refreshed token pair for user ${payload.identity?.userId || 'anonymous'} with token rotation`);
     } catch (error) {
       next(error);
     }

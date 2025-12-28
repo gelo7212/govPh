@@ -74,9 +74,15 @@ export class MunicipalityRepository {
    * Find municipality by code
    */
   async findByCode(code: string): Promise<Municipality | null> {
-    return MunicipalityModel.findOne({ code }).lean();
+    return MunicipalityModel.findOne({ $or: [{ code }, { name: code }] }).lean();
   }
 
+  /**
+   * Find municipalities by name
+   */
+  async findByName(name: string): Promise<Municipality[]> {
+    return MunicipalityModel.find({ name: new RegExp(`^${name}$`, 'i') }).lean();
+  }
   /**
    * Get all municipalities
    */

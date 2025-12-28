@@ -13,6 +13,7 @@ export {
  */
 export { IdentityAggregator } from './identity/identity.aggregator';
 export { SosAggregator } from './sos/sos.aggregator';
+export { MessageAggregator } from './sos/message.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
 
 /**
@@ -40,3 +41,7 @@ export type {
   RequestContext,
   ErrorResponse,
 } from './types';
+
+export { RealtimeServiceClient } from './clients/realtime.client';
+
+export { UserContext } from './clients/base.client';

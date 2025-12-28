@@ -1,12 +1,18 @@
 import { Request, Response } from 'express';
-import { handleServiceError, sendErrorResponse } from '@gov-ph/bff-core';
+import { GeoAggregator, handleServiceError, sendErrorResponse, SosAggregator } from '@gov-ph/bff-core';
 import { IdentityAggregator } from './identity.aggregator';
+import { DecodedToken, decodeJWT } from '../../utils/jwt';
+import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
 
 export class IdentityController {
   private aggregator: IdentityAggregator;
+  private geoAggregator?: GeoAggregator;
+  private sosAggregator?: SosAggregator;
 
-  constructor(aggregator: IdentityAggregator) {
+  constructor(aggregator: IdentityAggregator, geoAggregator?: GeoAggregator, sosAggregator?: SosAggregator) {
     this.aggregator = aggregator;
+    this.geoAggregator = geoAggregator;
+    this.sosAggregator = sosAggregator;
   }
 
   async getFirebaseAccount(req: Request, res: Response): Promise<void> {
@@ -39,6 +45,7 @@ export class IdentityController {
     try {
       // Require Authorization header with Firebase token
       const authHeader = req.headers.authorization;
+      const body = req.body as CitizenRegistrationData;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
         return;
@@ -51,8 +58,18 @@ export class IdentityController {
         return;
       }
 
-      const registrationData = req.body;
-      const newUser = await this.aggregator.registerCitizenUser(registrationData, user);
+      const municipality = body.address.city;
+
+      const municipalityCode =  await this.geoAggregator?.getMunicipalityByCode(municipality);
+
+      if(!municipalityCode || !municipalityCode.data) {
+        sendErrorResponse(res, 400, 'INVALID_REQUEST', `Unable to determine municipality code for: ${municipality}`);
+        return;
+      }
+
+      console.log('Determined municipality code:', municipalityCode);
+
+      const newUser = await this.aggregator.registerCitizenUser(body, user, municipalityCode.data.code);
       res.status(201).json({
         success: true,
         data: newUser,
@@ -65,6 +82,48 @@ export class IdentityController {
     }
   }
 
+  async validateToken(req: Request, res: Response): Promise<void> {
+    try {
+      const { token } = req.body;
+      const isValid = await this.aggregator.validateToken(token);
+      res.status(200).json({
+        success: true,
+        data: { isValid },
+        timestamp: new Date(),
+      });
+    }
+    catch (error) {
+      const errorInfo = handleServiceError(error, 'Token validation failed');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
+
+  async refreshToken(req: Request, res: Response): Promise<void> {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) {
+        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Refresh token is required');
+        return;
+      }
+      const decoded: DecodedToken | null = await decodeJWT(refreshToken);
+      console.log('Decoded refresh token:', decoded);
+      const sosReport = await this.sosAggregator?.getActiveSosByCitizen(decoded?.identity.userId || '', decoded?.actor?.cityCode || '');
+      if (sosReport && sosReport.data) {
+        console.log('Active SOS report found for user during token refresh:', sosReport.data);
+      }
+      const newTokens = await this.aggregator.refreshToken(refreshToken, sosReport?.data?.id);
+      res.status(200).json({
+        success: true,
+        data: newTokens,
+        timestamp: new Date(),
+      });
+    }
+    catch (error) {
+      const errorInfo = handleServiceError(error, 'Token refresh failed');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
+  
   async getToken(req: Request, res: Response): Promise<void> {
     try {
       const { firebaseUid } = req.body;
@@ -80,8 +139,14 @@ export class IdentityController {
         return;
       }
 
+      console.log('Generating token for user:', user);
 
-      const result = await this.aggregator.getToken(firebaseUid, user.id);
+      const sosReport = await this.sosAggregator?.getActiveSosByCitizen(user.data.id, user.data.municipalityCode);
+      if (sosReport && sosReport.data) {
+        console.log('Active SOS report found for user:', sosReport.data);
+      }
+
+      const result = await this.aggregator.getToken(firebaseUid, user.data.id, sosReport?.data?.id);
       res.status(200).json({
         success: true,
         data: result,

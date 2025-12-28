@@ -1,36 +1,94 @@
-import { MessageModel, IMessage } from './message.mongo.schema';
-import { Message } from './message.model';
+import { MessageRepository } from './message.repository';
+import { SosMessage } from './message.model';
+import { Types } from 'mongoose';
+import axios from 'axios';
+import { Logger } from '../../utils/logger';
 
 export class MessageService {
-  async sendMessage(data: any): Promise<Message> {
-    const message = await MessageModel.create({
-      cityId: data.cityId,
+  private realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || 'http://govph-realtime:3000';
+  private internalToken = process.env.INTERNAL_AUTH_TOKEN || 'internal-secret-key';
+  private logger = new Logger('MessageService');
+
+  constructor(private repository: MessageRepository) {}
+
+  async sendMessage(data: {
+    sosId: string;
+    senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER';
+    senderId?: string | null;
+    senderDisplayName: string;
+    contentType?: 'text' | 'system';
+    content: string;
+  }): Promise<SosMessage> {
+    const message = await this.repository.create({
       sosId: data.sosId,
-      senderId: data.senderId,
-      senderRole: data.senderRole,
+      senderType: data.senderType,
+      senderId: data.senderId ? new Types.ObjectId(data.senderId) : null,
+      senderDisplayName: data.senderDisplayName,
+      contentType: data.contentType || 'text',
       content: data.content,
     });
-    return this.mapToDTO(message);
+
+    // Broadcast to realtime service after message is persisted
+    try {
+      await this.broadcastMessageToRealtime(data.sosId, message);
+    } catch (error) {
+      this.logger.error('Failed to broadcast message to realtime service', error);
+      // Don't fail the message creation if realtime broadcast fails
+    }
+
+    return message;
   }
 
-  async getMessagesBySOS(cityId: string, sosId: string): Promise<Message[]> {
-    const messages = await MessageModel.find({ cityId, sosId }).sort({ createdAt: 1 });
-    return messages.map((msg) => this.mapToDTO(msg));
+  /**
+   * Broadcast message to realtime service for socket emission
+   */
+  private async broadcastMessageToRealtime(sosId: string, message: SosMessage): Promise<void> {
+    try {
+      await axios.post(
+        `${this.realtimeServiceUrl}/internal/messaging/broadcast`,
+        {
+          sosId: message.sosId,
+          message: {
+            id: message.id,
+            sosId: message.sosId,
+            senderType: message.senderType,
+            senderId: message.senderId || null,
+            senderDisplayName: message.senderDisplayName,
+            contentType: message.contentType,
+            content: message.content,
+            createdAt: message.createdAt,
+          },
+        },
+        {
+          headers: {
+            'x-internal-token': this.internalToken,
+          },
+        },
+      );
+      this.logger.info('Message broadcast to realtime service', { messageId: message.id, sosId });
+    } catch (error) {
+      this.logger.error('Error broadcasting message to realtime service', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        messageId: message.id,
+        sosId,
+      });
+      throw error;
+    }
   }
 
-  async deleteMessagesBySOS(sosId: string): Promise<void> {
-    await MessageModel.deleteMany({ sosId });
+  async getMessagesBySosId(
+    sosId: string,
+    skip: number = 0,
+    limit: number = 50,
+  ): Promise<{ messages: SosMessage[]; total: number }> {
+    return await this.repository.findBySosId(sosId, skip, limit);
   }
 
-  private mapToDTO(message: IMessage): Message {
-    return {
-      id: message._id?.toString() || '',
-      cityId: message.cityId,
-      sosId: message.sosId,
-      senderId: message.senderId,
-      senderRole: message.senderRole,
-      content: message.content,
-      createdAt: message.createdAt,
-    };
+  async getMessage(messageId: string): Promise<SosMessage | null> {
+    return await this.repository.findById(messageId);
+  }
+
+  async deleteMessagesBySosId(sosId: string): Promise<void> {
+    await this.repository.deleteMessagesBySosId(sosId);
   }
 }

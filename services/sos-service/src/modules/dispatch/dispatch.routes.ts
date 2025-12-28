@@ -15,6 +15,8 @@ const controller = new DispatchController(sosRepository, statusMachine);
  */
 
 // Assign rescuer to SOS
-router.post('/assign', validate(dispatchAssignSchema), (req, res) => controller.assignRescuer(req, res));
+router.post('/assign', validate(dispatchAssignSchema), (req, res, next) =>
+  controller.assignRescuer(req, res).catch(next)
+);
 
 export default router;

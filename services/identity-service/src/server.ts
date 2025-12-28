@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
 import { initializeApp } from './app';
 import { createLogger } from './utils/logger';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const logger = createLogger('Server');
 

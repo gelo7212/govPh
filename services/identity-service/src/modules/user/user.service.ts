@@ -47,6 +47,7 @@ export class UserService {
         registrationStatus: user.registrationStatus,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        address: user.address,
       });
 
       if (!result.acknowledged) {
@@ -256,6 +257,7 @@ export class UserService {
       registrationStatus: doc.registrationStatus,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
+      address: doc.address,
     };
   }
 }

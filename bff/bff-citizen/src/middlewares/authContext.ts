@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { getAuth } from '../config/firebase';
+import * as jwt from 'jsonwebtoken';
 
 /**
  * Middleware to extract and attach authentication context to request
- * Validates Firebase tokens from Authorization header
+ * Validates JWT tokens from Authorization header using JWT_PUBLIC_KEY from env
  */
 export async function authContextMiddleware(
   req: Request,
@@ -13,20 +13,27 @@ export async function authContextMiddleware(
 ): Promise<void> {
   const requestId = uuidv4();
   
-  // Extract Firebase token from Authorization header
+  // Extract JWT token from Authorization header
   const authHeader = req.headers.authorization;
   let user = undefined;
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.replace('Bearer ', '');
-      // Validate Firebase token asynchronously
-      const auth = getAuth();
-      const decodedToken = await auth.verifyIdToken(token);
+      const publicKey = process.env.JWT_PUBLIC_KEY;
+      
+      if (!publicKey) {
+        throw new Error('JWT_PUBLIC_KEY environment variable is not set');
+      }
+
+      // Verify and decode JWT token using public key
+      const decodedToken = jwt.verify(token, publicKey) as any;
       user = {
-        id: decodedToken.uid,
-        email: decodedToken.email || '',
-        roles: (decodedToken.roles as string[]) || [],
+        id: decodedToken.identity?.userId || decodedToken.uid || decodedToken.sub,
+        email: decodedToken.identity?.email || decodedToken.email,
+        role: decodedToken.identity?.role,
+        firebaseUid: decodedToken.identity?.firebaseUid,
+        actor: decodedToken.actor,
       };
 
       req.context = {

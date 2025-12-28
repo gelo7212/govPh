@@ -78,6 +78,7 @@ export interface JwtPayload {
   // Mission Context Block (OPTIONAL)
   // Present only when token is bound to SOS/rescue incident
   mission?: MissionContext;
+  tokenType: 'access' | 'refresh';
 }
 
 /**

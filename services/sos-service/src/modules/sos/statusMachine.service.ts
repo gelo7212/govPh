@@ -1,6 +1,5 @@
 import { SOSRepository } from '../sos/sos.repository';
 import { SOS, SOSStatus } from '../sos/sos.model';
-import { eventEmitter, SOSEvent } from '../../services/eventEmitter';
 
 /**
  * Status Machine Service
@@ -16,7 +15,7 @@ export class StatusMachineService {
    * Sets status to EN_ROUTE automatically
    */
   async handleRescuerAssignment(sosId: string, cityId: string, rescuerId: string): Promise<SOS | null> {
-    const sos = await this.repository.findById(sosId, cityId);
+    const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
     // Only transition from ACTIVE to EN_ROUTE
@@ -46,7 +45,7 @@ export class StatusMachineService {
     rescuerLat: number,
     rescuerLng: number,
   ): Promise<SOS | null> {
-    const sos = await this.repository.findById(sosId, cityId);
+    const sos = await this.repository.findById(sosId);
     if (!sos || !sos.assignedRescuerId) return null;
 
     // Only check distance if in EN_ROUTE status
@@ -78,7 +77,7 @@ export class StatusMachineService {
    * Cancel SOS (only allowed from ACTIVE status)
    */
   async cancelSOS(sosId: string, cityId: string): Promise<SOS | null> {
-    const sos = await this.repository.findById(sosId, cityId);
+    const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
     if (sos.status !== 'ACTIVE') {
@@ -89,13 +88,13 @@ export class StatusMachineService {
       status: 'CANCELLED',
     });
 
-    eventEmitter.publishSOSEvent({
-      type: 'SOS_CANCELLED',
-      sosId: updated.id,
-      cityId,
-      timestamp: new Date(),
-      data: { sosId: updated.id },
-    });
+    // eventEmitter.publishSOSEvent({
+    //   type: 'SOS_CANCELLED',
+    //   sosId: updated.id,
+    //   cityId,
+    //   timestamp: new Date(),
+    //   data: { sosId: updated.id },
+    // });
 
     return updated;
   }
@@ -104,21 +103,21 @@ export class StatusMachineService {
    * Close/Resolve SOS (admin only)
    */
   async closeSOS(sosId: string, cityId: string, resolutionNote?: string): Promise<SOS | null> {
-    const sos = await this.repository.findById(sosId, cityId);
+    const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
     const updated = await this.repository.update(cityId, sosId, {
       status: 'RESOLVED',
-      notes: resolutionNote || sos.notes,
+      notes: resolutionNote || sos.message,
     });
 
-    eventEmitter.publishSOSEvent({
-      type: 'SOS_RESOLVED',
-      sosId: updated.id,
-      cityId,
-      timestamp: new Date(),
-      data: { sosId: updated.id, resolutionNote },
-    });
+    // eventEmitter.publishSOSEvent({
+    //   type: 'SOS_RESOLVED',
+    //   sosId: updated.id,
+    //   cityId,
+    //   timestamp: new Date(),
+    //   data: { sosId: updated.id, resolutionNote },
+    // });
 
     return updated;
   }
@@ -143,16 +142,16 @@ export class StatusMachineService {
    * Publish status change event
    */
   private publishStatusChange(sos: SOS, newStatus: SOSStatus, cityId: string): void {
-    eventEmitter.publishSOSEvent({
-      type: 'STATUS_CHANGED',
-      sosId: sos.id,
-      cityId,
-      timestamp: new Date(),
-      data: {
-        sosId: sos.id,
-        previousStatus: sos.status,
-        status: newStatus,
-      },
-    });
+    // eventEmitter.publishSOSEvent({
+    //   type: 'STATUS_CHANGED',
+    //   sosId: sos.id,
+    //   cityId,
+    //   timestamp: new Date(),
+    //   data: {
+    //     sosId: sos.id,
+    //     previousStatus: sos.status,
+    //     status: newStatus,
+    //   },
+    // });
   }
 }

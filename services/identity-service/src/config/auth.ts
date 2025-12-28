@@ -9,14 +9,14 @@ export const authConfig = {
     issuer: 'identity.e-citizen',
     audience: 'e-citizen',
     
-    // Access token validity: 15 minutes
-    accessTokenExpiry: 15 * 60, // seconds
+    // Access token validity: 1 hour
+    accessTokenExpiry: 60 * 60, // seconds :: 1 hour
     
     // Refresh token validity: 7 days
-    refreshTokenExpiry: 7 * 24 * 60 * 60, // seconds
+    refreshTokenExpiry: 7 * 24 * 60 * 60, // seconds :: 7 days
   },
 
-  // Get JWT secret from environment
+  // Get JWT private key for signing (RS256)
   getAccessTokenSecret: (): string => {
     const secret = process.env.JWT_ACCESS_SECRET;
     if (!secret) {
@@ -25,12 +25,31 @@ export const authConfig = {
     return secret;
   },
 
+  // Get JWT public key for verification (RS256)
+  getAccessTokenPublicKey: (): string => {
+    const publicKey = process.env.JWT_PUBLIC_KEY;
+    if (!publicKey) {
+      throw new Error('JWT_PUBLIC_KEY environment variable is not set');
+    }
+    return publicKey;
+  },
+
+  // Get JWT refresh token private key for signing (RS256)
   getRefreshTokenSecret: (): string => {
     const secret = process.env.JWT_REFRESH_SECRET;
     if (!secret) {
       throw new Error('JWT_REFRESH_SECRET environment variable is not set');
     }
     return secret;
+  },
+
+  // Get JWT refresh token public key for verification (RS256)
+  getRefreshTokenPublicKey: (): string => {
+    const publicKey = process.env.JWT_PUBLIC_KEY;
+    if (!publicKey) {
+      throw new Error('JWT_PUBLIC_KEY environment variable is not set');
+    }
+    return publicKey;
   },
 
   // Token revocation

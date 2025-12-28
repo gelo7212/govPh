@@ -51,7 +51,7 @@ export class BoundariesService {
   }
 
   /**
-   * Get municipality by code from database
+   * Get municipality by code / name from database
    */
   async getMunicipalityByCode(code: string): Promise<Municipality | null> {
     return this.municipalityRepository.findByCode(code);

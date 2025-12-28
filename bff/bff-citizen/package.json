@@ -17,10 +17,12 @@
     "bff-core": "*",
     "express": "^4.18.0",
     "firebase-admin": "^12.7.0",
+    "joi": "^18.0.2",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.0",
+    "@types/joi": "^17.2.2",
     "@types/node": "^20.0.0",
     "@types/uuid": "^9.0.0",
     "typescript": "^5.0.0"

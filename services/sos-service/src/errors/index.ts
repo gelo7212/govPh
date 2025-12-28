@@ -1,48 +1,125 @@
 /**
- * Custom Error Classes
+ * Custom Error Classes for SOS Service
  */
 
-export class AppError extends Error {
+export class SOSServiceError extends Error {
   constructor(
-    public statusCode: number,
+    public code: string,
     message: string,
+    public statusCode: number = 500
   ) {
     super(message);
-    Object.setPrototypeOf(this, AppError.prototype);
+    this.name = 'SOSServiceError';
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(400, message);
-    Object.setPrototypeOf(this, ValidationError.prototype);
+/**
+ * Validation Errors
+ */
+export class ValidationError extends SOSServiceError {
+  constructor(
+    message: string,
+    public field?: string
+  ) {
+    super('VALIDATION_ERROR', message, 400);
   }
 }
 
-export class NotFoundError extends AppError {
-  constructor(resource: string) {
-    super(404, `${resource} not found`);
-    Object.setPrototypeOf(this, NotFoundError.prototype);
-  }
-}
-
-export class UnauthorizedError extends AppError {
+/**
+ * Authorization Errors
+ */
+export class UnauthorizedError extends SOSServiceError {
   constructor(message: string = 'Unauthorized') {
-    super(401, message);
-    Object.setPrototypeOf(this, UnauthorizedError.prototype);
+    super('UNAUTHORIZED', message, 401);
   }
 }
 
-export class ForbiddenError extends AppError {
+export class ForbiddenError extends SOSServiceError {
   constructor(message: string = 'Forbidden') {
-    super(403, message);
-    Object.setPrototypeOf(this, ForbiddenError.prototype);
+    super('FORBIDDEN', message, 403);
   }
 }
 
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(409, message);
-    Object.setPrototypeOf(this, ConflictError.prototype);
+export class InsufficientPermissionError extends SOSServiceError {
+  constructor(
+    public requiredRole: string,
+    public userRole: string
+  ) {
+    super(
+      'INSUFFICIENT_PERMISSION',
+      `User role '${userRole}' does not have permission. Required: '${requiredRole}'`,
+      403
+    );
   }
+}
+
+/**
+ * Resource Errors
+ */
+export class NotFoundError extends SOSServiceError {
+  constructor(
+    public resource: string,
+    public identifier?: string
+  ) {
+    super(
+      'NOT_FOUND',
+      `${resource} not found${identifier ? `: ${identifier}` : ''}`,
+      404
+    );
+  }
+}
+
+export class ConflictError extends SOSServiceError {
+  constructor(message: string) {
+    super('CONFLICT', message, 409);
+  }
+}
+
+/**
+ * Business Logic Errors
+ */
+export class InvalidStateTransitionError extends SOSServiceError {
+  constructor(
+    public currentState: string,
+    public requestedState: string
+  ) {
+    super(
+      'INVALID_STATE_TRANSITION',
+      `Cannot transition from '${currentState}' to '${requestedState}'`,
+      400
+    );
+  }
+}
+
+/**
+ * Error Response Handler
+ */
+export function getErrorResponse(error: unknown): {
+  code: string;
+  message: string;
+  statusCode: number;
+} {
+  if (error instanceof SOSServiceError) {
+    return {
+      code: error.code,
+      message: error.message,
+      statusCode: error.statusCode,
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      code: 'INTERNAL_SERVER_ERROR',
+      message: process.env.NODE_ENV === 'production'
+        ? 'An unexpected error occurred'
+        : error.message,
+      statusCode: 500,
+    };
+  }
+
+  return {
+    code: 'UNKNOWN_ERROR',
+    message: 'An unexpected error occurred',
+    statusCode: 500,
+  };
 }

@@ -32,6 +32,36 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface UserAddress {
+  street: string;
+  city: string;
+  barangay: string;
+  province: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface UserProfile {
+  id: string;
+  firebaseUid: string;
+  role: string;
+  email: string;
+  phone: string;
+  displayName: string;
+  municipalityCode: string;
+  department: string | null;
+  registrationStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  address: UserAddress;
+}
+
+export interface UserProfileResponse {
+  success: boolean;
+  data: UserProfile;
+  timestamp: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -72,6 +102,20 @@ export interface SosRequest {
   updatedAt: Date;
 }
 
+export interface SosResponse {
+  success: boolean;
+  data: {
+    id: string;
+    userId: string;
+    status: string;
+    description: string;
+    type: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  timestamp: string;
+}
+
 // Geo Types
 export interface Boundary {
   id: string;
@@ -88,6 +132,26 @@ export interface BoundarySearchResult {
   name: string;
   type: string;
   distance?: number;
+}
+
+export interface Municipality {
+  _id: string;
+  code: string;
+  name: string;
+  type: string;
+  district: string;
+  zip_code: string;
+  region: string;
+  province: string;
+  __v: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
 }
 
 // Request Context

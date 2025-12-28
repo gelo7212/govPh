@@ -4,34 +4,67 @@ import { SOSService } from './sos.service';
 import { SOSRepository } from './sos.repository';
 import { StatusMachineService } from './statusMachine.service';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema, closeSOSSchema } from '../../utils/validators';
+import { createLogger } from '../../utils/logger';
+import { CounterService } from '../counter';
 
+const logger = createLogger('SOSRoutes');
 const router = Router();
 const repository = new SOSRepository();
 const service = new SOSService(repository);
 const statusMachine = new StatusMachineService(repository);
-const controller = new SOSController(service, statusMachine);
+const counterService = new CounterService();
+const controller = new SOSController(service, statusMachine, counterService);
 
 // Public endpoints (via BFF)
 
 // Create SOS
-router.post('/', validate(createSOSSchema), (req, res) => controller.createSOS(req, res));
+router.post('/', validate(createSOSSchema), (req, res, next) =>
+  controller.createSOS(req, res).catch(next)
+);
 
 // List active SOS (with optional status filter)
-router.get('/', (req, res) => controller.listSOS(req, res));
+router.get('/', (req, res, next) =>
+  controller.listSOS(req, res).catch(next)
+);
 
 // Get specific SOS
-router.get('/:sosId', (req, res) => controller.getSOS(req, res));
+router.get('/:sosId', (req, res, next) =>
+  controller.getSOS(req, res).catch(next)
+);
+
+// Get active SOS for citizen
+router.get('/citizen/active', (req, res, next) =>
+  controller.getActiveSOSByCitizen(req, res).catch(next)
+);
+
+// update SOS tag
+router.patch('/:sosId/tag', (req, res, next) =>
+  controller.updateSosTag(req, res).catch(next)
+);
 
 // Update citizen location
-router.post('/:sosId/location', validate(updateLocationSchema), (req, res) => controller.updateLocation(req, res));
+router.post('/:sosId/location', validate(updateLocationSchema), (req, res, next) =>
+  controller.updateLocation(req, res).catch(next)
+);
 
-// Send message
-router.post('/:sosId/messages', validate(sendMessageSchema), (req, res) => controller.sendMessage(req, res));
+// // Send message
+// router.post('/:sosId/messages', validate(sendMessageSchema), (req, res, next) =>
+//   controller.sendMessage(req, res).catch(next)
+// );
 
 // Cancel SOS
-router.post('/:sosId/cancel', (req, res) => controller.cancelSOS(req, res));
+router.post('/:sosId/cancel', (req, res, next) =>
+  controller.cancelSOS(req, res).catch(next)
+);
 
 // Close/Resolve SOS
-router.post('/:sosId/close', validate(closeSOSSchema), (req, res) => controller.closeSOS(req, res));
+router.post('/:sosId/close', validate(closeSOSSchema), (req, res, next) =>
+  controller.closeSOS(req, res).catch(next)
+);
+
+// Internal endpoint: Save location snapshot from realtime service
+router.post('/:sosId/location-snapshot', (req, res, next) =>
+  controller.saveLocationSnapshot(req, res).catch(next)
+);
 
 export default router;

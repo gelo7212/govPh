@@ -34,4 +34,13 @@ export class GeoAggregator {
     const barangays = await this.geoClient.getBarangaysByMunicipality(municipalityCode);
     return barangays;
   }
+  /**
+ * GET /geo/reverse-geocode?lat=15.0339584&lon=120.6878208
+ * Reverse geocode coordinates to address
+ * Optional: zoom=18, addressDetails=true
+ */
+  async reverseGeocode(lat: number, lon: number, zoom?: number, addressDetails?: boolean) {
+    const response = await this.geoClient.reverseGeocode(lat, lon, zoom, addressDetails);
+    return response;
+  }
 }

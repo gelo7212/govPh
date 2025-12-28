@@ -4,13 +4,44 @@ import { SOS } from './sos.model';
 export class SOSService {
   constructor(private repository: SOSRepository) {}
 
-  async createSOS(data: any): Promise<SOS> {
-    const sos = await this.repository.create(data);
+  async createSOS(data: {
+    cityId: string;
+    citizenId: string;
+    sosNo: string;
+    longitude: number;
+    latitude: number;
+    message: string;
+    type: string;
+    address?: {
+      city: string;
+      barangay: string;
+    };
+    deviceId?: string;
+  }): Promise<SOS> {
+    const sos = await this.repository.create({
+      cityId: data.cityId,
+      citizenId: data.citizenId,
+      sosNo: data.sosNo,
+      status: 'ACTIVE',
+      lastKnownLocation: {
+        type: 'Point',
+        coordinates: [data.longitude, data.latitude],
+      },
+      address: data.address,
+      message: data.message,
+      type: data.type,
+      deviceId : data.deviceId
+    });
     return sos;
   }
 
-  async getSOS(id: string, cityId: string): Promise<SOS | null> {
-    const sos = await this.repository.findById(id, cityId);
+  async updateTag(sosId: string,  tag: string): Promise<SOS> {
+    const sos = await this.repository.updateTag(sosId, tag);
+    return sos;
+  }
+
+  async getSOS(id: string): Promise<SOS | null> {
+    const sos = await this.repository.findById(id);
     return sos;
   }
 
@@ -24,6 +55,17 @@ export class SOSService {
     return sosList;
   }
 
+  async getActiveSOSByCitizen(citizenId: string): Promise<SOS | null> {
+    const sosList = await this.repository.findByCitizen(citizenId);
+    const activeSOS = sosList.find((sos) => sos.status === 'ACTIVE' || sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
+    return activeSOS || null;
+  }
+
+  async listByCitizen(citizenId: string): Promise<SOS[]> {
+    const sosList = await this.repository.findByCitizen(citizenId);
+    return sosList;
+  }
+
   async updateLocation(sosId: string, cityId: string, location: any): Promise<SOS> {
     return await this.repository.update(cityId, sosId, {
       lastKnownLocation: {
@@ -31,6 +73,27 @@ export class SOSService {
         coordinates: [location.lng, location.lat],
       },
     });
+  }
+
+  /**
+   * Save location snapshot from realtime service
+   * Called by location sampler with meaningful location changes
+   */
+  async saveLocationSnapshot(sosId: string, location: any, cityId: string): Promise<SOS> {
+    // Save location with timestamp for audit trail
+    try {
+        return await this.repository.update(cityId, sosId, {
+        lastKnownLocation: {
+          type: 'Point',
+          coordinates: [location.longitude, location.latitude],
+        },
+        lastLocationUpdate: new Date(),
+        address: location.address,
+      });
+    } catch (error) {
+      console.error('Error saving location snapshot:', error);
+      throw new Error('Failed to save location snapshot: ' + error);
+    }
   }
 
   async sendMessage(sosId: string, cityId: string, messageData: any): Promise<any> {

@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
 export enum UserRole {
-  ADMIN = 'admin',
-  RESCUER = 'rescuer',
-  CITIZEN = 'citizen',
+  RESCUER = 'RESCUER',
+  CITIZEN = 'CITIZEN',
+  SOS_ADMIN = 'SOS_ADMIN',
+  CITY_ADMIN = 'CITY_ADMIN',
+  APP_ADMIN = 'APP_ADMIN',
 }
 
 declare global {
@@ -32,10 +34,26 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
     const userId = req.headers['x-user-id'] as string | undefined;
     const cityId = req.headers['x-city-id'] as string | undefined;
     const requestId = req.headers['x-request-id'] as string | undefined;
+    const actorType = req.headers['x-actor-type'] as string | undefined;
+    console.log('Role Guard - Extracted Headers:', {
+      userRole,
+      userId,
+      cityId,
+      requestId,
+      actorType,
+    });
+    // Check if this is an anonymous actor (citizen or rescuer)
+    const isAnonymousWithoutCity =
+      actorType === 'ANON' &&
+      (userRole === UserRole.CITIZEN || userRole === UserRole.RESCUER);
 
-    // For development/testing - remove in production
-    if (!userRole || !userId || !cityId) {
-      console.warn('Missing required headers in request');
+    // Validate required headers based on actor type
+    if (!isAnonymousWithoutCity && !cityId) {
+      return res.status(400).json({ error: 'Missing city ID in headers' });
+    }
+
+    if (!userRole || !userId) {
+      console.warn('Missing required headers (userId, userRole) in request');
       // Optionally continue without user context for health checks
       if (req.path === '/health') {
         return next();
@@ -44,7 +62,7 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       // return res.status(401).json({ error: 'Missing required headers' });
     }
 
-    if (userRole && userId && cityId) {
+    if (userRole && userId) {
       // Validate role
       if (!Object.values(UserRole).includes(userRole as UserRole)) {
         return res.status(400).json({ error: 'Invalid user role' });
@@ -53,7 +71,7 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       req.user = {
         id: userId,
         role: userRole as UserRole,
-        cityId: cityId,
+        cityId: cityId || '',
         requestId: requestId || `req_${Date.now()}`,
       };
     }

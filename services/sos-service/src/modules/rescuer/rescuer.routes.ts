@@ -10,11 +10,13 @@ const statusMachine = new StatusMachineService(sosRepository);
 const controller = new RescuerController(sosRepository, statusMachine);
 
 // Get assigned SOS
-router.get('/assignment', (req, res) => controller.getAssignment(req, res));
+router.get('/assignment', (req, res, next) =>
+  controller.getAssignment(req, res).catch(next)
+);
 
 // Update rescuer location
-router.post('/location', validate(rescuerLocationSchema), (req, res) =>
-  controller.updateRescuerLocation(req, res),
+router.post('/location', validate(rescuerLocationSchema), (req, res, next) =>
+  controller.updateRescuerLocation(req, res).catch(next)
 );
 
 export default router;

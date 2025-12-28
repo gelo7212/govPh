@@ -51,6 +51,7 @@ export class UserController {
         firebaseUid: req.body.firebaseUid,
         role: 'CITIZEN',
         municipalityCode,
+        municipalityId: req.body?.address?.municipalityId,
         registrationStatus: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -92,16 +93,13 @@ export class UserController {
    * GET /users/me
    * Get authenticated user's profile
    */
-  async getProfile(req: Request, res: Response): Promise<void> {
+  async getUserById(req: Request, res: Response): Promise<void> {
     try {
-      if (!req.user) {
-        throw new UnauthorizedError('User not authenticated');
-      }
-
-      const user = await userService.getUserById(req.user.userId);
+      const userId = req.params.userId
+      const user = await userService.getUserById(userId);
 
       if (!user) {
-        throw new NotFoundError('User', req.user.userId);
+        throw new NotFoundError('User', userId);
       }
 
       res.status(200).json({

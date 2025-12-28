@@ -6,6 +6,8 @@ export {
   IdentityServiceClient,
   SosServiceClient,
   GeoServiceClient,
+  IncidentServiceClient,
+  RealtimeServiceClient,
 } from './clients';
 
 /**
@@ -15,6 +17,7 @@ export { IdentityAggregator } from './identity/identity.aggregator';
 export { SosAggregator } from './sos/sos.aggregator';
 export { MessageAggregator } from './sos/message.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
+export { IncidentAggregator } from './incident/incident.aggregator';
 
 /**
  * Error Handling Utilities - Central export point
@@ -40,8 +43,17 @@ export type {
   BoundarySearchResult,
   RequestContext,
   ErrorResponse,
+  IncidentEntity,
+  IncidentAssignmentEntity,
+  CreateIncidentRequest,
+  UpdateIncidentRequest,
+  CreateAssignmentRequest,
+  UpdateAssignmentRequest,
+  IncidentResponse,
+  AssignmentResponse,
+  IncidentType,
+  IncidentStatus,
+  AssignmentStatus,
 } from './types';
-
-export { RealtimeServiceClient } from './clients/realtime.client';
 
 export { UserContext } from './clients/base.client';

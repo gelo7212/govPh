@@ -137,6 +137,9 @@ export interface UserEntity {
 
   // LGU-specific: REQUIRED for CITY_ADMIN & SOS_ADMIN
   municipalityCode?: string;
+
+  // LGU-specific: Municipality ID from address
+  municipalityId?: string;
   department?: Department;
 
   registrationStatus: RegistrationStatus;

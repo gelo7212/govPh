@@ -29,9 +29,9 @@ export class IdentityServiceClient extends BaseClient {
     }
   }
 
-  async authenticateUser(firebaseUid: string, userId?: string, sosId?: string) {
+  async authenticateUser(firebaseUid: string, userId?: string, sosId?: string, contextType?: string) {
     try {
-      const response = await this.client.post('/auth/token', { firebaseUid, userId, sosId });
+      const response = await this.client.post('/auth/token', { firebaseUid, userId, sosId, contextType });
       return response.data;
     } catch (error) {
       return this.handleError(error);

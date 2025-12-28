@@ -3,6 +3,7 @@ import { GeoAggregator, handleServiceError, sendErrorResponse, SosAggregator } f
 import { IdentityAggregator } from './identity.aggregator';
 import { DecodedToken, decodeJWT } from '../../utils/jwt';
 import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
+import { isAnonymousUserByFirebaseToken } from './../../utils/firebase'
 
 export class IdentityController {
   private aggregator: IdentityAggregator;
@@ -68,7 +69,7 @@ export class IdentityController {
       }
 
       console.log('Determined municipality code:', municipalityCode);
-
+      body.address.municipalityId = municipalityCode.data._id;
       const newUser = await this.aggregator.registerCitizenUser(body, user, municipalityCode.data.code);
       res.status(201).json({
         success: true,
@@ -127,11 +128,24 @@ export class IdentityController {
   async getToken(req: Request, res: Response): Promise<void> {
     try {
       const { firebaseUid } = req.body;
-      const { firebaseToken } = req.headers;
+      const { authorization } = req.headers;
       if (!firebaseUid) {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Firebase UID is required in request body');
         return;
       }
+
+      const isAnonymous = authorization && isAnonymousUserByFirebaseToken(authorization as string);
+      if (isAnonymous) {
+        console.log('User is identified as anonymous based on Firebase token.');
+        const token = await this.aggregator.getToken(firebaseUid, undefined, undefined, 'ANON_CITIZEN');
+        res.status(200).json({
+          success: true,
+          data: token,
+          timestamp: new Date(),
+        });
+        return;
+      }
+
 
       const user = await this.aggregator.getUserByFirebaseUid(firebaseUid);
       if (!user) {
@@ -146,6 +160,7 @@ export class IdentityController {
         console.log('Active SOS report found for user:', sosReport.data);
       }
 
+      
       const result = await this.aggregator.getToken(firebaseUid, user.data.id, sosReport?.data?.id);
       res.status(200).json({
         success: true,
@@ -169,7 +184,7 @@ export class IdentityController {
       const profile = await this.aggregator.getProfile(userId);
       res.status(200).json({
         success: true,
-        data: profile,
+        data: profile.data,
         timestamp: new Date(),
       });
     } catch (error) {

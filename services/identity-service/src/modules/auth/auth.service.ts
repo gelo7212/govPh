@@ -22,10 +22,10 @@ export class AuthService {
    * Generate Access Token
    * Short-lived token for API access
    */
-  static generateAccessToken(payload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'>): string {
+  static generateAccessToken(payload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'>, expiresIn?: number): string {
     try {
       const now = Math.floor(Date.now() / 1000);
-      const expiresIn = authConfig.jwt.accessTokenExpiry;
+      expiresIn = expiresIn ?? authConfig.jwt.accessTokenExpiry;
 
       const fullPayload: JwtPayload = {
         iss: authConfig.jwt.issuer,
@@ -139,7 +139,7 @@ export class AuthService {
     options?: {
       sosId?: string;
     }
-  ): string {
+  ): TokenResponse {
     const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
       // No identity block (anonymous)
       identity:{
@@ -153,7 +153,13 @@ export class AuthService {
       tokenType: 'access',
     };
 
-    return this.generateAccessToken(basePayload);
+    const accessToken = this.generateAccessToken(basePayload, authConfig.jwt.anonCitizenAccessTokenExpiry);
+    return {
+      accessToken,
+      refreshToken: '', // No refresh token for anonymous citizen
+      expiresIn: authConfig.jwt.anonCitizenAccessTokenExpiry,
+      tokenType: 'Bearer',
+    };
   }
 
   /**

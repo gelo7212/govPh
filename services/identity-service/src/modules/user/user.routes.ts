@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { userController } from './user.controller';
 import { requireAuth, requireRole, requireCityAdmin } from '../../middleware/requireRole';
+import { authMiddleware } from '../auth';
 
 const router = Router();
 
@@ -19,15 +20,10 @@ router.post(
     userController.registerCitizen(req, res).catch(next)
 );
 
-/**
- * GET /users/me
- * Get current user profile
- */
 router.get(
-  '/me',
-  requireAuth(),
+  '/:userId',
   (req, res, next) =>
-    userController.getProfile(req, res).catch(next)
+    userController.getUserById(req, res).catch(next)
 );
 
 /**

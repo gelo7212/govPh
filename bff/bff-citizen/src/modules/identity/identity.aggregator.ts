@@ -15,8 +15,8 @@ export class IdentityAggregator {
   /**
    * Get token for user with   const { userId, firebaseUid, contextType, cityCode, scopes, sosId, rescuerId } = req.body;
    */
-  async getToken(firebaseUid: string, userId: string, sosId?: string) {
-    const result = await this.identityClient.authenticateUser(firebaseUid, userId, sosId);
+  async getToken(firebaseUid: string, userId?: string, sosId?: string, contextType?: string) {
+    const result = await this.identityClient.authenticateUser(firebaseUid, userId, sosId, contextType);
     return result;
   }
 

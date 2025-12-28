@@ -11,6 +11,8 @@ export const authConfig = {
     
     // Access token validity: 1 hour
     accessTokenExpiry: 60 * 60, // seconds :: 1 hour
+    // Access token validity for anonymous citizens: 15 minutes
+    anonCitizenAccessTokenExpiry: 15 * 60, // seconds :: 15 minutes
     
     // Refresh token validity: 7 days
     refreshTokenExpiry: 7 * 24 * 60 * 60, // seconds :: 7 days

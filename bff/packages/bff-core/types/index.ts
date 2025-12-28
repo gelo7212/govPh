@@ -11,6 +11,7 @@ export interface CitizenRegistrationData {
   displayName: string;
   firebaseUid: string;
   address: {
+    municipalityId: string;
     street: string;
     city: string;
     barangay: string;
@@ -166,4 +167,97 @@ export interface ErrorResponse {
   code: string;
   message: string;
   details?: any;
+}
+// Incident Types
+export type IncidentType = 'emergency' | 'disaster' | 'accident' | 'crime';
+export type IncidentStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected';
+export type AssignmentStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
+
+export interface IncidentLocation {
+  lat: number;
+  lng: number;
+  cityCode: string;
+  barangayCode?: string;
+}
+
+export interface IncidentReporter {
+  userId?: string;
+  role: 'citizen' | 'guest';
+}
+
+export interface IncidentEntity {
+  id: string;
+  type: IncidentType;
+  title: string;
+  description?: string;
+  severity: 'low' | 'medium' | 'high';
+  status: IncidentStatus;
+  location: IncidentLocation;
+  reporter: IncidentReporter;
+  attachments: string[];
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateIncidentRequest {
+  type: IncidentType;
+  title: string;
+  description?: string;
+  severity: 'low' | 'medium' | 'high';
+  location: IncidentLocation;
+  reporter: IncidentReporter;
+  attachments?: string[];
+  metadata?: Record<string, any>;
+}
+
+export interface UpdateIncidentRequest {
+  type?: IncidentType;
+  title?: string;
+  description?: string;
+  severity?: 'low' | 'medium' | 'high';
+  location?: IncidentLocation;
+  attachments?: string[];
+  metadata?: Record<string, any>;
+}
+
+export interface IncidentAssignmentEntity {
+  id: string;
+  incidentId: string;
+  cityCode: string;
+  departmentCode: string;
+  assignedBy: 'system' | 'admin';
+  status: AssignmentStatus;
+  responderId?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAssignmentRequest {
+  incidentId: string;
+  cityCode: string;
+  departmentCode: string;
+  assignedBy: 'system' | 'admin';
+  responderId?: string;
+  notes?: string;
+}
+
+export interface UpdateAssignmentRequest {
+  responderId?: string;
+  notes?: string;
+}
+
+export interface IncidentResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: Date;
+}
+
+export interface AssignmentResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: Date;
 }

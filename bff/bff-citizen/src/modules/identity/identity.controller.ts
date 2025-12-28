@@ -3,7 +3,7 @@ import { GeoAggregator, handleServiceError, sendErrorResponse, SosAggregator } f
 import { IdentityAggregator } from './identity.aggregator';
 import { DecodedToken, decodeJWT } from '../../utils/jwt';
 import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
-import { isAnonymousUserByFirebaseToken } from './../../utils/firebase'
+import { isAnonymousUserByFirebaseToken, validateFirebaseToken } from './../../utils/firebase'
 
 export class IdentityController {
   private aggregator: IdentityAggregator;
@@ -45,20 +45,23 @@ export class IdentityController {
   async registerCitizen(req: Request, res: Response): Promise<void> {
     try {
       // Require Authorization header with Firebase token
-      const authHeader = req.headers.authorization;
+      const authHeader = req.headers.authorization as string;
+    
       const body = req.body as CitizenRegistrationData;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
         return;
       }
 
-      // Get authenticated user from context (set by authContextMiddleware)
-      const user = req.context?.user;
-      if (!user) {
-        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid or expired Firebase token');
+      const token = authHeader.replace('Bearer ', '');
+      const isValid = await validateFirebaseToken(token);
+    
+
+      if (!isValid) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', isValid || 'Invalid Firebase token');
         return;
       }
-
+      
       const municipality = body.address.city;
 
       const municipalityCode =  await this.geoAggregator?.getMunicipalityByCode(municipality);
@@ -70,7 +73,7 @@ export class IdentityController {
 
       console.log('Determined municipality code:', municipalityCode);
       body.address.municipalityId = municipalityCode.data._id;
-      const newUser = await this.aggregator.registerCitizenUser(body, user, municipalityCode.data.code);
+      const newUser = await this.aggregator.registerCitizenUser(body, undefined, municipalityCode.data.code);
       res.status(201).json({
         success: true,
         data: newUser,
@@ -133,8 +136,8 @@ export class IdentityController {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Firebase UID is required in request body');
         return;
       }
-
-      const isAnonymous = authorization && isAnonymousUserByFirebaseToken(authorization as string);
+      const token = authorization && authorization.startsWith('Bearer ') ? authorization.replace('Bearer ', '') : null;
+      const isAnonymous = token && await isAnonymousUserByFirebaseToken(token);
       if (isAnonymous) {
         console.log('User is identified as anonymous based on Firebase token.');
         const token = await this.aggregator.getToken(firebaseUid, undefined, undefined, 'ANON_CITIZEN');

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { GeoController } from './geo.controller';
 import { GeoAggregator } from './geo.aggregator';
 import { GeoServiceClient } from '@gov-ph/bff-core';
+import { authContextMiddleware } from '../../middlewares/authContext';
 
 export const geoRoutes = Router();
 
@@ -15,7 +16,7 @@ const geoController = new GeoController(geoAggregator);
  * GET /geo/provinces
  * Get all provinces
  */
-geoRoutes.get('/provinces', (req, res) => geoController.getAllProvinces(req, res));
+geoRoutes.get('/provinces',  (req, res) => geoController.getAllProvinces(req, res));
 
 /**
  * GET /geo/municipalities?province=<province_name>
@@ -34,4 +35,4 @@ geoRoutes.get('/barangays', (req, res) => geoController.getBarangaysByMunicipali
  * Reverse geocode coordinates to address
  * Optional: zoom=18, addressDetails=true
  */
-geoRoutes.get('/reverse-geocode', (req, res) => geoController.reverseGeocode(req, res));
+geoRoutes.get('/reverse-geocode',authContextMiddleware,  (req, res) => geoController.reverseGeocode(req, res));

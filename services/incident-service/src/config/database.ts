@@ -11,8 +11,10 @@ let mongoClient: typeof mongoose | null = null;
 export async function connectMongoDB(): Promise<typeof mongoose> {
   try {
     const mongoUri =
-      process.env.MONGO_URI || 'mongodb://localhost:27017/incident-service';
+      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'identity-service'}`;
 
+
+    console.log('Connecting to MongoDB at', mongoUri);
     if (mongoClient && mongoClient.connection.readyState === 1) {
       logger.info('Already connected to MongoDB');
       return mongoClient;

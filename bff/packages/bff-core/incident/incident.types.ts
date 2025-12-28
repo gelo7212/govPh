@@ -6,7 +6,7 @@
 
 export type IncidentType = 'emergency' | 'disaster' | 'accident' | 'crime' | 'medical' | 'other';
 export type IncidentSeverity = 'low' | 'medium' | 'high';
-export type IncidentStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected';
+export type IncidentStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected' | 'cancelled';
 
 export interface IncidentLocation {
   lat: number;

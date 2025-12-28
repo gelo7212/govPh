@@ -23,6 +23,12 @@ services:
         paths:
           - /api/messages
         strip_path: false
+      
+      - name: incident-api
+        paths:
+          - /api/incidents
+        strip_path: false
+
 
   # =====================
   # BFF Admin Service

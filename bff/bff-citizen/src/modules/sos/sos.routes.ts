@@ -6,8 +6,17 @@ import { MessageAggregator } from './sos.message.aggregator';
 import { SosServiceClient, UserContext } from '@gov-ph/bff-core';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema } from '../../utils/validators';
 import { createAttachUserContextMiddleware } from '../../middlewares/attachUserContext';
+import { authContextMiddleware } from '../../middlewares/authContext';
 
 export const sosRoutes = Router();
+
+// ==================== CORS Preflight Handlers ====================
+sosRoutes.options('/', (req, res) => res.sendStatus(200));
+sosRoutes.options('/:sosId', (req, res) => res.sendStatus(200));
+sosRoutes.options('/user/requests', (req, res) => res.sendStatus(200));
+sosRoutes.options('/citizen/active', (req, res) => res.sendStatus(200));
+sosRoutes.options('/:sosId/tag', (req, res) => res.sendStatus(200));
+sosRoutes.options('/:sosId/messages', (req, res) => res.sendStatus(200));
 
 // Initialize SOS dependencies
 const sosClient = new SosServiceClient(process.env.SOS_SERVICE_URL || 'http://govph-sos:3000');
@@ -36,28 +45,28 @@ const attachUserContext = (req: Request, res: Response, next: Function) => {
 sosRoutes.use(attachUserContext);
 
 // Routes
-sosRoutes.post('/', validate(createSOSSchema), (req, res) => sosController.createSosRequest(req, res));
-sosRoutes.get('/:sosId', (req, res) => sosController.getSosRequest(req, res));
-sosRoutes.get('/user/requests', (req, res) => sosController.getUserSosRequests(req, res));
-sosRoutes.delete('/:sosId', (req, res) => sosController.cancelSosRequest(req, res));
-sosRoutes.get('/citizen/active', (req, res) => sosController.getActiveSosByCitizen(req, res));
-sosRoutes.put('/:sosId/tag', (req, res) => sosController.updateSosTag(req, res));
+sosRoutes.post('/',authContextMiddleware, validate(createSOSSchema), (req, res) => sosController.createSosRequest(req, res));
+sosRoutes.get('/:sosId',authContextMiddleware, (req, res) => sosController.getSosRequest(req, res));
+sosRoutes.get('/user/requests',authContextMiddleware, (req, res) => sosController.getUserSosRequests(req, res));
+sosRoutes.delete('/:sosId',authContextMiddleware, (req, res) => sosController.cancelSosRequest(req, res));
+sosRoutes.get('/citizen/active',authContextMiddleware, (req, res) => sosController.getActiveSosByCitizen(req, res));
+sosRoutes.put('/:sosId/tag',authContextMiddleware, (req, res) => sosController.updateSosTag(req, res));
 
 // Message Routes - nested under SOS
 /**
  * Send a message to an SOS conversation
  * POST /:sosId/messages
  */
-sosRoutes.post('/:sosId/messages', (req, res) => messageController.sendMessage(req, res));
+sosRoutes.post('/:sosId/messages',authContextMiddleware, (req, res) => messageController.sendMessage(req, res));
 
 /**
  * Get all messages for an SOS conversation
  * GET /:sosId/messages
  */
-sosRoutes.get('/:sosId/messages', (req, res) => messageController.getMessages(req, res));
+sosRoutes.get('/:sosId/messages',authContextMiddleware, (req, res) => messageController.getMessages(req, res));
 
 /**
  * Get a single message by ID
  * GET /message/:messageId
  */
-sosRoutes.get('/message/:messageId', (req, res) => messageController.getMessage(req, res));
+sosRoutes.get('/message/:messageId',authContextMiddleware, (req, res) => messageController.getMessage(req, res));

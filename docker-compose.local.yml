@@ -64,6 +64,7 @@ services:
       GEO_SERVICE_URL: "http://govph-geo:3000"
       SOS_SERVICE_URL: "http://govph-sos:3000"
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
+      INCIDENT_MS_URL: "http://govph-incident:3000"
   # =====================
   # BFF – Admin (Web)
   # =====================
@@ -124,6 +125,18 @@ services:
     # ports:
     #   - "3005:3000"
     environment:
+      PORT: 3000
+
+  incident-service:
+    build: ./services/incident-service
+    container_name: govph-incident
+    networks:
+      - govph-network
+    # Internal only - accessed via Kong gateway
+    # ports:
+    #   - "3006:3000"
+    environment:
+      INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3000
 
 networks:

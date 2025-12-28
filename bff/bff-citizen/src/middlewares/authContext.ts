@@ -36,6 +36,10 @@ export async function authContextMiddleware(
         actor: decodedToken.actor,
       };
 
+      if(decodedToken.actor === "ANON"){
+        // user
+      }
+
       req.context = {
         user,
         requestId,

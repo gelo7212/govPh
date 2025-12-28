@@ -101,6 +101,19 @@ export class IncidentController {
   }
 
   /**
+   * POST /incidents/:id/cancel
+  */
+    async cancelIncident(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const result = await this.aggregator.updateIncidentStatus(id, 'cancelled');
+            res.json(result);
+        } catch (error) {
+        res.status(400).json({ error: (error as Error).message });
+        }
+    }
+
+  /**
    * PATCH /incidents/:id/status
    * Update incident status
    */
@@ -276,11 +289,3 @@ export class IncidentController {
     }
   }
 }
-
-export const incidentController = new IncidentController(
-  new IncidentAggregator(
-    new (require('@gov-ph/bff-core').IncidentServiceClient)(
-      process.env.INCIDENT_MS_URL || 'http://localhost:3004'
-    )
-  )
-);

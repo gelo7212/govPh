@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { IdentityController } from './identity.controller';
 import { IdentityAggregator } from './identity.aggregator';
 import { GeoAggregator, GeoServiceClient, IdentityServiceClient, SosAggregator, SosServiceClient } from '@gov-ph/bff-core';
+import { authContextMiddleware } from '../../middlewares/authContext';
 
 export const identityRoutes = Router();
 
@@ -19,9 +20,9 @@ const identityController = new IdentityController(identityAggregator, geoAggrega
 
 // Routes
 identityRoutes.post('/token', (req, res) => identityController.getToken(req, res));
-identityRoutes.get('/profile', (req, res) => identityController.getProfile(req, res));
-identityRoutes.post('/logout', (req, res) => identityController.logout(req, res));
-identityRoutes.get('/firebase/:firebaseUid', (req, res) => identityController.getFirebaseAccount(req, res));
+identityRoutes.get('/profile',authContextMiddleware, (req, res) => identityController.getProfile(req, res));
+identityRoutes.post('/logout',authContextMiddleware, (req, res) => identityController.logout(req, res));
+identityRoutes.get('/firebase/:firebaseUid',authContextMiddleware, (req, res) => identityController.getFirebaseAccount(req, res));
 identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));
-identityRoutes.post('/refresh', (req, res) => identityController.refreshToken(req, res));
-identityRoutes.post('/validate', (req, res) => identityController.validateToken(req, res));
+identityRoutes.post('/refresh',authContextMiddleware, (req, res) => identityController.refreshToken(req, res));
+identityRoutes.post('/validate',authContextMiddleware, (req, res) => identityController.validateToken(req, res));

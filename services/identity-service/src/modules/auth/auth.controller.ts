@@ -40,6 +40,7 @@ export class AuthController {
             timestamp: new Date(),
           } as ApiResponse
         );
+        return;
       }
       
       if(contextType === 'ANON_RESCUER'){

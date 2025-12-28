@@ -14,10 +14,21 @@ export const isAnonymousUserByFirebaseToken = async (firebaseToken: string): Pro
     try {
         const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
         const isAnonymous = decodedToken.firebase.sign_in_provider === 'anonymous';
+        console.log(`Firebase token for UID ${decodedToken.uid} indicates as ${decodedToken.firebase.sign_in_provider} user.`);
         return isAnonymous;
-      
     }
     catch (error) {
+        console.error('Error verifying Firebase token:', error);
         return false;
+    }
+};
+
+export const validateFirebaseToken = async (firebaseToken: string): Promise<admin.auth.DecodedIdToken> => {
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
+        return decodedToken;
+    } catch (error) {
+        console.error('Error verifying Firebase token:', error);
+        throw error;
     }
 };

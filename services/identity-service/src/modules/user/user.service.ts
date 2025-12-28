@@ -43,6 +43,7 @@ export class UserService {
         phone: user.phone,
         displayName: user.displayName,
         municipalityCode: user.municipalityCode,
+        municipalityId: user.municipalityId,
         department: user.department,
         registrationStatus: user.registrationStatus,
         createdAt: user.createdAt,

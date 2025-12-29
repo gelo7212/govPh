@@ -29,6 +29,7 @@ const IncidentSchema = new mongoose.Schema(
       lng: { type: Number, required: true },
       barangayCode: { type: String, sparse: true },
       cityCode: { type: String, required: true, index: true },
+      cityId: { type: String, required: true, index: true },
     },
     reporter: {
       userId: { type: String, sparse: true, index: true },

@@ -62,6 +62,7 @@ export interface IncidentLocation {
   lng: number;
   barangayCode?: string;
   cityCode: string;
+  cityId: string;
 }
 
 /**

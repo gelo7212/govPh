@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { IncidentAggregator } from './incident.aggregator';
 import { AssignmentStatus } from '@gov-ph/bff-core/incident/incident.types';
+import { getAllReportCategories, getUniqueCategoryTypes, REPORT_CATEGORIES } from '../../utils/report.categories';
+import { identifyReportTypeAndSeverity, identifyByKeywords } from '../../utils/reportTypeIdentifier';
 
 /**
  * Incident Controller - Handles HTTP requests for incident operations
@@ -21,8 +23,30 @@ export class IncidentController {
       const userId = (req as any).context?.user?.id;
       const cityCode = (req as any).context?.user?.cityCode;
 
+      // Identify severity and incident type from report title or keywords
+      let typeAndSeverity = { incidentType: 'other', severity: 'low' };
+      
+      // Try to identify by title first (originalTitle or title field)
+      const reportTitle = req.body.originalTitle || req.body.title;
+      if (reportTitle) {
+        const identified = identifyReportTypeAndSeverity(reportTitle);
+        if (identified) {
+          typeAndSeverity = identified;
+        }
+      }
+      
+      // If not identified by title, try keywords
+      if (typeAndSeverity.incidentType === 'other' && typeAndSeverity.severity === 'low') {
+        const keywords = REPORT_CATEGORIES.find(rc => rc.title === reportTitle)?.keywords || [];
+        if (keywords.length > 0) {
+          typeAndSeverity = identifyByKeywords(keywords, reportTitle);
+        }
+      }
+
       const incidentData = {
         ...req.body,
+        type: typeAndSeverity.incidentType,
+        severity: typeAndSeverity.severity,
         reporter: {
           userId: userId || undefined,
           role: userId ? 'citizen' : 'guest',
@@ -284,6 +308,41 @@ export class IncidentController {
       const { id } = req.params;
       const result = await this.aggregator.completeAssignment(id);
       res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  /**
+   * GET /reports/lookup
+   * Get all available report categories for lookup/autocomplete
+   */
+  async getReportCategoriesLookup(req: Request, res: Response): Promise<void> {
+    try {
+      const { category, suggestion } = req.query;
+
+      let reportCategories = getAllReportCategories();
+
+      // Filter by category type if provided
+      if (category && typeof category === 'string') {
+        reportCategories = reportCategories.filter(
+          (r) => r.category.toLowerCase() === category.toLowerCase()
+        );
+      }
+
+      // Filter by suggestion flag if provided
+      if (suggestion !== undefined) {
+        const suggestionBool = suggestion === 'true';
+        reportCategories = reportCategories.filter(
+          (r) => r.suggestion === suggestionBool
+        );
+      }
+
+      res.json({
+        data: reportCategories,
+        total: reportCategories.length,
+        categories: getUniqueCategoryTypes(),
+      });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }

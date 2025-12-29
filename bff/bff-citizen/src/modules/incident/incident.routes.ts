@@ -15,6 +15,11 @@ const incidentController = new IncidentController(incidentAggregator);
  * Incident Module Routes
  */
 
+// ==================== Incident Lookup Endpoints ====================
+
+// Get report categories lookup
+incidentRoutes.get('/reports/types/lookup', (req, res) => incidentController.getReportCategoriesLookup(req, res));
+
 // ==================== Incident Endpoints ====================
 
 // Create incident

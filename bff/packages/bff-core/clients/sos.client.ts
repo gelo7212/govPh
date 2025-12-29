@@ -17,8 +17,19 @@ export class SosServiceClient extends BaseClient {
    */
   async createSosRequest(data: any): Promise<SosResponse> {
     try {
-    
-      const response = await this.client.post('/api/sos', data, { headers: { 'x-device-id': data.deviceId } });
+      // Update user context from request data if provided
+      if (data.userId || data.actorType || data.cityId || data.userRole) {
+        this.setUserContext({
+          userId: data.userId,
+          actorType: data.actorType,
+          cityId: data.cityId,
+          role: data.userRole,
+        });
+      }
+      
+      const response = await this.client.post('/api/sos', data, 
+        { headers: { 'x-device-id': data.deviceId } }
+      );
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -39,7 +50,12 @@ export class SosServiceClient extends BaseClient {
    */
   async getActiveSosByCitizen(citizenId: string, cityId: string): Promise<SosResponse | null> {
     try {
-      const response = await this.client.get('/api/sos/citizen/active', { params: { citizenId } , headers: { 'x-city-id': cityId } });
+      // Ensure cityId is in context for the request
+      if (cityId && this.userContext) {
+        this.userContext.cityId = cityId;
+      }
+      
+      const response = await this.client.get('/api/sos/citizen/active', { params: { citizenId } });
       return response.data;
     }
     catch (error) {
@@ -93,8 +109,17 @@ export class SosServiceClient extends BaseClient {
     senderDisplayName: string;
     contentType?: 'text' | 'system';
     content: string;
+    cityId: string;
   }) {
     try {
+      // Update user context from message data
+      this.setUserContext({
+        userId: data.senderId || undefined,
+        actorType: data.senderType,
+        role: data.senderType,
+        cityId: data.cityId
+      });
+      
       const response = await this.client.post(`/api/sos/${sosId}/messages`, data);
       return response.data;
     } catch (error) {
@@ -131,11 +156,18 @@ export class SosServiceClient extends BaseClient {
   }
 
   /**
-   * Cancel an SOS request
+   * Close/Resolve an SOS request
    */
-  async cancelSosRequest(sosId: string) {
+  async closeSosRequest(sosId: string, data: any, context: any) {
     try {
-      const response = await this.client.post(`/api/sos/${sosId}/cancel`);
+      // Update user context from message data
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+      const response = await this.client.post(`/api/sos/${sosId}/close`, data);
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -143,13 +175,21 @@ export class SosServiceClient extends BaseClient {
   }
 
   /**
-   * Close/Resolve an SOS request
-   */
-  async closeSosRequest(sosId: string, data: any) {
+   * Cancel an SOS request
+  */
+  async cancelSosRequest(sosId: string, context: any) {
     try {
-      const response = await this.client.post(`/api/sos/${sosId}/close`, data);
+      // Update user context from message data
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+      const response = await this.client.post(`/api/sos/${sosId}/cancel`);
       return response.data;
-    } catch (error) {
+    }
+    catch (error) {
       return this.handleError(error);
     }
   }

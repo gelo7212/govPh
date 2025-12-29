@@ -1,3 +1,4 @@
+import { IncidentEntity, IncidentResponse } from '../types';
 import { BaseClient, UserContext } from './base.client';
 
 /**
@@ -14,7 +15,7 @@ export class IncidentServiceClient extends BaseClient {
   /**
    * Create a new incident
    */
-  async createIncident(data: any): Promise<any> {
+  async createIncident(data: any): Promise<IncidentResponse<IncidentEntity>> {
     try {
       const response = await this.client.post('/incidents', data);
       return response.data;
@@ -26,7 +27,7 @@ export class IncidentServiceClient extends BaseClient {
   /**
    * Get incident by ID
    */
-  async getIncidentById(incidentId: string): Promise<any> {
+  async getIncidentById(incidentId: string): Promise<IncidentResponse<IncidentEntity>> {
     try {
       const response = await this.client.get(`/incidents/${incidentId}`);
       return response.data;

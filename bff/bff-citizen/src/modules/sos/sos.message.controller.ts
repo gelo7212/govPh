@@ -55,6 +55,7 @@ export class MessageController {
         senderDisplayName,
         contentType: contentType || 'text',
         content,
+        cityId: req.context?.user?.actor?.cityCode || ''
       };
 
       const message = await this.aggregator.sendMessage(sosId, messagePayload);
@@ -140,4 +141,5 @@ export class MessageController {
       });
     }
   }
+
 }

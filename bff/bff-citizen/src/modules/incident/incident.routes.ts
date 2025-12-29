@@ -2,14 +2,17 @@ import { Router } from 'express';
 import { IncidentController } from './incident.controller';
 import { authContextMiddleware } from '../../middlewares/authContext';
 import { IncidentAggregator } from './incident.aggregator';
-import { IncidentServiceClient } from '@gov-ph/bff-core';
+import { IncidentServiceClient, IncidentTimelineServiceClient } from '@gov-ph/bff-core';
 export const incidentRoutes = Router();
 
 
 const incidentClient = new IncidentServiceClient(
   process.env.INCIDENT_MS_URL || 'http://govph-incident:3000'
 );
-const incidentAggregator = new IncidentAggregator(incidentClient);
+const incidentTimelineClient = new IncidentTimelineServiceClient(
+  process.env.INCIDENT_MS_URL || 'http://govph-incident:3000'
+);
+const incidentAggregator = new IncidentAggregator(incidentClient, incidentTimelineClient);
 const incidentController = new IncidentController(incidentAggregator);
 /**
  * Incident Module Routes

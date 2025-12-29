@@ -16,6 +16,7 @@ export class MessageAggregator {
     senderDisplayName: string;
     contentType?: 'text' | 'system';
     content: string;
+    cityId: string;
   }): Promise<any> {
     const result = await this.sosClient.sendMessage(sosId, data);
     return result;

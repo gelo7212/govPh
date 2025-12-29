@@ -5,7 +5,7 @@ const IncidentSchema = new mongoose.Schema(
     _id: { type: String, required: true },
     type: {
       type: String,
-      enum: ['emergency', 'disaster', 'accident', 'crime', 'medical', 'other'],
+      enum:['emergency', 'disaster', 'accident', 'crime', 'medical', 'road', 'public_infrastructure', 'utility', 'sanitation', 'facility', 'social_assistance', 'safety_hazard', 'other'],
       required: true,
       index: true,
     },
@@ -19,7 +19,7 @@ const IncidentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['open', 'acknowledged', 'in_progress', 'resolved', 'rejected'],
+      enum: ['open','for_review', 'acknowledged', 'in_progress', 'resolved', 'rejected'],
       default: 'open',
       required: true,
       index: true,

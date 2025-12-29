@@ -34,6 +34,7 @@ export async function authContextMiddleware(
         role: decodedToken.identity?.role,
         firebaseUid: decodedToken.identity?.firebaseUid,
         actor: decodedToken.actor,
+        
       };
 
       if(decodedToken.actor === "ANON"){

@@ -17,7 +17,7 @@ export function validateRequiredFields(
  * Validate incident type
  */
 export function validateIncidentType(type: string): void {
-  const validTypes = ['emergency', 'disaster', 'accident', 'crime', 'medical', 'other'];
+  const validTypes = ['emergency', 'disaster', 'accident', 'crime', 'medical', 'road', 'public_infrastructure', 'utility', 'sanitation', 'facility', 'social_assistance', 'safety_hazard', 'other'];
   if (!validTypes.includes(type)) {
     throw new ValidationError(
       `Invalid incident type. Must be one of: ${validTypes.join(', ')}`
@@ -126,3 +126,54 @@ export function validateAssignmentCreationPayload(data: any): void {
     throw new ValidationError('assignedBy must be either system or admin');
   }
 }
+
+/**
+ * Validate timeline event type
+ */
+export function validateTimelineEventType(eventType: string): void {
+  const validEventTypes = [
+    'created',
+    'status_changed',
+    'assigned',
+    'acknowledged',
+    'note_added',
+    'attachment_added',
+    'resolved',
+    'rejected',
+    'escalated',
+  ];
+  if (!validEventTypes.includes(eventType)) {
+    throw new ValidationError(
+      `Invalid timeline event type. Must be one of: ${validEventTypes.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Validate actor type
+ */
+export function validateActorType(actorType: string): void {
+  const validActorTypes = ['citizen', 'guest', 'admin', 'rescuer', 'system'];
+  if (!validActorTypes.includes(actorType)) {
+    throw new ValidationError(
+      `Invalid actor type. Must be one of: ${validActorTypes.join(', ')}`
+    );
+  }
+}
+
+/**
+ * Validate incident timeline creation payload
+ */
+export function validateIncidentTimelinePayload(data: any): void {
+  validateRequiredFields(data, ['incidentId', 'eventType', 'actor']);
+
+  validateTimelineEventType(data.eventType);
+
+  if (data.actor) {
+    validateActorType(data.actor.actorType);
+    if (data.actor.actorId && typeof data.actor.actorId !== 'string') {
+      throw new ValidationError('actor.actorId must be a string');
+    }
+  }
+}
+

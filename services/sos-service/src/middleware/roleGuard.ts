@@ -48,9 +48,9 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       (userRole === UserRole.CITIZEN || userRole === UserRole.RESCUER);
 
     // Validate required headers based on actor type
-    if (!isAnonymousWithoutCity && !cityId) {
-      return res.status(400).json({ error: 'Missing city ID in headers' });
-    }
+    // if (!isAnonymousWithoutCity && !cityId) {
+    //   return res.status(400).json({ error: 'Missing city ID in headers' });
+    // }
 
     if (!userRole || !userId) {
       console.warn('Missing required headers (userId, userRole) in request');

@@ -23,7 +23,16 @@ export class SosController {
       }
       // optional location
       
-      const sosData = { ...req.body, userId , location, address, deviceId };
+      const sosData = { 
+        ...req.body, 
+        userId,
+        userRole: req.context?.user?.role, 
+        location, 
+        address, 
+        deviceId , 
+        actorType : req.context?.user?.actor?.type, 
+        cityId: req.context?.user?.actor?.cityCode
+      };
       const result = await this.aggregator.createSosRequest(sosData);
       res.status(201).json(result);
     } catch (error) {
@@ -74,7 +83,13 @@ export class SosController {
   async cancelSosRequest(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
-      const result = await this.aggregator.cancelSosRequest(sosId);
+      const userContext = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const result = await this.aggregator.cancelSosRequest(sosId, userContext);
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

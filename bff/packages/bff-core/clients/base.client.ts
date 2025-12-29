@@ -50,7 +50,7 @@ export abstract class BaseClient {
       },
     });
 
-    // Add interceptor to include user context headers
+    // Add interceptor to include user context headers and log requests
     this.client.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       if (this.userContext) {
         if (this.userContext.userId) {
@@ -59,6 +59,9 @@ export abstract class BaseClient {
         if (this.userContext.role) {
           config.headers['x-user-role'] = this.userContext.role;
         }
+        if (this.userContext.actorType) {
+          config.headers['x-actor-type'] = this.userContext.actorType;
+        }
         if (this.userContext.cityId) {
           config.headers['x-city-id'] = this.userContext.cityId;
         }
@@ -66,6 +69,16 @@ export abstract class BaseClient {
           config.headers['x-request-id'] = this.userContext.requestId;
         }
       }
+
+      // Log all intercepted requests
+      console.log('[BaseClient Request]', {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        headers: config.headers,
+        body: config.data,
+      });
+
       return config;
     });
   }

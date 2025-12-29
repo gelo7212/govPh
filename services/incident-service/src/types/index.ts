@@ -34,7 +34,7 @@ export interface AuthRequest extends Request {
 /**
  * Incident Type Enum
  */
-export type IncidentType = 'emergency' | 'disaster' | 'accident' | 'crime' | 'medical' | 'other';
+export type IncidentType = 'emergency' | 'disaster' | 'accident' | 'crime' | 'medical' | 'road' | 'public_infrastructure' | 'utility' | 'sanitation' | 'facility' | 'social_assistance' | 'safety_hazard' | 'other';
 
 /**
  * Incident Severity
@@ -104,4 +104,45 @@ export interface IncidentAssignmentEntity {
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+/**
+ * Timeline Event Type
+ */
+export type TimelineEventType =
+  | 'created'
+  | 'status_changed'
+  | 'assigned'
+  | 'acknowledged'
+  | 'note_added'
+  | 'attachment_added'
+  | 'resolved'
+  | 'rejected'
+  | 'escalated'
+  | 'unassigned';
+
+/**
+ * Actor Type
+ */
+export type ActorType = 'citizen' | 'guest' | 'admin' | 'rescuer' | 'system';
+
+/**
+ * Timeline Actor
+ */
+export interface TimelineActor {
+  actorType: ActorType;
+  actorId?: string;
+}
+
+/**
+ * Incident Timeline Entity
+ */
+export interface IncidentTimelineEntity {
+  _id?: string;
+  id?: string;
+  incidentId: string;
+  eventType: TimelineEventType;
+  actor: TimelineActor;
+  payload?: Record<string, any>;
+  createdAt?: Date;
 }

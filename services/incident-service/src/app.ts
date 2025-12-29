@@ -5,6 +5,7 @@ import { getErrorResponse } from './errors';
 import { createLogger } from './utils/logger';
 import incidentRoutes from './modules/incidents/incident.routes';
 import assignmentRoutes from './modules/assignments/assignment.routes';
+import incidentTimeline from './modules/incident-timelines/incident-timeline.routes';
 
 const logger = createLogger('App');
 
@@ -39,6 +40,7 @@ export const createApp = (): Express => {
   // Routes
   app.use('/incidents', incidentRoutes);
   app.use('/assignments', assignmentRoutes);
+  app.use('/incident-timelines', incidentTimeline);
 
   // Health check endpoint
   app.get('/health', (_req: Request, res: Response) => {

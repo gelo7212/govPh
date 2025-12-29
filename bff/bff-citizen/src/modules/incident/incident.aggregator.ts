@@ -1,4 +1,4 @@
-import { IncidentServiceClient } from '@gov-ph/bff-core';
+import { IncidentServiceClient, IncidentTimelineServiceClient} from '@gov-ph/bff-core';
 import {
   IncidentEntity,
   IncidentAssignmentEntity,
@@ -18,9 +18,11 @@ import {
  */
 export class IncidentAggregator {
   private incidentClient: IncidentServiceClient;
+  private incidentTimelineClient: IncidentTimelineServiceClient;
 
-  constructor(incidentClient: IncidentServiceClient) {
+  constructor(incidentClient: IncidentServiceClient, incidentTimelineClient: IncidentTimelineServiceClient) {
     this.incidentClient = incidentClient;
+    this.incidentTimelineClient = incidentTimelineClient;
   }
 
   /**
@@ -42,6 +44,8 @@ export class IncidentAggregator {
   async getIncidentById(incidentId: string): Promise<IncidentResponse<IncidentEntity>> {
     try {
       const incident = await this.incidentClient.getIncidentById(incidentId);
+      const timeline = await this.incidentTimelineClient.getTimelineByIncidentId(incidentId);
+      incident.data.timeline = timeline.data;
       return incident;
     } catch (error) {
       console.error('Failed to get incident:', error);

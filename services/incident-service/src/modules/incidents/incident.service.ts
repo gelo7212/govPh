@@ -7,6 +7,8 @@ import {
 } from '../../utils/validators';
 import { createLogger } from '../../utils/logger';
 
+import { incidentTimelineService} from '../incident-timelines'
+
 const logger = createLogger('IncidentService');
 
 /**
@@ -23,7 +25,19 @@ export class IncidentService {
         type: incidentData.type,
         severity: incidentData.severity,
       });
-      return await incidentRepository.createIncident(incidentData);
+      const incident = await incidentRepository.createIncident(incidentData);
+      if(!incident) {
+        throw new Error('Incident creation failed');
+      }
+
+      await incidentTimelineService.logIncidentCreatedEvent(
+        incident.id!,
+        incident.reporter.userId!,
+        incident.reporter.role!,
+        'citizen_app',
+        incident.reporter.userId ? false : true
+      );
+      return incident;
     } catch (error) {
       if (error instanceof ValidationError) throw error;
       logger.error('Error creating incident', error);

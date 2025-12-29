@@ -2,6 +2,8 @@
  * Incident Service Type Definitions
  */
 
+import { IncidentTimelineEntity } from "../types";
+
 // ==================== Incident Types ====================
 
 export type IncidentType = 'emergency' | 'disaster' | 'accident' | 'crime' | 'medical' | 'other';
@@ -13,6 +15,7 @@ export interface IncidentLocation {
   lng: number;
   barangayCode?: string;
   cityCode: string;
+  cityName?: string;
 }
 
 export interface IncidentReporter {
@@ -30,6 +33,7 @@ export interface IncidentEntity {
   status: IncidentStatus;
   location: IncidentLocation;
   reporter: IncidentReporter;
+  timeline?: IncidentTimelineEntity[];
   attachments?: string[];
   metadata?: Record<string, any>;
   createdAt?: Date;

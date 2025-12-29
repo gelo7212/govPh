@@ -88,17 +88,26 @@ export class SosAggregator {
   /**
    * Cancel SOS request
    */
-  async cancelSosRequest(sosId: string) {
-    const result = await this.sosClient.cancelSosRequest(sosId);
-    return result;
-  }
+  async cancelSosRequest(sosId: string, context: any) {
+    const request = await this.sosClient.getSosRequest(sosId);
+    if (!request) {
+      throw new Error('SOS request not found');
+    }
 
-  /**
-   * Close/Resolve an SOS request
-   */
-  async closeSosRequest(sosId: string, data: any) {
-    const result = await this.sosClient.closeSosRequest(sosId, data);
-    return result;
+    const data = request.data;
+    if(data.status === 'CANCELLED' || data.status === 'CLOSED') {
+      throw new Error(`Cannot cancel an SOS request that is already ${data.status}`);
+    }
+
+    if(data.status === 'ACTIVE'){
+      const result = await this.sosClient.cancelSosRequest(
+        sosId,
+        context
+      );
+      return result;
+    } else {
+      throw new Error(`Cannot cancel an SOS request with status ${data.status}`);
+    }
   }
 
   async updateSosTag(sosId: string, tag: string) {

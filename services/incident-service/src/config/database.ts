@@ -11,7 +11,7 @@ let mongoClient: typeof mongoose | null = null;
 export async function connectMongoDB(): Promise<typeof mongoose> {
   try {
     const mongoUri =
-      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'identity-service'}`;
+      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'incident-service'}`;
 
 
     console.log('Connecting to MongoDB at', mongoUri);

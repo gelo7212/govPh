@@ -8,6 +8,7 @@ export {
   GeoServiceClient,
   IncidentServiceClient,
   RealtimeServiceClient,
+  IncidentTimelineServiceClient,
 } from './clients';
 
 /**
@@ -18,6 +19,7 @@ export { SosAggregator } from './sos/sos.aggregator';
 export { MessageAggregator } from './sos/message.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
 export { IncidentAggregator } from './incident/incident.aggregator';
+export { IncidentTimelineAggregator } from './incident/incident-timeline.aggregator';
 
 /**
  * Error Handling Utilities - Central export point
@@ -54,6 +56,14 @@ export type {
   IncidentType,
   IncidentStatus,
   AssignmentStatus,
+  IncidentTimelineEntity,
+  CreateTimelineEventRequest,
+  UpdateTimelineEventRequest,
+  TimelineResponse,
+  TimelineEventCountResponse,
+  TimelineEventType,
+  TimelineActor,
+  PaginationOptions,
 } from './types';
 
 export { UserContext } from './clients/base.client';

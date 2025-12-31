@@ -23,22 +23,12 @@ export const isAnonymousUserByFirebaseToken = async (firebaseToken: string): Pro
     }
 };
 
-export const getFirebaseUserByUid = async (firebaseUid: string): Promise<admin.auth.UserRecord | null> => {
-    try {
-        const userRecord = await admin.auth().getUser(firebaseUid);
-        return userRecord;
-    } catch (error) {
-        console.error('Error fetching Firebase user by UID:', error);
-        return null;
-    }
-};
-
-export const validateFirebaseToken = async (firebaseToken: string): Promise<admin.auth.DecodedIdToken> => {
+export const validateFirebaseToken = async (firebaseToken: string): Promise<admin.auth.DecodedIdToken | false> => {
     try {
         const decodedToken = await admin.auth().verifyIdToken(firebaseToken);
         return decodedToken;
     } catch (error) {
         console.error('Error verifying Firebase token:', error);
-        throw error;
+        return false
     }
 };

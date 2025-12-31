@@ -3,7 +3,7 @@ import { GeoAggregator, handleServiceError, sendErrorResponse, SosAggregator } f
 import { IdentityAggregator } from './identity.aggregator';
 import { DecodedToken, decodeJWT } from '../../utils/jwt';
 import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
-import { getFirebaseUserByUid, isAnonymousUserByFirebaseToken, validateFirebaseToken } from './../../utils/firebase'
+import { validateFirebaseToken } from './../../utils/firebase';
 
 export class IdentityController {
   private aggregator: IdentityAggregator;
@@ -55,23 +55,12 @@ export class IdentityController {
 
       const token = authHeader.replace('Bearer ', '');
       const isValid = await validateFirebaseToken(token);
-
-      if(body.email !== isValid?.email) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email in token does not match email in registration data');
-        return;
-      }
     
 
       if (!isValid) {
         sendErrorResponse(res, 401, 'UNAUTHORIZED', isValid || 'Invalid Firebase token');
         return;
       }
-
-      if(isValid.email_verified === false) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email must be verified to register');
-        return;
-      }
-
       
       const municipality = body.address.city;
 
@@ -148,18 +137,11 @@ export class IdentityController {
         return;
       }
       const token = authorization && authorization.startsWith('Bearer ') ? authorization.replace('Bearer ', '') : null;
-      const isAnonymous = token && await isAnonymousUserByFirebaseToken(token);
-      if (isAnonymous) {
-        console.log('User is identified as anonymous based on Firebase token.');
-        const token = await this.aggregator.getToken(firebaseUid, undefined, undefined, 'ANON_CITIZEN');
-        res.status(200).json({
-          success: true,
-          data: token,
-          timestamp: new Date(),
-        });
+      const isValid = token ? await validateFirebaseToken(token) : false;
+      if (!isValid) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', isValid || 'Invalid Firebase token');
         return;
       }
-
 
       const user = await this.aggregator.getUserByFirebaseUid(firebaseUid);
       if (!user) {
@@ -168,14 +150,7 @@ export class IdentityController {
       }
 
       console.log('Generating token for user:', user);
-
-      const sosReport = await this.sosAggregator?.getActiveSosByCitizen(user.data.id, user.data.municipalityCode);
-      if (sosReport && sosReport.data) {
-        console.log('Active SOS report found for user:', sosReport.data);
-      }
-
-      
-      const result = await this.aggregator.getToken(firebaseUid, user.data.id, sosReport?.data?.id);
+      const result = await this.aggregator.getToken(firebaseUid, user.data.id, undefined);
       res.status(200).json({
         success: true,
         data: result,
@@ -217,121 +192,6 @@ export class IdentityController {
       });
     } catch (error) {
       const errorInfo = handleServiceError(error, 'Logout failed');
-      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
-    }
-  }
-
-  async sendOtp(req: Request, res: Response): Promise<void> {
-    try {
-      // phone number format is 10 digits without country code - check format
-      const { authorization } = req.headers;
-      if(!authorization || !authorization.startsWith('Bearer ')) {
-        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
-        return;
-      }
-      
-      const { phoneNumber, context } = req.body;
-;
-      if (!phoneNumber || !context) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Phone number and context are required for sending OTP');
-        return;
-      }
-
-      const isValidPhone = /^\d{10}$/.test(phoneNumber);
-      if (!isValidPhone) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Phone number must be 10 digits without country code');
-        return;
-      }
-
-      const formattedPhoneNumber = `+63${phoneNumber}`;
-
-      const token = authorization.replace('Bearer ', '');
-      if(!token) {
-        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid Authorization header format');
-        return;
-      }
-      if(context === 'registration') {
-        const decodedFirebaseToken = await validateFirebaseToken(token);
-        if (!decodedFirebaseToken) {
-          sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid Firebase token in Authorization header');
-          return;
-        }
-        
-        const firebaseUser = await  getFirebaseUserByUid(decodedFirebaseToken.uid);
-        console.log('Firebase user for OTP registration:', firebaseUser);
-        if(firebaseUser?.emailVerified === false) {
-          sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email must be verified to send registration OTP');
-          return;
-        }
-        
-        await this.aggregator.sendOtp(formattedPhoneNumber, context, firebaseUser?.uid, undefined);
-        res.status(200).json({
-          success: true,
-          data: { message: 'OTP sent successfully' },
-          timestamp: new Date(),
-        });
-      }
-      else {
-        new Error('Not implemented yet for non-registration contexts');
-      }
-      
-    } catch (error) {
-      const errorInfo = handleServiceError(error, 'Failed to send OTP');
-      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
-    }
-  }
-
-  async verifyOtp(req: Request, res: Response): Promise<void> {
-    try {
-
-      const { authorization } = req.headers;
-      if(!authorization || !authorization.startsWith('Bearer ')) {
-        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
-        return;
-      }
-
-      const { phoneNumber, code, context } = req.body;
-      if (!phoneNumber || !code || !context) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Phone number, code, and context are required for OTP verification');
-        return;
-      }
-      
-      const isValidPhone = /^\d{10}$/.test(phoneNumber);
-      if (!isValidPhone) {
-        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Phone number must be 10 digits without country code');
-        return;
-      }
-      const formattedPhoneNumber = `+63${phoneNumber}`;
-       const token = authorization.replace('Bearer ', '');
-      if(!token) {
-        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid Authorization header format');
-        return;
-      }
-
-      if(context === 'registration') {
-        const decodedFirebaseToken = await validateFirebaseToken(token);
-        if (!decodedFirebaseToken) {
-          sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid Firebase token in Authorization header');
-          return;
-        }
-        
-        const firebaseUser = await  getFirebaseUserByUid(decodedFirebaseToken.uid);
-        console.log('Firebase user for OTP registration:', firebaseUser);
-        if(firebaseUser?.emailVerified === false) {
-          sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email must be verified to send registration OTP');
-          return;
-        }
-        await this.aggregator.verifyOtp(formattedPhoneNumber, code, context, firebaseUser?.uid, undefined);
-        res.status(200).json({
-          success: true,
-          data: { message: 'OTP verified successfully' },
-          timestamp: new Date(),
-        });
-        return;
-      }
-      new Error('Not implemented yet for non-registration contexts');
-    } catch (error) {
-      const errorInfo = handleServiceError(error, 'Failed to verify OTP');
       sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
     }
   }

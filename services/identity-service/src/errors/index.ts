@@ -111,6 +111,7 @@ export class NotFoundError extends IdentityServiceError {
   }
 }
 
+
 export class UserAlreadyExistsError extends IdentityServiceError {
   constructor(public identifier: string) {
     super(
@@ -171,6 +172,50 @@ export class DatabaseError extends IdentityServiceError {
     super('DATABASE_ERROR', `Database operation failed: ${message}`, 500);
   }
 }
+
+/* SMS Errors */
+export class SmsServiceError extends IdentityServiceError {
+  constructor(message: string) {
+    super('SMS_SERVICE_ERROR', `SMS service error: ${message}`, 500);
+  }
+}
+
+export class SmsOtpVerificationError extends IdentityServiceError {
+  constructor(message: string) {
+    super('SMS_OTP_VERIFICATION_FAILED', message, 400);
+  }
+}
+
+export class SmsOtpSendError extends IdentityServiceError {
+  constructor(message: string) {
+    super('SMS_OTP_SEND_FAILED', message, 500);
+  }
+}
+
+export class SmsVerificationNumberMismatchError extends IdentityServiceError {
+  constructor(message: string) {
+    super('SMS_VERIFICATION_NUMBER_MISMATCH', message, 400);
+  }
+}
+
+export class SmsOtpExpiredError extends IdentityServiceError {
+  constructor(message: string) {
+    super('SMS_OTP_EXPIRED', message, 400);
+  }
+}
+
+export class VerificationGeneralError extends IdentityServiceError {
+  constructor(message: string) {
+    super('VERIFICATION_ERROR', message, 400);
+  }
+}
+
+export class InternalServiceError extends IdentityServiceError {
+  constructor(message: string) {
+    super('INTERNAL_SERVICE_ERROR', message, 500);
+  }
+}
+
 
 /**
  * Error Response Handler

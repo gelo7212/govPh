@@ -25,20 +25,7 @@ export const connectMongoDB = async (): Promise<Connection> => {
     });
 
     mongoConnection = mongoose.connection;
-
-    // Database existence check and creation (after connection is established)
-    const adminDb = mongoose.connection.getClient().db('admin');
-    const databases = await adminDb.admin().listDatabases();
-    const dbExists = databases.databases.some(db => db.name === (process.env.MICROSERVICE_NAME || 'identity-service'));
-
-    if (!dbExists) {
-      logger.info('Creating identity-service database');
-      const targetDb = mongoose.connection.getClient().db(process.env.MICROSERVICE_NAME || 'identity-service');
-      // Create a system collection to ensure database is created
-      await targetDb.createCollection('__init__');
-      await targetDb.collection('__init__').deleteMany({});
-    }
-
+    
     // Register schemas
     mongoConnection.model('users', UserSchema);
     mongoConnection.model('rescuer_missions', RescuerMissionSchema);

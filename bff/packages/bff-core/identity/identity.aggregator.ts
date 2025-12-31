@@ -78,4 +78,14 @@ export class IdentityAggregator {
     const registered = await this.identityClient.registerCitizenUser(data);
     return registered;
   } 
+
+  async sendOtp(phoneNumber: string, context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication', firebaseId?: string, userId?: string): Promise<void> {
+    const result = await this.identityClient.sendOtpToPhone(phoneNumber, context, firebaseId, userId);
+    return result;
+  }
+  
+  async verifyOtp(phoneNumber: string, code: string, context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication', firebaseId?: string, userId?: string): Promise<boolean> {
+    const result = await this.identityClient.verifyPhoneOtp(phoneNumber, code, context, firebaseId, userId);
+    return result;
+  }
 }

@@ -51,16 +51,16 @@ export class SosAggregator {
   /**
    * Cancel SOS request
    */
-  async cancelSosRequest(sosId: string): Promise<SosRequest> {
-    const updated = await this.sosClient.cancelSosRequest(sosId);
+  async cancelSosRequest(sosId: string, context: any): Promise<SosRequest> {
+    const updated = await this.sosClient.cancelSosRequest(sosId, context);
     return updated;
   }
 
   /**
    * Close/Resolve an SOS request
    */
-  async closeSosRequest(sosId: string, data: any): Promise<SosRequest> {
-    const updated = await this.sosClient.closeSosRequest(sosId, data);
+  async closeSosRequest(sosId: string, data: any, context: any): Promise<SosRequest> {
+    const updated = await this.sosClient.closeSosRequest(sosId, data, context);
     return updated;
   }
 

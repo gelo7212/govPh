@@ -10,9 +10,9 @@ export const authConfig = {
     audience: 'e-citizen',
     
     // Access token validity: 1 hour
-    accessTokenExpiry: 60 * 60, // seconds :: 1 hour
-    // Access token validity for anonymous citizens: 15 minutes
-    anonCitizenAccessTokenExpiry: 15 * 60, // seconds :: 15 minutes
+    accessTokenExpiry: 60 * 15, // seconds :: 15
+    // Access token validity for anonymous citizens: 180 days
+    anonCitizenAccessTokenExpiry: 180 * 24 * 60 * 60, // seconds :: 180 Days
     
     // Refresh token validity: 7 days
     refreshTokenExpiry: 7 * 24 * 60 * 60, // seconds :: 7 days

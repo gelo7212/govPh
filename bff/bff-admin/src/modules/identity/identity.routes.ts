@@ -3,6 +3,7 @@ import { IdentityController } from './identity.controller';
 import { IdentityAggregator } from './identity.aggregator';
 import { GeoAggregator, GeoServiceClient, IdentityServiceClient, SosAggregator, SosServiceClient } from '@gov-ph/bff-core';
 import { authContextMiddleware } from '../../middlewares/authContext';
+
 export const identityRoutes = Router();
 
 
@@ -25,5 +26,3 @@ identityRoutes.get('/firebase/:firebaseUid',authContextMiddleware, (req, res) =>
 identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));
 identityRoutes.post('/refresh',authContextMiddleware, (req, res) => identityController.refreshToken(req, res));
 identityRoutes.post('/validate',authContextMiddleware, (req, res) => identityController.validateToken(req, res));
-identityRoutes.post('/send/otp', (req, res) => identityController.sendOtp(req, res));
-identityRoutes.post('/verify/otp', (req, res) => identityController.verifyOtp(req, res));

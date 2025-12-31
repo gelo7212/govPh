@@ -109,8 +109,8 @@ export abstract class BaseClient {
       if (data) {
         if (typeof data === 'object') {
           // Handle error response objects
-          errorCode = data.error?.code || data.code || errorCode;
-          errorMessage = data.error?.message || data.message || errorMessage;
+          errorCode = data.error?.code || data.code || errorCode ;
+          errorMessage = data.error?.message || data.message || data.error || errorMessage;
 
           // Include additional details for debugging (sanitized)
           if (data.error && typeof data.error === 'object') {
@@ -127,6 +127,7 @@ export abstract class BaseClient {
           code: errorCode,
           message: errorMessage,
           url: error.config?.url,
+          data: error.response?.data,
           details,
         });
 

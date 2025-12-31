@@ -104,6 +104,7 @@ services:
     #   - "3002:3000"
     environment:
       PORT: 3000
+      SEMAPHORE_API_KEY: 1cd60ad27489bcbb49004d39f62f0d2e
 
   geo-service:
     build: ./services/geo-service

@@ -111,4 +111,33 @@ export class IdentityServiceClient extends BaseClient {
       return this.handleError(error);
     }
   }
+
+  async sendOtpToPhone(
+    phoneNumber: string, 
+    context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication',
+    firebaseId?: string,
+    userId?: string
+  ): Promise<any> {
+    try {
+      const response = await this.client.post('/sms/send/otp', { phoneNumber, context, firebaseId, userId });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async verifyPhoneOtp(
+    phoneNumber: string, 
+    code: string, 
+    context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication',
+    firebaseId?: string,
+    userId?: string
+  ): Promise<any> {
+    try {
+      const response = await this.client.post('/sms/verify/otp', { phoneNumber, code, context, firebaseId, userId });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 }

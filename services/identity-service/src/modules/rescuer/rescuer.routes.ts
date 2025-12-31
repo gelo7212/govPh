@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { rescuerController } from './rescuer.controller';
-import { requireSOSAdmin } from '../../middleware/requireRole';
+import { requireSOSAdmin } from '../../middlewares/requireRole';
 
 const router = Router();
 

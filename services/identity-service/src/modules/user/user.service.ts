@@ -1,5 +1,6 @@
 import { UserEntity, RegistrationStatus } from '../../types';
 import { getCollection } from '../../config/database';
+import { SmsService } from '../sms';  
 import {
   NotFoundError,
   UserAlreadyExistsError,
@@ -33,6 +34,19 @@ export class UserService {
         throw new UserAlreadyExistsError(
           user.email || user.firebaseUid
         );
+      }
+
+      if(user.role === 'CITIZEN') {
+        if(!user.phone) {
+          throw new Error('Phone number is required for citizen registration');
+        }
+        
+        const isVerified = await SmsService.isMobileNumberVerified(user.phone, 'registration', user.firebaseUid, user.id);
+        if(!isVerified) {
+          throw new Error('Phone number not verified for citizen registration');
+        }
+       
+       
       }
 
       const result = await collection.insertOne({
@@ -94,6 +108,26 @@ export class UserService {
     }
   }
 
+  /**
+   * Get user by phone number
+  */
+  async getUserByPhone(phone: string): Promise<UserEntity | null> {
+    try {
+      const collection = getCollection('users');
+      const doc = await collection.findOne({ phone });
+
+      if (!doc) {
+        return null;
+      }
+      return this.mapDocToEntity(doc);
+    } catch (error) {
+      logger.error('Failed to get user by phone number', error);
+      throw new DatabaseError(
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+  
   /**
    * Get user by Firebase UID
    */

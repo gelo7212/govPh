@@ -13,10 +13,10 @@ export class IdentityAggregator {
   }
 
   /**
-   * Get token for user with   const { userId, firebaseUid, contextType, cityCode, scopes, sosId, rescuerId } = req.body;
+   * Get token for user with   const { userId, firebaseUid, contextType, cityCode, scopes, rescuerId } = req.body;
    */
-  async getToken(firebaseUid: string, userId?: string, sosId?: string, contextType?: string) {
-    const result = await this.identityClient.authenticateUser(firebaseUid, userId, sosId, contextType);
+  async getToken(firebaseUid: string, userId?: string, contextType?: string) {
+    const result = await this.identityClient.authenticateUser(firebaseUid, userId, undefined, contextType);
     return result;
   }
 
@@ -72,14 +72,5 @@ export class IdentityAggregator {
     };
     const registered = await this.identityClient.registerCitizenUser(payload);
     return registered;
-  }
-
-  async sendOtp(mobileNumber: string, context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication', firebaseId?: string, userId?: string) {
-    const result = await this.identityClient.sendOtpToPhone(mobileNumber, context, firebaseId, userId);
-    return result;
-  }
-  async verifyOtp(mobileNumber: string, code: string, context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication', firebaseId?: string, userId?: string) {
-    const result = await this.identityClient.verifyPhoneOtp(mobileNumber, code, context, firebaseId, userId);
-    return result;
   }
 }

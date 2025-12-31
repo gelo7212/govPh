@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller';
-import { requireCityAdmin, requireAppAdmin } from '../../middleware/requireRole';
+import { requireCityAdmin, requireAppAdmin } from '../../middlewares/requireRole';
 
 const router = Router();
 

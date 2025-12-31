@@ -65,6 +65,8 @@ export class UserController {
         },
       };
 
+
+
       // Validate municipality if provided
       if (municipalityCode) {
         validateMunicipalityForRole('CITIZEN', municipalityCode);
@@ -88,7 +90,6 @@ export class UserController {
       throw error;
     }
   }
-
   /**
    * GET /users/me
    * Get authenticated user's profile

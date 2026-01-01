@@ -5,16 +5,17 @@ import { logger } from '../../utils/logger';
  */
 export class StatusMachineService {
   private validTransitions = {
-    active: ['assigned', 'closed'],
+    active: ['assigned', 'closed', 'cancelled'],
     assigned: ['responding', 'closed'],
     responding: ['closed'],
     closed: [],
+    cancelled: [],
   };
 
   /**
    * Validate and transition SOS status
    */
-  async transition(sosId: string, newStatus: string, updatedBy: string): Promise<string> {
+  async transition(sosId: string, newStatus: string, updatedBy: string, oldStatus: string): Promise<string> {
     try {
       logger.info('Transitioning SOS status', {
         sosId,
@@ -23,7 +24,7 @@ export class StatusMachineService {
       });
 
       // Validate transition
-      const isValidTransition = this.isValidTransition('active', newStatus);
+      const isValidTransition = this.isValidTransition(oldStatus, newStatus);
 
       if (!isValidTransition) {
         throw new Error(`Invalid status transition to ${newStatus}`);

@@ -17,13 +17,13 @@ export class SOSMSClient {
    */
   async verifySOS(sosId: string): Promise<boolean> {
     try {
-      const response = await axios.get(`${this.baseURL}/internal/sos/${sosId}`, {
+      const response = await axios.get(`${this.baseURL}/api/sos/${sosId}`, {
         headers: {
           'x-internal-token': config.INTERNAL_AUTH_TOKEN,
         },
       });
-
-      return response.status === 200;
+      logger.info('SOS verification response', { sosId, url: `${this.baseURL}/internal/sos/${sosId}`, status: response.data });
+      return response.status === 200 || response.status === 204;
     } catch (error) {
       logger.error('Error verifying SOS', { sosId, error });
       return false;

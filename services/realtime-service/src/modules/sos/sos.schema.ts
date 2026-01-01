@@ -24,9 +24,12 @@ export const closeSOSSchema = Joi.object({
 
 export const updateStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('active', 'assigned', 'responding', 'closed')
+    .valid('active', 'assigned', 'responding', 'closed', 'cancelled')
     .required(),
   updatedBy: Joi.string().required(),
+  oldStatus: Joi.string()
+    .valid('active', 'assigned', 'responding', 'closed', 'cancelled')
+    .required(),
 });
 
 export const updateLocationSchema = Joi.object({

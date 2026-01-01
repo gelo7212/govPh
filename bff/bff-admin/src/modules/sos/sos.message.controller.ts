@@ -50,7 +50,7 @@ export class MessageController {
 
       const messagePayload: MessagePayload = {
         sosId,
-        senderType: (userRole as UserRole) || 'CITIZEN',
+        senderType: (userRole as UserRole),
         senderId: userId,
         senderDisplayName,
         contentType: contentType || 'text',

@@ -4,11 +4,13 @@ import { SOCKET_EVENTS } from '../../utils/constants';
 import SocketThrottle from '../throttle';
 import LocationSampler from '../location.sampler';
 import SOSMSClient from '../../services/sos-ms.client';
+import SOSService from '../../modules/sos/sos.service';
 import axios from 'axios';
 
 const locationThrottle = new SocketThrottle(1000); // 1 second throttle
 const locationSampler = new LocationSampler();
 const sosMsClient = new SOSMSClient();
+const sosService = new SOSService();
 
 // SOS service endpoint (Docker service name or env override)
 const SOS_SERVICE_URL = process.env.SOS_SERVICE_URL || 'http://govph-sos:3000';
@@ -47,12 +49,11 @@ export const registerLocationEvents = (io: Server, socket: Socket): void => {
         return;
       }
 
-      logger.info('Location update received', {
+      logger.debug('Location update received', {
         userId,
         sosId,
         latitude: data.latitude,
         longitude: data.longitude,
-        deviceId : data.deviceId,
       });
 
       // Validate location data
@@ -78,24 +79,34 @@ export const registerLocationEvents = (io: Server, socket: Socket): void => {
         deviceId : data.deviceId,
       });
 
-      // 2. Check if location should be persisted (sampler)
+      // Update Redis geo index and SOS state via service
       const locationData = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        accuracy: data.accuracy,
+        deviceId: data.deviceId,
+      };
+
+      await sosService.updateSOSLocation(sosId, locationData, data.address);
+
+      // Check if location should be persisted (sampler)
+      const samplerLocationData = {
         sosId,
         userId,
         latitude: data.latitude,
         longitude: data.longitude,
         accuracy: data.accuracy,
         timestamp,
-        deviceId : data.deviceId,
+        deviceId: data.deviceId,
       };
 
-      if (locationSampler.shouldSave(locationData)) {
-        // 3. Call SOS service to save location snapshot (fire and forget, don't block socket)
-        persistLocationSnapshot(sosId, locationData, cityCode, userRole, userId, data.address).catch((err) => {
+      if (locationSampler.shouldSave(samplerLocationData)) {
+        // Call SOS service to save location snapshot (fire and forget, don't block socket)
+        persistLocationSnapshot(sosId, samplerLocationData, cityCode, userRole, userId, data.address).catch((err) => {
           logger.error('Location snapshot persistence failed', { sosId, error: err });
         });
-        locationSampler.recordSave(locationData);
-      }
+        locationSampler.recordSave(samplerLocationData);
+      } 
     } catch (error) {
       logger.error('Error handling location update', error);
       socket.emit(SOCKET_EVENTS.ERROR, {
@@ -122,16 +133,6 @@ async function persistLocationSnapshot(sosId: string, location: any, cityCode: s
 }): Promise<void> {
   try {
     const url = `${SOS_SERVICE_URL}/api/sos/${sosId}/location-snapshot`;
-    
-    logger.info('Calling SOS service to persist location snapshot', {
-      sosId,
-      url,
-      latitude: location.latitude,
-      longitude: location.longitude,
-      accuracy: location.accuracy,
-      address,
-      deviceId : location.deviceId
-    });
 
     await axios.post(
       url,
@@ -154,14 +155,13 @@ async function persistLocationSnapshot(sosId: string, location: any, cityCode: s
       },
     );
 
-    logger.info('Location snapshot successfully persisted to SOS service', { sosId });
+    logger.debug('Location snapshot persisted to SOS service', { sosId });
   } catch (error) {
     // Log error but don't fail realtime broadcast
     logger.error('Failed to persist location snapshot to SOS service', {
       sosId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
-    console.error(error);
     // In production, might want to add to retry queue here
   }
 }

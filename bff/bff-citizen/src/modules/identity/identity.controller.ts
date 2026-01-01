@@ -67,7 +67,13 @@ export class IdentityController {
         return;
       }
 
-      if(isValid.email_verified === false) {
+      const firebaseUser = await  getFirebaseUserByUid(isValid.uid);
+      console.log('Firebase user for registration:', firebaseUser);
+      if(!firebaseUser) {
+        sendErrorResponse(res, 404, 'NOT_FOUND', 'Firebase user not found');
+        return;
+      }
+      if(firebaseUser.emailVerified === false) {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email must be verified to register');
         return;
       }
@@ -160,8 +166,12 @@ export class IdentityController {
         return;
       }
 
-
       const user = await this.aggregator.getUserByFirebaseUid(firebaseUid);
+      const firebaseUser = await getFirebaseUserByUid(firebaseUid);
+      if(firebaseUser?.emailVerified === false) {
+        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Email must be verified to generate token');
+        return;
+      }
       if (!user) {
         sendErrorResponse(res, 404, 'NOT_FOUND', 'User not found');
         return;

@@ -245,7 +245,7 @@ export class SOSController {
       throw new ForbiddenError('Cannot cancel another citizen\'s SOS');
     }
 
-    const cancelled = await this.statusMachine.cancelSOS(sosId, cityId);
+    const cancelled = await this.statusMachine.cancelSOS(sosId, cityId, citizenId);
 
     res.status(200).json({
       success: true,

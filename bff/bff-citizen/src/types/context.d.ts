@@ -3,6 +3,7 @@
  */
 
 export interface User {
+  userId?: string;
   id: string; // userId from identity.userId
   email?: string;
   role?: string; // Single role from identity.role

@@ -67,12 +67,12 @@ export class SOSController {
   async updateStatus(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
-      const { status, updatedBy } = req.body;
+      const { status, updatedBy, oldStatus } = req.body;
 
       logger.info('Updating SOS status', { sosId, status });
 
-      const newStatus = await this.statusMachine.transition(sosId, status, updatedBy);
-
+      const newStatus = await this.statusMachine.transition(sosId, status, updatedBy, oldStatus);
+      this.sosService.closeSOS(sosId, updatedBy);
       res.status(200).json({
         success: true,
         data: newStatus,
@@ -148,6 +148,34 @@ export class SOSController {
       res.status(500).json({
         success: false,
         error: 'Failed to save location snapshot',
+      });
+    }
+  }
+
+  async getNearbySOSStates(req: Request, res: Response): Promise<void> {
+    try {
+      const { latitude, longitude, radius } = req.query;
+      if (!latitude || !longitude || !radius) {
+        res.status(400).json({
+          success: false,
+          error: 'latitude, longitude, and radius are required query parameters',
+        });
+        return;
+      }
+      const states = await this.sosService.getSOSNearbyLocation(
+        parseFloat(latitude as string),
+        parseFloat(longitude as string),
+        parseInt(radius as string)
+      );
+      res.status(200).json({
+        success: true,
+        data: states,
+      });
+    } catch (error) {
+      logger.error('Error getting nearby SOS states', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve nearby SOS states',
       });
     }
   }

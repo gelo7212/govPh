@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
-import { JwtPayload, ApiResponse } from '../../types';
+import { JwtPayload, ApiResponse, PERMISSION_MATRIX } from '../../types';
 import { createLogger } from '../../utils/logger';
 import { userService } from '../user/user.service';
 
@@ -94,6 +94,30 @@ export class AuthController {
         } as ApiResponse);
         return;
       }
+      // admin login
+      if(user.role === 'APP_ADMIN') {
+        PERMISSION_MATRIX['APP_ADMIN'] && Object.entries(PERMISSION_MATRIX['APP_ADMIN']).forEach(([permission, hasAccess]) => {
+          if(hasAccess) {
+            scopes.push(permission);
+          }
+        });
+      }
+
+      if(user.role === 'CITY_ADMIN') {
+        PERMISSION_MATRIX['CITY_ADMIN'] && Object.entries(PERMISSION_MATRIX['CITY_ADMIN']).forEach(([permission, hasAccess]) => {
+          if(hasAccess) {
+            scopes.push(permission);
+          }
+        });
+      }
+      if(user.role === 'SOS_ADMIN') {
+        PERMISSION_MATRIX['SOS_ADMIN'] && Object.entries(PERMISSION_MATRIX['SOS_ADMIN']).forEach(([permission, hasAccess]) => {
+          if(hasAccess) {
+            scopes.push(permission);
+          }
+        });
+      }
+
       // error when user has no municipality code  when not app admin.
       if(!user.municipalityCode &&  user.role !== 'APP_ADMIN') {
         res.status(400).json({

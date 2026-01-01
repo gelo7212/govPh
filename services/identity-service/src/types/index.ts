@@ -25,6 +25,7 @@ export interface IdentityClaims {
   userId?: string;      // USER-UUID (must exist if identity block present)
   firebaseUid?: string; // Firebase UID (must exist if identity block present)
   role: UserRole;      // Role ALWAYS exists when identity block present
+  scopes?: string[];   // Optional scopes for the user
 }
 
 /**

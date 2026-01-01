@@ -65,6 +65,8 @@ services:
       SOS_SERVICE_URL: "http://govph-sos:3000"
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
       INCIDENT_MS_URL: "http://govph-incident:3000"
+      CLIENT_ID_ADMIN: 'gov-ph-admin-client'
+      CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
   # =====================
   # BFF – Admin (Web)
   # =====================
@@ -81,6 +83,17 @@ services:
     environment:
       NODE_ENV: local
       PORT: 3000
+      FIREBASE_SERVICE_ACCOUNT_KEY: /repo/bff/bff-admin/src/firebase-service-account.json
+      JWT_PUBLIC_KEY: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxRek0X1VCnmuXyXIsGz4\nVy+Eotl050LatEcWdD535zSaTlsbP3qiPPvG5xj2AX9vOitzq+L5k45dk99/MYns\n49H2oHFbNq6S4Srq6QFo19/mV/IMdwgV5svSq+dPPpiE9p0R/kjzDMtpJed1Z8IK\n/pr2PD7ap7ybnnxumpIV/R8jTtqi25WCMl05MGQfLtl/wsHeXuL10xloDB7WlUcz\nK3OjQc7pJ4D4cprkXeYT9YdCJ/cEhiaMmhjeEhed/Z9twqlBKqohvZjUpjL1zequ\nygTsriA0niEplyfUGOoirxQbnwpgCE0gGp6OQEwtyev1clmwkPEXr71s0PgBAron\n0QIDAQAB\n-----END PUBLIC KEY-----"
+      INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
+      # Service URLs (use Docker internal network)
+      IDENTITY_SERVICE_URL: "http://govph-identity:3000"
+      GEO_SERVICE_URL: "http://govph-geo:3000"
+      SOS_SERVICE_URL: "http://govph-sos:3000"
+      REALTIME_SERVICE_URL: "http://govph-realtime:3000"
+      INCIDENT_MS_URL: "http://govph-incident:3000"
+      CLIENT_ID_ADMIN: 'gov-ph-admin-client'
+      CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
 
   sos-service:
     build: ./services/sos-service
@@ -93,6 +106,7 @@ services:
     environment:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3000
+      REALTIME_SERVICE_URL: "http://govph-realtime:3000"
 
   identity-service:
     build: ./services/identity-service
@@ -127,6 +141,7 @@ services:
     #   - "3005:3000"
     environment:
       PORT: 3000
+      INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
 
   incident-service:
     build: ./services/incident-service

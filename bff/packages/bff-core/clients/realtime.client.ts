@@ -52,6 +52,17 @@ export class RealtimeServiceClient extends BaseClient {
       await this.handleError(error);
     }
   }
+
+  async getSOSNearbyLocation(latitude: number, longitude: number, radius: number): Promise<any[]> {
+    try {
+      const response = await this.client.get('/internal/realtime/sos/nearby', {
+        params: { latitude, longitude, radius },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 }
 
 export default RealtimeServiceClient;

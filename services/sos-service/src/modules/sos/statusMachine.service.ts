@@ -1,5 +1,6 @@
 import { SOSRepository } from '../sos/sos.repository';
 import { SOS, SOSStatus } from '../sos/sos.model';
+import { sosRealtimeClient } from '../../services/sos.realtime.client'
 
 /**
  * Status Machine Service
@@ -76,7 +77,7 @@ export class StatusMachineService {
   /**
    * Cancel SOS (only allowed from ACTIVE status)
    */
-  async cancelSOS(sosId: string, cityId: string): Promise<SOS | null> {
+  async cancelSOS(sosId: string, cityId: string, citizenId: string): Promise<SOS | null> {
     const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
@@ -87,14 +88,10 @@ export class StatusMachineService {
     const updated = await this.repository.update(cityId, sosId, {
       status: 'CANCELLED',
     });
-
-    // eventEmitter.publishSOSEvent({
-    //   type: 'SOS_CANCELLED',
-    //   sosId: updated.id,
-    //   cityId,
-    //   timestamp: new Date(),
-    //   data: { sosId: updated.id },
-    // });
+    let oldStatus = sos.status.toLocaleLowerCase();
+    if(oldStatus == 'ACTIVED')
+      oldStatus = 'active';
+    await sosRealtimeClient.closeSOS(sosId, citizenId);
 
     return updated;
   }

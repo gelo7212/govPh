@@ -31,6 +31,11 @@ router.post('/:sosId/status', validate(updateStatusSchema), (req, res) => {
   controller.updateStatus(req, res);
 });
 
+// get all SOS realtime sos by radius (MUST be before /:sosId routes)
+router.get('/nearby', (req, res) => {
+  controller.getNearbySOSStates(req, res);
+});
+
 // Get SOS realtime state
 router.get('/:sosId/state', (req, res) => {
   controller.getSOSState(req, res);
@@ -39,6 +44,6 @@ router.get('/:sosId/state', (req, res) => {
 // Save location snapshot from realtime sampler
 router.post('/:sosId/location', (req, res) => {
   controller.saveLocationSnapshot(req, res);
-});
+}); 
 
 export default router;

@@ -2,43 +2,29 @@ _format_version: "3.0"
 
 services:
   # =====================
-  # BFF Citizen Service
-  # =====================
-  - name: bff-citizen
-    url: http://govph-bff-citizen:3000
-    routes:
-      - name: identity-api
-        paths:
-          - /api/identity
-        strip_path: false
-      - name: sos-api
-        paths:
-          - /api/sos
-        strip_path: false
-      - name: geo-api
-        paths:
-          - /api/geo
-        strip_path: false
-      - name: messages-api
-        paths:
-          - /api/messages
-        strip_path: false
-      
-      - name: incident-api
-        paths:
-          - /api/incidents
-        strip_path: false
-
-
-  # =====================
-  # BFF Admin Service
+  # BFF Admin Service (FIRST - More Specific)
   # =====================
   - name: bff-admin
     url: http://govph-bff-admin:3000
     routes:
       - name: admin-api
+        hosts:
+          - admin.localhost
         paths:
-          - /admin
+          - /api
+        strip_path: false
+
+  # =====================
+  # BFF Citizen Service (SECOND - Fallback)
+  # =====================
+  - name: bff-citizen
+    url: http://govph-bff-citizen:3000
+    routes:
+      - name: citizen-api
+        hosts:
+          - citizen.localhost
+        paths:
+          - /api
         strip_path: false
 
 plugins:

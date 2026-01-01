@@ -24,6 +24,18 @@ export class SOSService {
       const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
       await redisClient.setEx(key, 86400, JSON.stringify(state)); // 24 hour TTL
 
+      // Add to geospatial index for efficient location-based queries
+      if (location?.longitude && location?.latitude) {
+        const geoKey = `${REDIS_KEYS.SOS_STATE}:geo`;
+        await redisClient.geoAdd(geoKey, {
+          longitude: location.longitude,
+          latitude: location.latitude,
+          member: sosId,
+        });
+        // Set same TTL for geo index
+        await redisClient.expire(geoKey, 86400);
+      }
+
       logger.info('SOS initialized in realtime', { sosId, citizenId });
 
       return state;
@@ -49,6 +61,10 @@ export class SOSService {
 
         // Keep for 1 hour after closing for history
         await redisClient.setEx(key, 3600, JSON.stringify(state));
+
+        // Remove from geospatial index
+        const geoKey = `${REDIS_KEYS.SOS_STATE}:geo`;
+        await redisClient.zRem(geoKey, sosId);
       }
 
       logger.info('SOS closed in realtime', { sosId, closedBy });
@@ -86,10 +102,146 @@ export class SOSService {
 
         const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
         await redisClient.setEx(key, 86400, JSON.stringify(state));
+
+        // Update geospatial index
+        if (location?.longitude && location?.latitude) {
+          const geoKey = `${REDIS_KEYS.SOS_STATE}:geo`;
+          await redisClient.geoAdd(geoKey, {
+            longitude: location.longitude,
+            latitude: location.latitude,
+            member: sosId,
+          });
+        }
       }
     } catch (error) {
       logger.error('Error updating SOS location', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get SOS realtime state by city coordinates
+   * @param cityLat - City center latitude
+   * @param cityLon - City center longitude
+   * @param radiusKm - Search radius in kilometers (default: 50 km for full city coverage)
+   * @returns Array of active SOS requests in city radius
+   */
+  async getSOSByCityAndNearby(cityLat: number, cityLon: number, radiusKm: number = 50): Promise<any[]> {
+    try {
+      if (!cityLat || !cityLon || typeof cityLat !== 'number' || typeof cityLon !== 'number') {
+        logger.error('Invalid city coordinates provided', { cityLat, cityLon });
+        return [];
+      }
+
+      // Use geo radius with city coordinates
+      return await this.getSOSNearbyLocation(cityLon, cityLat, radiusKm);
+    } catch (error) {
+      logger.error('Error getting SOS by city', error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate distance between two coordinates using Haversine formula
+   * Returns distance in kilometers
+   */
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  /**
+   * Get nearby SOS requests based on longitude and latitude using Redis GEO commands
+   * Optimized for scale - works efficiently with millions of records
+   * @param longitude - User's longitude coordinate
+   * @param latitude - User's latitude coordinate
+   * @param radiusKm - Search radius in kilometers (default: 20 km)
+   * @returns Array of nearby SOS requests with distance information, sorted by distance
+   */
+  async getSOSNearbyLocation(longitude: number, latitude: number, radiusKm: number = 20): Promise<any[]> {
+    try {
+      if (!longitude || !latitude || typeof longitude !== 'number' || typeof latitude !== 'number') {
+        logger.error('Invalid coordinates provided', { longitude, latitude });
+        return [];
+      }
+
+      const geoKey = `${REDIS_KEYS.SOS_STATE}:geo`;
+      
+      // Use Redis GEOSEARCH for efficient location-based queries (Redis 6.2+)
+      // Falls back to manual calculation if GEOSEARCH not available
+      let nearbyIds: any[] = [];
+      
+      try {
+        // GEOSEARCH returns members within radius, already sorted by distance
+        nearbyIds = await redisClient.geoSearch(
+          geoKey,
+          { longitude, latitude },
+          { radius: radiusKm, unit: 'km' }
+        ) as any[];
+      } catch (geoSearchError) {
+        // Fallback: Use GEORADIUS if available
+        logger.warn('GEOSEARCH not available, using GEORADIUS fallback', { radiusKm });
+        nearbyIds = await redisClient.geoRadius(
+          geoKey,
+          { longitude, latitude },
+          radiusKm,
+          'km'
+        ) as any;
+      }
+
+      if (!nearbyIds || nearbyIds.length === 0) {
+        logger.info('No nearby SOS requests found', { longitude, latitude, radiusKm });
+        return [];
+      }
+
+      // Fetch full state for each nearby SOS
+      const nearbySOS = [];
+      for (const memberId of nearbyIds) {
+        const key = `${REDIS_KEYS.SOS_STATE}:${memberId}`;
+        const data = await redisClient.get(key);
+        if (data) {
+          const state = JSON.parse(data);
+          
+          // Only include active SOS requests
+          if (state.status === 'active' && state.location?.longitude && state.location?.latitude) {
+            const distance = this.calculateDistance(
+              latitude,
+              longitude,
+              state.location.latitude,
+              state.location.longitude
+            );
+            
+            nearbySOS.push({
+              ...state,
+              distance: Math.round(distance * 100) / 100,
+            });
+          }
+        }
+      }
+
+      // Sort by distance
+      nearbySOS.sort((a, b) => a.distance - b.distance);
+
+      logger.info('Found nearby SOS requests', { 
+        longitude, 
+        latitude, 
+        radiusKm, 
+        count: nearbySOS.length 
+      });
+
+      return nearbySOS;
+    } catch (error) {
+      logger.error('Error getting nearby SOS by location', error);
+      return [];
     }
   }
 }

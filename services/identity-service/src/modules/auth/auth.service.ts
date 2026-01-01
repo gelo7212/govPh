@@ -105,6 +105,7 @@ export class AuthService {
         userId,
         firebaseUid,
         role: userRole,
+        scopes,
       },
       actor: {
         type: 'USER',

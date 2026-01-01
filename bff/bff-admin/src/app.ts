@@ -1,6 +1,6 @@
 import express, { Express } from 'express';
-import { requireRoleMiddleware } from './middlewares/requireRole';
-import { authContextMiddleware } from './middlewares/authContext';
+import { identityRoutes } from './modules/identity/identity.routes';
+import { sosRoutes } from './modules/sos/sos.routes';
 
 export function createApp(): Express {
   const app = express();
@@ -8,12 +8,10 @@ export function createApp(): Express {
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(authContextMiddleware);
 
   // Admin routes with role protection
-  app.use('/api/admin', requireRoleMiddleware(['admin']), (req, res) => {
-    res.json({ message: 'Admin routes' });
-  });
+  app.use('/api/identity',  identityRoutes);
+  app.use('/api/sos', sosRoutes);
 
   // Health check
   app.get('/health', (req, res) => {

@@ -3,7 +3,7 @@ import { GeoAggregator, handleServiceError, sendErrorResponse, SosAggregator } f
 import { IdentityAggregator } from './identity.aggregator';
 import { DecodedToken, decodeJWT } from '../../utils/jwt';
 import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
-import { validateFirebaseToken } from './../../utils/firebase';
+import { getFirebaseUserByUid, validateFirebaseToken } from './../../utils/firebase';
 
 export class IdentityController {
   private aggregator: IdentityAggregator;
@@ -131,7 +131,12 @@ export class IdentityController {
   async getToken(req: Request, res: Response): Promise<void> {
     try {
       const { firebaseUid } = req.body;
-      const { authorization } = req.headers;
+      const { authorization, 'x-client-id': clientId } = req.headers;
+      if(!clientId || (clientId !== process.env.CLIENT_ID_ADMIN && clientId !== process.env.CLIENT_ID_RESCUE)) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid client ID');
+        return;
+      }
+
       if (!firebaseUid) {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Firebase UID is required in request body');
         return;
@@ -143,17 +148,41 @@ export class IdentityController {
         return;
       }
 
-      const user = await this.aggregator.getUserByFirebaseUid(firebaseUid);
+      const firebaseId = isValid.uid;
+
+      const firebaseAccount = await getFirebaseUserByUid(firebaseId);
+      if (!firebaseAccount) {
+        sendErrorResponse(res, 404, 'NOT_FOUND', 'Firebase user not found');
+        return;
+      }
+
+      if(firebaseAccount.disabled) {
+        sendErrorResponse(res, 403, 'FORBIDDEN', 'Firebase user account is disabled');
+        return;
+      }
+      
+      if (!firebaseAccount.emailVerified) {
+        sendErrorResponse(res, 403, 'FORBIDDEN', 'Firebase user email is not verified');
+        return;
+      }
+
+      const user = await this.aggregator.getUserByFirebaseUid(firebaseId);
       if (!user) {
         sendErrorResponse(res, 404, 'NOT_FOUND', 'User not found');
         return;
       }
+      const userRole = user.data.role.toLocaleLowerCase();
+      // app_admin city_admin sos_admin
 
-      console.log('Generating token for user:', user);
-      const result = await this.aggregator.getToken(firebaseUid, user.data.id, undefined);
+      if(userRole !== 'app_admin' && userRole !== 'city_admin' && userRole !== 'sos_admin') {
+        sendErrorResponse(res, 403, 'FORBIDDEN', 'User does not have admin or rescue privileges');
+        return;
+      }
+      
+      const result = await this.aggregator.getToken(firebaseUid, user.data.id);
       res.status(200).json({
         success: true,
-        data: result,
+        data: result.data,
         timestamp: new Date(),
       });
     } catch (error) {

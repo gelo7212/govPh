@@ -1,5 +1,5 @@
 import { SosServiceClient } from '../clients';
-import { CreateSosRequest, SosRequest } from '../types';
+import { CreateSosRequest, SosRequest, SosResponse } from '../types';
 
 /**
  * SOS Aggregator - Shared orchestration layer

@@ -52,6 +52,11 @@ export const SmsOtpSchema = new mongoose.Schema(
     }
 );
 
+SmsOtpSchema.index({ phoneNumber: 1, context: 1, status: 1 });
+SmsOtpSchema.index({ createdAt: 1 });
+SmsOtpSchema.index({ firebaseId: 1 });
+SmsOtpSchema.index({ userId: 1 });
+SmsOtpSchema.index({ phoneNumber: 1, context: 1, createdAt: 1 });
 export const SmsOtpModel = mongoose.model<ISmsOtp>(
   'SmsOtp',
   SmsOtpSchema

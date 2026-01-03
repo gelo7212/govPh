@@ -28,6 +28,12 @@ export async function authContextMiddleware(
 
       // Verify and decode JWT token using public key
       const decodedToken = jwt.verify(token, publicKey) as any;
+      const role = decodedToken.identity?.role;
+      if(role !== 'CITIZEN'){
+        res.status(403).json({ error: 'Forbidden: Insufficient role' });
+        return;
+      }
+
       user = {
         id: decodedToken.identity?.userId || decodedToken.uid || decodedToken.sub,
         email: decodedToken.identity?.email || decodedToken.email,
@@ -38,7 +44,16 @@ export async function authContextMiddleware(
       };
 
       if(decodedToken.actor === "ANON"){
-        // user
+        user = {
+          firebaseUid: decodedToken.identity?.firebaseUid,
+          email: undefined,
+          actor: {
+            type: 'ANON',
+            cityCode: undefined
+          },
+          id: undefined,
+          role: 'CITIZEN'
+        }
       }
 
       req.context = {
@@ -50,14 +65,11 @@ export async function authContextMiddleware(
       return;
     } catch (error) {
       console.error('Failed to parse auth token', error);
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
     }
+  }else{
+    res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
+    return;
   }
-
-  req.context = {
-    user,
-    requestId,
-    timestamp: new Date(),
-  };
-
-  next();
 }

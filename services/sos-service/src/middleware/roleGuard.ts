@@ -12,10 +12,13 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        id: string;
+        id?: string;
         role: UserRole;
-        cityId: string;
+        cityId?: string;
         requestId: string;
+        actor:{
+          type: string;
+        }
       };
       validatedBody?: any;
     }
@@ -47,10 +50,18 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       actorType === 'ANON' &&
       (userRole === UserRole.CITIZEN || userRole === UserRole.RESCUER);
 
-    // Validate required headers based on actor type
-    // if (!isAnonymousWithoutCity && !cityId) {
-    //   return res.status(400).json({ error: 'Missing city ID in headers' });
-    // }
+    if(isAnonymousWithoutCity){
+      req.user = {
+        id: undefined,
+        role: userRole as UserRole,
+        cityId: undefined,
+        requestId: requestId || `req_${Date.now()}`,
+        actor:{
+          type: actorType || 'ANON',
+        }
+      };
+      return next();
+    }
 
     if (!userRole || !userId) {
       console.warn('Missing required headers (userId, userRole) in request');
@@ -73,6 +84,9 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
         role: userRole as UserRole,
         cityId: cityId || '',
         requestId: requestId || `req_${Date.now()}`,
+        actor:{
+          type: actorType || 'UNKNOWN',
+        }
       };
     }
 

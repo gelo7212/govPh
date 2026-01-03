@@ -119,6 +119,9 @@ services:
     environment:
       PORT: 3000
       SEMAPHORE_API_KEY: 1cd60ad27489bcbb49004d39f62f0d2e
+      USER_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
+      ENCRYPTION_KEY: n++mnwYjzA/umoe981HWgdI4idmTRgPZ+fpd0Hu5ua0=
+      OTP_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
 
   geo-service:
     build: ./services/geo-service

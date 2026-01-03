@@ -91,8 +91,8 @@ export class SOSRepository {
   private mapToDTO(sos: ISOS): SOS {
     return {
       id: sos._id?.toString() || '',
-      cityId: sos.cityId,
-      citizenId: sos.citizenId,
+      cityId: sos.cityId || '',
+      citizenId: sos.citizenId || '',
       status: sos.status,
       createdAt: sos.createdAt,
       updatedAt: sos.updatedAt,

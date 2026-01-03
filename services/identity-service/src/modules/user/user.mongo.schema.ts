@@ -12,7 +12,9 @@ const UserSchema = new mongoose.Schema(
       index: true,
     },
     email: { type: String, sparse: true, unique: true },
+    emailHashed: { type: String, sparse: true, unique: true },
     phone: { type: String, sparse: true },
+    phoneHashed: { type: String, sparse: true, unique: true, index: true },
     displayName: { type: String },
     municipalityCode: {
       type: String,
@@ -42,5 +44,8 @@ const UserSchema = new mongoose.Schema(
 // Compound indexes for common queries
 UserSchema.index({ role: 1, municipalityCode: 1 });
 UserSchema.index({ registrationStatus: 1, municipalityCode: 1 });
+UserSchema.index({ phoneHashed: 1 });
+UserSchema.index({ emailHashed: 1 });
+UserSchema.index({ createdAt: 1 });
 
 export default UserSchema;

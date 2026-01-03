@@ -26,3 +26,4 @@ identityRoutes.get('/firebase/:firebaseUid',authContextMiddleware, (req, res) =>
 identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));
 identityRoutes.post('/refresh',authContextMiddleware, (req, res) => identityController.refreshToken(req, res));
 identityRoutes.post('/validate',authContextMiddleware, (req, res) => identityController.validateToken(req, res));
+identityRoutes.get('/user/:userId',authContextMiddleware, (req, res) => identityController.getUserDetails(req, res));

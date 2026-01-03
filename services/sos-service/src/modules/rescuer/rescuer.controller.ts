@@ -25,6 +25,14 @@ export class RescuerController {
 
     const { id: rescuerId, cityId } = req.user;
 
+    if (!cityId) {
+      throw new ForbiddenError('City ID is required');
+    }
+
+    if(!rescuerId){
+      throw new ForbiddenError('Rescuer ID is required');
+    }
+
     // Find SOS assigned to this rescuer (in EN_ROUTE or ARRIVED status)
     const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);
     const activeAssignment = assignments.find((sos) => sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
@@ -60,6 +68,13 @@ export class RescuerController {
 
     const { lat, lng } = req.validatedBody;
     const { id: rescuerId, cityId } = req.user;
+
+    if (!cityId) {
+      throw new ForbiddenError('City ID is required');
+    }
+    if(!rescuerId){
+      throw new ForbiddenError('Rescuer ID is required');
+    }
 
     // Find active assignment for this rescuer
     const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);

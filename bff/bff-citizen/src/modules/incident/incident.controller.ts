@@ -22,6 +22,10 @@ export class IncidentController {
     try {
       const userId = (req as any).context?.user?.id;
       const cityCode = (req as any).context?.user?.cityCode;
+      const userActor = (req as any).context?.user?.actor;
+      if(userActor && userActor.type === 'ANON'){
+        throw new Error('Anonymous users cannot create incidents');
+      }
 
       // Identify severity and incident type from report title or keywords
       let typeAndSeverity = { incidentType: 'other', severity: 'low' };

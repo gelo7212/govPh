@@ -6,7 +6,7 @@ export class SOSService {
 
   async createSOS(data: {
     cityId: string;
-    citizenId: string;
+    citizenId?: string;
     sosNo: string;
     longitude: number;
     latitude: number;

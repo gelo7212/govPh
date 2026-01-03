@@ -274,10 +274,10 @@ export class IdentityController {
           return;
         }
         
-        await this.aggregator.sendOtp(formattedPhoneNumber, context, firebaseUser?.uid, undefined);
+        const otpResponse = await this.aggregator.sendOtp(formattedPhoneNumber, context, firebaseUser?.uid, undefined);
         res.status(200).json({
-          success: true,
-          data: { message: 'OTP sent successfully' },
+          success: otpResponse.success,
+          data: { message: otpResponse.data.message },
           timestamp: new Date(),
         });
       }

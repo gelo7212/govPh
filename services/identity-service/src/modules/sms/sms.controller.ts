@@ -12,10 +12,10 @@ export class SmsController {
     try {
         const { phoneNumber, context , userId, firebaseId} = req.body;
         
-        await this.smsService.sendSmsOtp(phoneNumber, context, userId, firebaseId);
+        const result = await this.smsService.sendSmsOtp(phoneNumber, context, userId, firebaseId);
         res.status(200).json({
-            success: true,
-            data: { message: 'OTP sent successfully' },
+            success: result.success,
+            data: { message: result.message },
             timestamp: new Date(),
         });
         return;

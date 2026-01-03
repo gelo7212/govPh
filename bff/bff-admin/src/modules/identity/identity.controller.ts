@@ -211,6 +211,25 @@ export class IdentityController {
     }
   }
 
+  async getUserDetails(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.params.userId;
+      if (!userId) {
+        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'User ID is required');
+        return;
+      }
+      const userDetails = await this.aggregator.getProfile(userId);
+      res.status(200).json({
+        success: true,
+        data: userDetails.data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to fetch user details');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
+
   async logout(req: Request, res: Response): Promise<void> {
     try {
       // Invalidate token logic

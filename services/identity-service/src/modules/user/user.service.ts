@@ -8,6 +8,7 @@ import {
 } from '../../errors';
 import { createLogger } from '../../utils/logger';
 import mongoose from 'mongoose';
+import { encryptPhone, hashString } from '../../utils/crypto';
 
 const logger = createLogger('UserService');
 
@@ -53,8 +54,10 @@ export class UserService {
         _id: new mongoose.Types.ObjectId(),
         firebaseUid: user.firebaseUid,
         role: user.role,
-        email: user.email,
-        phone: user.phone,
+        email: user.email ? encryptPhone(user.email) : undefined,
+        emailHashed: user.email ? hashString(user.email) : undefined,
+        phone: user.phone ? encryptPhone(user.phone) : undefined,
+        phoneHashed: user.phone ? hashString(user.phone) : undefined,
         displayName: user.displayName,
         municipalityCode: user.municipalityCode,
         municipalityId: user.municipalityId,
@@ -114,7 +117,7 @@ export class UserService {
   async getUserByPhone(phone: string): Promise<UserEntity | null> {
     try {
       const collection = getCollection('users');
-      const doc = await collection.findOne({ phone });
+      const doc = await collection.findOne({ phoneHashed: hashString(phone) });
 
       if (!doc) {
         return null;

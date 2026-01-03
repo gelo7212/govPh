@@ -1,7 +1,7 @@
 
 import { IdentityServiceError, InternalServiceError, SmsVerificationNumberMismatchError, VerificationGeneralError } from "../../errors";
 import { SemaphoreSmsService } from "../../services/sms.semaphore.service";
-import { generateOtp, compareOtp, hashOtp } from "../../utils/crypto";
+import { generateOtp, compareOtp, hashOtp, hashString } from "../../utils/crypto";
 import { userService } from "../user/user.service";
 import { SmsOtpModel } from "./sms.otp.mongo.schema";
 export class SmsService {
@@ -18,12 +18,19 @@ export class SmsService {
   ): Promise<any> {
     try {
         const otp =  generateOtp();
+        // format phone number to 10 digits, remove country code if present and leading zeros
         const formattedPhone = phoneNumber.replace(/^(\+63|0)/, '');
+        // format number to +63XXXXXXXXXX
+        const formattedE164Phone = `+63${formattedPhone}`;
+        
+        const hashedPhone = hashString(formattedPhone);
+
         // firebaeId and userId cannot be co-existing
         if(firebaseId && userId) {
             throw new VerificationGeneralError('firebaseId and userId cannot be provided together');
         }
-        const user = await userService.getUserByPhone(`+63${formattedPhone}`);
+
+        const user = await userService.getUserByPhone(formattedE164Phone);
      
         if(context === 'registration' && !firebaseId) {
             throw new VerificationGeneralError('firebaseId is required for registration context');
@@ -37,12 +44,11 @@ export class SmsService {
             }
             const isPhoneVerified = await SmsService.isMobileNumberVerified(formattedPhone, context, firebaseId, userId);
             if(isPhoneVerified) {
-                throw new VerificationGeneralError('Phone number is already verified for registration');
+                return { success: false, message: 'Phone number is already verified' , data: {}};
             }
         }
 
-
-        const existingOtp = await SmsOtpModel.findOne({ phoneNumber: formattedPhone, context, status: 'sent'}).where({
+        const existingOtp = await SmsOtpModel.findOne({ phoneNumber: hashedPhone, context, status: 'sent'}).where({
             createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) } // 10 minutes ago
         }).sort({ createdAt: -1 });
         
@@ -57,7 +63,7 @@ export class SmsService {
         const result = await this.provider.sendOtp(phoneNumber, otp);
         const hashedOtp = hashOtp(formattedPhone, otp);
         await SmsOtpModel.create({
-            phoneNumber: formattedPhone,
+            phoneNumber: hashedPhone,
             otp: hashedOtp,
             context,
             status: 'sent',
@@ -84,9 +90,10 @@ export class SmsService {
         // format phone number to 10 digits, remove country code if present and leading zeros
         const formattedPhone = phoneNumber.replace(/^(\+63|0)/, '');
         const hashedCode = hashOtp(formattedPhone, code);
+        const hashedPhone = hashString(formattedPhone);
         const smsOtpRecord = await SmsOtpModel.findOne(
           { 
-            phoneNumber: formattedPhone, 
+            phoneNumber: hashedPhone, 
             otp: hashedCode, 
             status: 'sent', 
             context,
@@ -127,13 +134,14 @@ export class SmsService {
         }
         
         if(context === 'registration' && firebaseId) {
-            const record = await SmsOtpModel.findOne({ phoneNumber: formattedPhone, status: 'verified', context })
-            .sort({ createdAt: -1 });
-            if(record && record.firebaseId !== firebaseId) {
-                throw new SmsVerificationNumberMismatchError('Phone number verified with a different firebaseId');
-            }
+          const hashedPhone = hashString(formattedPhone);
+          const record = await SmsOtpModel.findOne({ phoneNumber: hashedPhone, status: 'verified', context })
+          .sort({ createdAt: -1 });
+          if(record && record.firebaseId !== firebaseId) {
+              throw new SmsVerificationNumberMismatchError('Phone number verified with a different firebaseId');
+          }
 
-            return !!record;
+          return !!record;
         }
         throw new VerificationGeneralError('isMobileNumberVerified is only implemented for registration context');
         

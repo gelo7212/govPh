@@ -1,8 +1,8 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface ISOS extends Document {
-  cityId: string;
-  citizenId: string;
+  cityId?: string;
+  citizenId?: string;
   status: 'ACTIVE' | 'EN_ROUTE' | 'ARRIVED' | 'RESOLVED' | 'CANCELLED';
   assignedRescuerId?: string;
   lastKnownLocation?: {
@@ -25,12 +25,14 @@ const sosSchema = new Schema<ISOS>(
   {
     cityId: {
       type: String,
-      required: true,
+      required: false,
+      sparse: true,
       index: true,
     },
     citizenId: {
       type: String,
-      required: true,
+      required: false,
+      sparse: true,
       index: true,
     },
     status: {

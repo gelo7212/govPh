@@ -11,9 +11,12 @@ export class SosController {
   async createSosRequest(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.context?.user?.id;
-      if (!userId) {
-        res.status(401).json({ error: 'Unauthorized' });
-        return;
+      const actor = req.context?.user?.actor?.type;
+      if(actor !== "ANON"){
+        if (!userId ) {
+          res.status(401).json({ error: 'Unauthorized' });
+          return;
+        }
       }
       const location = req.body.location;
       const address = req.body.address;

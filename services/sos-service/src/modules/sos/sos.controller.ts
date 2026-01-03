@@ -20,56 +20,69 @@ export class SOSController {
    * Create SOS (CITIZEN only)
    */
   async createSOS(req: Request, res: Response): Promise<void> {
-    if (!req.user || req.user.role !== UserRole.CITIZEN) {
-      throw new ForbiddenError('Only citizens can create SOS requests');
+    try {
+      const isAnon = req.user?.actor?.type === "ANON";
+
+      if(!isAnon){
+        if (!req.user || req.user.role !== UserRole.CITIZEN) {
+          throw new ForbiddenError('Only citizens can create SOS requests');
+        }
+      }
+
+      const deviceId = req.headers['x-device-id'] as string;
+      if( !deviceId ) {
+        throw new ValidationError('Missing deviceId in headers');
+      }
+
+      const { type, message, silent, address } = req.body;
+      const { id: citizenId, cityId } = req.user || { id: '', cityId: '' };
+
+      const location = req.body.location;
+      const barangay = address?.barangay || '';
+      const city = address?.city || '';
+      if(!isAnon){
+        if (!citizenId || !cityId) {
+          throw new ValidationError('Missing citizenId or cityId');
+        }
+        const existingSOS = await this.sosService.getActiveSOSByCitizen(citizenId);
+        if (existingSOS) {
+          throw new ValidationError('An active SOS request already exists for this citizen');
+        }
     }
 
-    const deviceId = req.headers['x-device-id'] as string;
-    if( !deviceId ) {
-      throw new ValidationError('Missing deviceId in headers');
+
+      const sos = await this.sosService.createSOS({
+        type,
+        message,
+        citizenId,
+        cityId : cityId || '',
+        latitude: location?.latitude || 0, // Will be updated with first location
+        longitude: location?.longitude || 0,
+        address: { city, barangay },
+        sosNo: await this.counterService.generateSOSNumber(),
+        deviceId
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          id: sos.id,
+          userId: sos.citizenId,
+          status: sos.status,
+          location: sos.lastKnownLocation,
+          description: sos.message,
+          type: sos.type,
+          createdAt: sos.createdAt,
+          updatedAt: sos.updatedAt,
+          sosNo: sos.soNo,
+          message: sos.message,
+        },
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logger.error('Error creating SOS', { error });
+      throw error;
     }
-
-    const { type, message, silent, address } = req.body;
-    const { id: citizenId, cityId } = req.user;
-
-    const location = req.body.location;
-    const barangay = address?.barangay || '';
-    const city = address?.city || '';
-
-    const existingSOS = await this.sosService.getActiveSOSByCitizen(citizenId);
-    if (existingSOS) {
-      throw new ValidationError('An active SOS request already exists for this citizen');
-    }
-
-
-    const sos = await this.sosService.createSOS({
-      type,
-      message,
-      citizenId,
-      cityId,
-      latitude: location?.latitude || 0, // Will be updated with first location
-      longitude: location?.longitude || 0,
-      address: { city, barangay },
-      sosNo: await this.counterService.generateSOSNumber(),
-      deviceId
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        id: sos.id,
-        userId: sos.citizenId,
-        status: sos.status,
-        location: sos.lastKnownLocation,
-        description: sos.message,
-        type: sos.type,
-        createdAt: sos.createdAt,
-        updatedAt: sos.updatedAt,
-        sosNo: sos.soNo,
-        message: sos.message,
-      },
-      timestamp: new Date(),
-    });
   }
 
   async getActiveSOSByCitizen(req: Request, res: Response): Promise<void> {
@@ -112,7 +125,7 @@ export class SOSController {
    */
   async listSOS(req: Request, res: Response): Promise<void> {
 
-    if(req.user && req.user.role === UserRole.CITIZEN) {
+    if(req.user && req.user.role === UserRole.CITIZEN && req.user.id ) {
        const results = await this.sosService.listByCitizen(req.user.id);
         res.status(200).json({
           success: true,
@@ -131,9 +144,9 @@ export class SOSController {
 
     let results;
     if (status) {
-      results = await this.sosService.listByStatus(cityId, status as string);
+      results = await this.sosService.listByStatus(cityId || '', status as string);
     } else {
-      results = await this.sosService.listSOS(cityId);
+      results = await this.sosService.listSOS(cityId || '');
     }
 
     res.status(200).json({
@@ -166,7 +179,7 @@ export class SOSController {
       throw new ForbiddenError('Cannot update location of another citizen');
     }
 
-    const updated = await this.sosService.updateLocation(sosId, cityId, {
+    const updated = await this.sosService.updateLocation(sosId, cityId || '', {
       lat,
       lng,
       accuracy,
@@ -206,7 +219,7 @@ export class SOSController {
       throw new ForbiddenError('Cannot message another citizen\'s SOS');
     }
 
-    const message = await this.sosService.sendMessage(sosId, cityId, {
+    const message = await this.sosService.sendMessage(sosId, cityId || '', {
       content,
       senderRole: role.toLowerCase(),
       senderId: userId,
@@ -245,7 +258,7 @@ export class SOSController {
       throw new ForbiddenError('Cannot cancel another citizen\'s SOS');
     }
 
-    const cancelled = await this.statusMachine.cancelSOS(sosId, cityId, citizenId);
+    const cancelled = await this.statusMachine.cancelSOS(sosId, cityId || '', citizenId);
 
     res.status(200).json({
       success: true,
@@ -270,7 +283,7 @@ export class SOSController {
     const { resolutionNote } = req.body;
     const { cityId } = req.user;
 
-    const closed = await this.statusMachine.closeSOS(sosId, cityId, resolutionNote);
+    const closed = await this.statusMachine.closeSOS(sosId, cityId || '', resolutionNote);
     if (!closed) {
       throw new NotFoundError('SOS request', sosId);
     }

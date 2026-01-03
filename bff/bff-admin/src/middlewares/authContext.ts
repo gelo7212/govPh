@@ -51,14 +51,11 @@ export async function authContextMiddleware(
       return;
     } catch (error) {
       console.error('Failed to parse auth token', error);
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
     }
+  }else{
+    res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
+    return;
   }
-
-  req.context = {
-    user,
-    requestId,
-    timestamp: new Date(),
-  };
-
-  next();
 }

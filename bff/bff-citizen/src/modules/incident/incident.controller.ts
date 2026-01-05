@@ -78,22 +78,22 @@ export class IncidentController {
     }
   }
 
-  /**
-   * GET /incidents/city/:cityCode
-   * Get incidents by city code
-   */
-  async getIncidentsByCity(req: Request, res: Response): Promise<void> {
-    try {
-      const { cityCode } = req.params;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+  // /**
+  //  * GET /incidents/city/:cityCode
+  //  * Get incidents by city code
+  //  */
+  // async getIncidentsByCity(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     const { cityCode } = req.params;
+  //     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+  //     const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
 
-      const result = await this.aggregator.getIncidentsByCity(cityCode, limit, skip);
-      res.json(result);
-    } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
-    }
-  }
+  //     const result = await this.aggregator.getIncidentsByCity(cityCode, limit, skip);
+  //     res.json(result);
+  //   } catch (error) {
+  //     res.status(400).json({ error: (error as Error).message });
+  //   }
+  // }
 
   /**
    * GET /incidents/user/:userId
@@ -134,7 +134,10 @@ export class IncidentController {
     async cancelIncident(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;
-            const result = await this.aggregator.updateIncidentStatus(id, 'cancelled');
+            const user = (req as any).context?.user;
+            const actorType = user.actor.type  ? 'citizen' : 'guest';
+            const reason = req.body.reason || 'Cancelled by user';
+            const result = await this.aggregator.updateIncidentStatus(id, 'cancelled', user?.id || 'system', actorType, reason);
             res.json(result);
         } catch (error) {
         res.status(400).json({ error: (error as Error).message });
@@ -149,8 +152,10 @@ export class IncidentController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-
-      const result = await this.aggregator.updateIncidentStatus(id, status);
+      const user = (req as any).context?.user;
+      const actorType = user.actor.type  ? 'citizen' : 'guest';
+      const reason = req.body.reason || 'Status updated';
+      const result = await this.aggregator.updateIncidentStatus(id, status, user?.id || 'system', actorType, reason);
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

@@ -45,7 +45,7 @@ export abstract class BaseClient {
       httpAgent: new http.Agent({ family: 4 }),
       httpsAgent: new https.Agent({ family: 4 }),
       headers: {
-        'Authorization': 'Bearer service-token',
+        // 'Authorization': 'Bearer service-token',
         'x-internal-token': process.env.INTERNAL_AUTH_TOKEN || '',
       },
     });

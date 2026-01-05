@@ -66,18 +66,72 @@ export class IncidentRepository {
   }
 
   /**
-   * Get incidents by city code
+   * Get incidents by city code with filters and sorting
    */
   async getIncidentsByCity(
     cityCode: string,
     limit: number = 50,
-    skip: number = 0
+    skip: number = 0,
+    filters?: {
+      search?: string;
+      severity?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+    sortBy: string = 'createdAt',
+    sortOrder: 'asc' | 'desc' = 'desc'
   ): Promise<IncidentEntity[]> {
     try {
       const collection = getCollection('incidents');
+      
+      // Build query conditions array
+      const conditions: any[] = [{ 'location.cityCode': cityCode }];
+
+      // Add search filter (search in title or description)
+      if (filters?.search) {
+        conditions.push({
+          $or: [
+            { title: { $regex: filters.search, $options: 'i' } },
+            { description: { $regex: filters.search, $options: 'i' } },
+          ],
+        });
+      }
+
+      // Add severity filter
+      if (filters?.severity) {
+        conditions.push({ severity: filters.severity });
+      }
+
+      // Add status filter
+      if (filters?.status) {
+        conditions.push({ status: filters.status });
+      }
+
+      // Add date range filter
+      if (filters?.startDate || filters?.endDate) {
+        const dateFilter: any = {};
+        if (filters.startDate) {
+          dateFilter.$gte = new Date(filters.startDate);
+        }
+        if (filters.endDate) {
+          dateFilter.$lte = new Date(filters.endDate);
+        }
+        conditions.push({ createdAt: dateFilter });
+      }
+
+      // Build final query with $and to ensure all conditions are met
+      const query = conditions.length > 1 ? { $and: conditions } : conditions[0];
+
+      // Build sort object
+      const sortObj: any = {};
+      const validSortFields = ['severity', 'status', 'title', 'createdAt'];
+      const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+      sortObj[sortField] = sortOrder === 'asc' ? 1 : -1;
+
       const incidents = await collection
-        .find({ 'location.cityCode': cityCode })
-        .sort({ createdAt: -1 })
+        .find(query)
+        .sort(sortObj)
         .limit(limit)
         .skip(skip)
         .toArray();
@@ -156,11 +210,11 @@ export class IncidentRepository {
         { returnDocument: 'after' }
       );
 
-      if (!result || !result.value) {
+      if (!result) {
         throw new NotFoundError('Incident', incidentId);
       }
 
-      return this.mapDocumentToEntity(result.value);
+      return this.mapDocumentToEntity(result);
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       logger.error('Error updating incident status', error);
@@ -219,12 +273,60 @@ export class IncidentRepository {
   }
 
   /**
-   * Get incident count by city
+   * Get incident count by city with optional filters
    */
-  async getIncidentCountByCity(cityCode: string): Promise<number> {
+  async getIncidentCountByCity(
+    cityCode: string,
+    filters?: {
+      search?: string;
+      severity?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<number> {
     try {
       const collection = getCollection('incidents');
-      return await collection.countDocuments({ 'location.cityCode': cityCode });
+      
+      // Build query conditions array
+      const conditions: any[] = [{ 'location.cityCode': cityCode }];
+
+      // Add search filter
+      if (filters?.search) {
+        conditions.push({
+          $or: [
+            { title: { $regex: filters.search, $options: 'i' } },
+            { description: { $regex: filters.search, $options: 'i' } },
+          ],
+        });
+      }
+
+      // Add severity filter
+      if (filters?.severity) {
+        conditions.push({ severity: filters.severity });
+      }
+
+      // Add status filter
+      if (filters?.status) {
+        conditions.push({ status: filters.status });
+      }
+
+      // Add date range filter
+      if (filters?.startDate || filters?.endDate) {
+        const dateFilter: any = {};
+        if (filters.startDate) {
+          dateFilter.$gte = new Date(filters.startDate);
+        }
+        if (filters.endDate) {
+          dateFilter.$lte = new Date(filters.endDate);
+        }
+        conditions.push({ createdAt: dateFilter });
+      }
+
+      // Build final query with $and to ensure all conditions are met
+      const query = conditions.length > 1 ? { $and: conditions } : conditions[0];
+
+      return await collection.countDocuments(query);
     } catch (error) {
       logger.error('Error counting incidents', error);
       throw new DatabaseError('Failed to count incidents');

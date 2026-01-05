@@ -8,6 +8,7 @@ import userRoutes from './modules/user/user.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import rescuerRoutes from './modules/rescuer/rescuer.routes';
 import { smsRoutes } from './modules/sms';
+import inviteRoutes from './modules/invite/invite.routes';
 
 const logger = createLogger('App');
 
@@ -39,6 +40,7 @@ export const createApp = (): Express => {
   app.use('/admin', adminRoutes);
   app.use('/rescuer', rescuerRoutes);
   app.use('/sms', smsRoutes);
+  app.use('/invites', inviteRoutes);
 
   // Error handler middleware (before 404 handler)
   app.use(

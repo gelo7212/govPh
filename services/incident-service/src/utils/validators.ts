@@ -41,7 +41,7 @@ export function validateSeverity(severity: string): void {
  * Validate incident status
  */
 export function validateIncidentStatus(status: string): void {
-  const validStatuses = ['open', 'acknowledged', 'in_progress', 'resolved', 'rejected'];
+  const validStatuses = ['open', 'acknowledged', 'in_progress', 'resolved', 'rejected', 'for_review', 'cancelled'];
   if (!validStatuses.includes(status)) {
     throw new ValidationError(
       `Invalid incident status. Must be one of: ${validStatuses.join(', ')}`

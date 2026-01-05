@@ -1,5 +1,5 @@
 import { IdentityServiceClient } from '@gov-ph/bff-core';
-import { CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
+import { AdminRegistrationData, CitizenRegistrationData } from '@gov-ph/bff-core/dist/types';
 
 /**
  * Identity Aggregator - Orchestrates identity-related operations
@@ -71,6 +71,11 @@ export class IdentityAggregator {
       ...(municipalityCode && { municipalityCode }),
     };
     const registered = await this.identityClient.registerCitizenUser(payload);
+    return registered;
+  }
+
+  async registerAdminUser(data: AdminRegistrationData) {
+    const registered = await this.identityClient.registerAdminUser(data);
     return registered;
   }
 }

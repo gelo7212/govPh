@@ -29,9 +29,9 @@ incidentRoutes.get('/reports/types/lookup', (req, res) => incidentController.get
 incidentRoutes.post('/reports',authContextMiddleware, (req, res) => incidentController.createIncident(req, res));
 
 // Get incidents by city code (MORE SPECIFIC - must come before /:id)
-incidentRoutes.get('/reports/city/:cityCode',authContextMiddleware, (req, res) =>
-  incidentController.getIncidentsByCity(req, res)
-);
+// incidentRoutes.get('/reports/city/:cityCode',authContextMiddleware, (req, res) =>
+//   incidentController.getIncidentsByCity(req, res)
+// );
 
 // Get incidents by user ID
 incidentRoutes.get('/reports/user/:userId',authContextMiddleware, (req, res) =>

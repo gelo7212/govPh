@@ -8,3 +8,4 @@ export { GeoServiceClient } from './geo.client';
 export { RealtimeServiceClient } from './realtime.client';
 export { IncidentServiceClient } from './incident.client';
 export { IncidentTimelineServiceClient } from './incident-timeline.client';
+export { CityServiceClient } from './city.client';

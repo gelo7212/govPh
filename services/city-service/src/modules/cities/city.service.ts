@@ -1,8 +1,13 @@
-import { Model } from 'mongoose';
-import { ICity } from '../../types';
+import { Model, mongo } from 'mongoose';
+import { ICity } from './city.schema';
+import { CityConfigService } from '../city-config/city-config.service';
+import { ICityConfig } from '../city-config/city-config.schema';
 
 export class CityService {
-  constructor(private cityModel: Model<ICity>) {}
+  constructor(
+    private cityModel: Model<ICity>,
+    private cityConfigService?: CityConfigService,
+  ) {}
 
   async getAllCities(filters?: { isActive?: boolean; provinceCode?: string }) {
     const query: any = {};
@@ -20,8 +25,48 @@ export class CityService {
   }
 
   async createCity(data: Partial<ICity>) {
+    data._id = new mongo.ObjectId(data.cityId);
+    
     const city = new this.cityModel(data);
-    return city.save();
+    const savedCity = await city.save();
+
+    // Auto-create city config when city is created
+    if (this.cityConfigService) {
+      const defaultConfig: Partial<ICityConfig> = {
+        cityCode: data.cityCode,
+        cityId: (savedCity as any)._id?.toString() || '',
+        incident: {
+          allowAnonymous: true,
+          allowOutsideCityReports: false,
+          autoAssignDepartment: true,
+          requireCityVerificationForResolve: false,
+        },
+        sos: {
+          allowAnywhere: true,
+          autoAssignNearestHQ: true,
+          escalationMinutes: 30,
+          allowProvinceFallback: true,
+        },
+        visibility: {
+          showIncidentsOnPublicMap: true,
+          showResolvedIncidents: false,
+        },
+        setup: {
+          isInitialized: false,
+          currentStep: 'CITY_PROFILE' as const,
+          completedSteps: [],
+        },
+        isActive: true,
+      };
+      try {
+        await this.cityConfigService.createCityConfig(defaultConfig);
+      } catch (error) {
+        console.error('Failed to create city config:', error);
+        // Don't fail city creation if config creation fails
+      }
+    }
+
+    return savedCity;
   }
 
   async updateCity(cityCode: string, data: Partial<ICity>) {

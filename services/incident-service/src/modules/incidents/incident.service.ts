@@ -1,4 +1,4 @@
-import { IncidentEntity, IncidentStatus } from '../../types';
+import { ActorType, IncidentEntity, IncidentStatus } from '../../types';
 import { incidentRepository } from './incident.repository';
 import { ValidationError, NotFoundError } from '../../errors';
 import {
@@ -59,18 +59,30 @@ export class IncidentService {
   }
 
   /**
-   * Get incidents by city
+   * Get incidents by city with filters and sorting
    */
   async getIncidentsByCity(
     cityCode: string,
     limit?: number,
-    skip?: number
+    skip?: number,
+    filters?: {
+      search?: string;
+      severity?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+    sortBy?: string,
+    sortOrder?: 'asc' | 'desc'
   ): Promise<IncidentEntity[]> {
     try {
       return await incidentRepository.getIncidentsByCity(
         cityCode,
         limit,
-        skip
+        skip,
+        filters,
+        sortBy,
+        sortOrder
       );
     } catch (error) {
       logger.error('Error retrieving incidents by city', error);
@@ -118,7 +130,11 @@ export class IncidentService {
    */
   async updateIncidentStatus(
     incidentId: string,
-    status: IncidentStatus
+    status: IncidentStatus,
+    updatedBy: string,
+    actorType: ActorType,
+    oldStatus: IncidentStatus,
+    reason: string
   ): Promise<IncidentEntity> {
     try {
       validateIncidentStatus(status);
@@ -128,7 +144,14 @@ export class IncidentService {
       
       // Validate status transition
       this.validateStatusTransition(incident.status, status);
-      
+      await incidentTimelineService.logIncidentStatusUpdatedEvent(
+        incidentId,
+        updatedBy,
+        actorType,
+        oldStatus,
+        status,
+        reason
+      );
       logger.info('Updating incident status', {
         incidentId,
         from: incident.status,
@@ -174,11 +197,20 @@ export class IncidentService {
   }
 
   /**
-   * Get incident count by city
+   * Get incident count by city with optional filters
    */
-  async getIncidentCountByCity(cityCode: string): Promise<number> {
+  async getIncidentCountByCity(
+    cityCode: string,
+    filters?: {
+      search?: string;
+      severity?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<number> {
     try {
-      return await incidentRepository.getIncidentCountByCity(cityCode);
+      return await incidentRepository.getIncidentCountByCity(cityCode, filters);
     } catch (error) {
       logger.error('Error counting incidents', error);
       throw error;
@@ -194,11 +226,13 @@ export class IncidentService {
   ): void {
     // Define valid transitions
     const validTransitions: Record<IncidentStatus, IncidentStatus[]> = {
-      open: ['acknowledged', 'rejected'],
-      acknowledged: ['in_progress', 'rejected'],
-      in_progress: ['resolved', 'rejected'],
-      resolved: [],
-      rejected: [],
+      open: ['acknowledged', 'rejected', 'for_review', 'cancelled'],
+      for_review: ['acknowledged', 'rejected'],
+      acknowledged: ['in_progress', 'rejected', 'for_review'],
+      in_progress: ['resolved', 'rejected','for_review'],
+      resolved: ['rejected', 'for_review'],
+      rejected: ['resolved', 'for_review'],
+      cancelled: [],
     };
 
     const allowedTransitions = validTransitions[currentStatus] || [];

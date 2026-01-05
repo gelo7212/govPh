@@ -1,6 +1,5 @@
 import { Model } from 'mongoose';
-import { IDepartment } from '../../types';
-
+import { IDepartment } from './department.schema';
 export class DepartmentService {
   constructor(private departmentModel: Model<IDepartment>) {}
 

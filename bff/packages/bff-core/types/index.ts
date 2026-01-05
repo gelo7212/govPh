@@ -23,6 +23,15 @@ export interface CitizenRegistrationData {
     id: string;
   };
 }
+
+export interface AdminRegistrationData {
+  email: string;
+  phone: string;
+  displayName: string;
+  firebaseUid: string;
+  inviteId: string;
+  code: string;
+}
 // Identity Types
 export interface User {
   id: string;
@@ -339,3 +348,29 @@ export interface PaginationOptions {
   limit?: number;
   skip?: number;
 }
+
+// City Service Types
+export {
+  type CityData,
+  type CreateCityRequest,
+  type UpdateCityRequest,
+  type CityResponse,
+  type DepartmentData,
+  type CreateDepartmentRequest,
+  type UpdateDepartmentRequest,
+  type DepartmentResponse,
+  type SosHQData,
+  type CreateSosHQRequest,
+  type UpdateSosHQRequest,
+  type SosHQResponse,
+  type CityConfigData,
+  type CreateCityConfigRequest,
+  type UpdateCityConfigRequest,
+  type CityConfigResponse,
+  type CityConfigIncidentRules,
+  type CityConfigSosRules,
+  type CityConfigVisibilityRules,
+  type CityConfigSetup,
+  type CityLocation,
+  type SosHQLocation,
+} from './city.types';

@@ -9,6 +9,7 @@ export {
   IncidentServiceClient,
   RealtimeServiceClient,
   IncidentTimelineServiceClient,
+  CityServiceClient,
 } from './clients';
 
 /**
@@ -20,6 +21,7 @@ export { MessageAggregator } from './sos/message.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
 export { IncidentAggregator } from './incident/incident.aggregator';
 export { IncidentTimelineAggregator } from './incident/incident-timeline.aggregator';
+export { CityAggregator } from './city/city.aggregator';
 
 /**
  * Error Handling Utilities - Central export point

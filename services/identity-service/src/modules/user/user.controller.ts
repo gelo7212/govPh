@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { UserEntity, RequestUser } from '../../types';
+import { UserEntity, RequestUser, UserRole } from '../../types';
 import { userService } from './user.service';
+import { inviteService } from '../../modules/invite/invite.service';
 import { AuditLoggerService } from '../../services/auditLogger';
 import { logUserCreated, logStatusChange } from '../../services/auditLogger';
 import { getCollection } from '../../config/database';
@@ -90,6 +91,62 @@ export class UserController {
       throw error;
     }
   }
+
+  /**
+   * Register admin user
+   * Protected - only city admins can create admin users
+  */
+  async registerAdminUser(req: Request, res: Response): Promise<void> {
+    try {
+     
+      const { email, phone, displayName, firebaseUid, inviteId, code } = req.body;
+
+      const invite = await inviteService.validateInvite(inviteId);
+      if (!invite.valid) {
+        console.log('Invalid invite code used for admin registration:', inviteId, invite.reason);
+        throw new ValidationError('Invalid or expired invite code');
+      }
+      
+      const user: UserEntity = {
+        email,
+        phone,
+        displayName,
+        firebaseUid,
+        municipalityCode: invite.municipalityCode!,
+        role: invite.role as UserRole,
+        registrationStatus: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      // Validate payload
+      validateUserCreationPayload(user);
+      // Validate municipality
+      const created = await userService.createUser(user);
+      // Log the creation
+      if (!created.id) {
+        throw new DatabaseError('Failed to create user: missing id');
+      }
+
+      inviteService.acceptInvite(inviteId, code, created.id, invite.role as UserRole);
+      
+      res.status(201).json({
+        success: true,
+        data: {
+          id: created.id,
+          firebaseUid: created.firebaseUid,
+          role: created.role,
+          municipalityCode: created.municipalityCode,
+          registrationStatus: created.registrationStatus,
+        },
+        timestamp: new Date(),
+      });
+    }
+    catch (error) {
+      logger.error('Failed to register admin user', error);
+      throw error;
+    }
+  }
+
   /**
    * GET /users/me
    * Get authenticated user's profile

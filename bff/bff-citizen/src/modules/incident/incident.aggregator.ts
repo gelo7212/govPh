@@ -53,22 +53,22 @@ export class IncidentAggregator {
     }
   }
 
-  /**
-   * Get incidents by city code
-   */
-  async getIncidentsByCity(
-    cityCode: string,
-    limit?: number,
-    skip?: number
-  ): Promise<IncidentResponse<IncidentEntity[]>> {
-    try {
-      const incidents = await this.incidentClient.getIncidentsByCity(cityCode, limit, skip);
-      return incidents;
-    } catch (error) {
-      console.error('Failed to get incidents by city:', error);
-      throw error;
-    }
-  }
+  // /**
+  //  * Get incidents by city code
+  //  */
+  // async getIncidentsByCity(
+  //   cityCode: string,
+  //   limit?: number,
+  //   skip?: number
+  // ): Promise<IncidentResponse<IncidentEntity[]>> {
+  //   try {
+  //     const incidents = await this.incidentClient.getIncidentsByCity(cityCode, limit, skip);
+  //     return incidents;
+  //   } catch (error) {
+  //     console.error('Failed to get incidents by city:', error);
+  //     throw error;
+  //   }
+  // }
 
   /**
    * Get incidents by user ID
@@ -108,10 +108,13 @@ export class IncidentAggregator {
    */
   async updateIncidentStatus(
     incidentId: string,
-    status: IncidentStatus
+    status: IncidentStatus,
+    updatedBy: string,
+    actorType: string,
+    reason: string
   ): Promise<IncidentResponse<IncidentEntity>> {
     try {
-      const result = await this.incidentClient.updateIncidentStatus(incidentId, status);
+      const result = await this.incidentClient.updateIncidentStatus(incidentId, status, updatedBy, actorType, reason);
       return result;
     } catch (error) {
       console.error('Failed to update incident status:', error);

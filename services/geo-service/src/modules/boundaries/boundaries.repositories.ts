@@ -94,7 +94,7 @@ export class MunicipalityRepository {
    * Find municipalities by province name
    */
   async findByProvinceName(provinceName: string): Promise<Municipality[]> {
-    return MunicipalityModel.find({ province: provinceName }).sort({ name: 1 }).lean();
+    return MunicipalityModel.find({ province: new RegExp(`^${provinceName}$`, 'i') }).sort({ name: 1 }).lean();
   }
 
   /**

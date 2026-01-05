@@ -62,7 +62,7 @@ router.delete(
  * POST /sos-hq/:id/activate
  * Activate a SOS headquarters
  */
-router.post(
+router.patch(
   '/:id/activate',
   (req, res, next) =>
     sosHQController.activate(req, res).catch(next),

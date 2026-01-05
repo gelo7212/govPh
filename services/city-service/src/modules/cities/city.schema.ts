@@ -1,8 +1,28 @@
-import { Schema } from 'mongoose';
+import {  Schema, Document } from 'mongoose';
+
+export interface ICity extends Document {
+  cityCode: string;
+  cityId: string;
+  name: string;
+  provinceCode: string;
+  centerLocation: {
+    lat: number;
+    lng: number;
+  };
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const CitySchema = new Schema(
   {
     cityCode: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    cityId: {
       type: String,
       required: true,
       unique: true,

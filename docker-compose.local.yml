@@ -77,6 +77,9 @@ services:
     container_name: govph-bff-admin
     networks:
       - govph-network
+    depends_on:
+      city-service:
+        condition: service_healthy
     # Internal only - accessed via Kong gateway
     # ports:
     #   - "3004:3000"
@@ -92,6 +95,7 @@ services:
       SOS_SERVICE_URL: "http://govph-sos:3000"
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
       INCIDENT_MS_URL: "http://govph-incident:3000"
+      CITY_SERVICE_URL: "http://govph-city:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
 
@@ -122,6 +126,7 @@ services:
       USER_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
       ENCRYPTION_KEY: n++mnwYjzA/umoe981HWgdI4idmTRgPZ+fpd0Hu5ua0=
       OTP_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
+      INVITE_LINK_HOST: http://localhost:3000
 
   geo-service:
     build: ./services/geo-service
@@ -157,6 +162,24 @@ services:
     environment:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3000
+
+  city-service:
+    build: ./services/city-service
+    container_name: govph-city
+    networks:
+      - govph-network
+    # Internal only - accessed via Kong gateway
+    # ports:
+    #   - "3007:3000"
+    environment:
+      INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
+      PORT: 3000
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   govph-network:

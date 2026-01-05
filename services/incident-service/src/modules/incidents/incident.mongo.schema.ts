@@ -19,7 +19,7 @@ const IncidentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['open','for_review', 'acknowledged', 'in_progress', 'resolved', 'rejected'],
+      enum: ['open','for_review', 'acknowledged', 'in_progress', 'resolved', 'rejected', 'cancelled'],
       default: 'open',
       required: true,
       index: true,

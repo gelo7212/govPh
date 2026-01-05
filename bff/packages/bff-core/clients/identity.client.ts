@@ -1,4 +1,4 @@
-import { CitizenRegistrationData, UserProfileResponse } from '../types';
+import { AdminRegistrationData, CitizenRegistrationData, UserProfileResponse } from '../types';
 import { BaseClient, UserContext } from './base.client';
 
 /**
@@ -93,6 +93,16 @@ export class IdentityServiceClient extends BaseClient {
     }
   }
 
+  async registerAdminUser(data: AdminRegistrationData) {
+    try {
+      const response = await this.client.post('/users/admin/register', data);
+      return response.data;
+    }
+    catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   async registerCitizenUser(data: CitizenRegistrationData) {
     try {
       const response = await this.client.post('/users/register', data);
@@ -135,6 +145,62 @@ export class IdentityServiceClient extends BaseClient {
   ): Promise<any> {
     try {
       const response = await this.client.post('/sms/verify/otp', { phoneNumber, code, context, firebaseId, userId });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Create a new invite
+   */
+  async createInvite(role: string, municipalityCode: string, accessToken: string): Promise<any> {
+    try {
+      const response = await this.client.post('/invites', { role, municipalityCode }, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Validate an invite (public endpoint)
+   */
+  async validateInvite(inviteId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/invites/${inviteId}`);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Accept an invite
+   */
+  async acceptInvite(inviteId: string, code: string, accessToken: string): Promise<any> {
+    try {
+      const response = await this.client.post(`/invites/${inviteId}/accept`, { code }, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * List invites with filtering
+   */
+  async listInvites(filters?: any, accessToken?: string): Promise<any> {
+    try {
+      const response = await this.client.get('/invites', { params: filters, headers: { Authorization: `Bearer ${accessToken}` } });
       return response.data;
     } catch (error) {
       return this.handleError(error);

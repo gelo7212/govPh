@@ -1,4 +1,27 @@
-import { Schema } from 'mongoose';
+import { Schema, Document } from 'mongoose';
+
+export interface ISosHQ extends Document {
+  scopeLevel: 'CITY' | 'PROVINCE';
+  cityCode?: string;
+  cityId?: string;
+  provinceCode?: string;
+  name: string;
+  contactNumber?: string;
+  address?: string;
+  location: {
+    lat: number;
+    lng: number;
+  };
+  coverageRadiusKm?: number;
+  supportedDepartmentCodes: string[];
+  isMain: boolean;
+  isTemporary: boolean;
+  isActive: boolean;
+  activatedAt?: Date;
+  deactivatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const SosHQSchema = new Schema(
   {
@@ -17,6 +40,14 @@ export const SosHQSchema = new Schema(
       },
     },
 
+    cityId: {
+      type: String,
+      index: true,
+      required: function (this: any): boolean {
+        return this.scopeLevel === 'CITY';
+      },
+    },
+
     provinceCode: {
       type: String,
       index: true,
@@ -28,6 +59,14 @@ export const SosHQSchema = new Schema(
     name: {
       type: String,
       required: true,
+    },
+
+    contactNumber: {
+      type: String,
+    },
+
+    address: {
+      type: String,
     },
 
     location: {

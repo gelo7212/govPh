@@ -12,6 +12,31 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const logMessage = `${req.method} ${req.path} - Status: ${res.statusCode} - Duration: ${duration}ms`;
+    
+    if (res.statusCode >= 400) {
+      logger.warn(logMessage, {
+        query: req.query,
+        params: req.params,
+        body: req.body,
+      });
+    } else {
+      logger.info(logMessage, {
+        query: req.query,
+        params: req.params,
+      });
+    }
+  });
+  
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({

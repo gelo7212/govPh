@@ -2,7 +2,7 @@
  * User Role Types - Authoritative role definitions
  * Only exists in authenticated identity context
  */
-export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
+export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER' | 'SK_ADMIN';
 
 /**
  * Actor Type - WHO IS ACTING RIGHT NOW?
@@ -244,11 +244,12 @@ export interface ApiResponse<T = unknown> {
  * Dictates who can create/manage whom
  */
 export const AUTHORITY_RULES: Record<UserRole, Readonly<UserRole[]>> = {
-  APP_ADMIN: ['CITY_ADMIN', 'SOS_ADMIN'],
-  CITY_ADMIN: ['SOS_ADMIN'],
+  APP_ADMIN: ['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN'],
+  CITY_ADMIN: ['SOS_ADMIN', 'SK_ADMIN'],
   SOS_ADMIN: [],
   CITIZEN: [],
-  RESCUER: []
+  RESCUER: [],
+  SK_ADMIN: [],
 };
 
 /**
@@ -308,6 +309,14 @@ export const PERMISSION_MATRIX: Record<UserRole, Record<Permission, boolean>> = 
     view_all_sos: false,
     assign_rescuer: false,
     respond_to_sos: true,
+    create_sos: false,
+  },
+  SK_ADMIN: {
+    manage_cities: false,
+    manage_admins: false,
+    view_all_sos: false,
+    assign_rescuer: false,
+    respond_to_sos: false,
     create_sos: false,
   }
 };

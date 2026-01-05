@@ -1,5 +1,5 @@
 import { IdentityServiceClient, SosServiceClient, GeoServiceClient } from '../clients';
-import { User, LoginResponse, AuthToken, CitizenRegistrationData } from '../types';
+import { User, LoginResponse, AuthToken, CitizenRegistrationData, AdminRegistrationData } from '../types';
 
 /**
  * Identity Aggregator - Shared orchestration layer
@@ -87,5 +87,42 @@ export class IdentityAggregator {
   async verifyOtp(phoneNumber: string, code: string, context: 'login' | 'reset' | 'registration' | 'transaction' | 'authentication', firebaseId?: string, userId?: string): Promise<boolean> {
     const result = await this.identityClient.verifyPhoneOtp(phoneNumber, code, context, firebaseId, userId);
     return result;
+  }
+
+  /**
+   * Create a new invite
+   */
+  async createInvite(role: string, municipalityCode: string, accessToken: string): Promise<any> {
+    const result = await this.identityClient.createInvite(role, municipalityCode, accessToken);
+    return result;
+  }
+
+  /**
+   * Validate an invite
+   */
+  async validateInvite(inviteId: string): Promise<any> {
+    const result = await this.identityClient.validateInvite(inviteId);
+    return result;
+  }
+
+  /**
+   * Accept an invite
+   */
+  async acceptInvite(inviteId: string, code: string, accessToken: string): Promise<any> {
+    const result = await this.identityClient.acceptInvite(inviteId, code, accessToken);
+    return result;
+  }
+
+  /**
+   * List invites
+   */
+  async listInvites(filters?: any, accessToken?: string): Promise<any> {
+    const result = await this.identityClient.listInvites(filters, accessToken);
+    return result;
+  }
+
+  async registerAdminUser(data: AdminRegistrationData): Promise<User> {
+    const registered = await this.identityClient.registerAdminUser(data);
+    return registered;
   }
 }

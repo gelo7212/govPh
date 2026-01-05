@@ -5,7 +5,7 @@ import { logger } from './utils/logger';
 
 dotenv.config();
 
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 30007;
 
 async function startServer() {
   try {

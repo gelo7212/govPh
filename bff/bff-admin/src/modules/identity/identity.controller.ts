@@ -243,4 +243,58 @@ export class IdentityController {
       sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
     }
   }
+
+  async registerAdmin(req: Request, res: Response): Promise<void> {
+    try {
+      const body = req.body;
+      const { firebaseUid } = req.body;
+      const { authorization, 'x-client-id': clientId } = req.headers;
+      if(!clientId || (clientId !== process.env.CLIENT_ID_ADMIN && clientId !== process.env.CLIENT_ID_RESCUE)) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Invalid client ID');
+        return;
+      }
+
+      if (!firebaseUid) {
+        sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Firebase UID is required in request body');
+        return;
+      }
+      const token = authorization && authorization.startsWith('Bearer ') ? authorization.replace('Bearer ', '') : null;
+      const isValid = token ? await validateFirebaseToken(token) : false;
+      if (!isValid) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', isValid || 'Invalid Firebase token');
+        return;
+      }
+
+      const firebaseId = isValid.uid;
+
+      const firebaseAccount = await getFirebaseUserByUid(firebaseId);
+      if (!firebaseAccount) {
+        sendErrorResponse(res, 404, 'NOT_FOUND', 'Firebase user not found');
+        return;
+      }
+
+      if(firebaseAccount.disabled) {
+        sendErrorResponse(res, 403, 'FORBIDDEN', 'Firebase user account is disabled');
+        return;
+      }
+      
+      if (!firebaseAccount.emailVerified) {
+        sendErrorResponse(res, 403, 'FORBIDDEN', 'Firebase user email is not verified');
+        return;
+      }
+
+
+      const newUser = await this.aggregator.registerAdminUser(body);
+      const getToken = await this.aggregator.getToken(firebaseUid, newUser.data.id);
+      res.status(201).json({
+        success: true,
+        data: getToken.data,
+        message: 'Admin user registered successfully',
+        timestamp: new Date(),
+      });
+    }catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to register admin user');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
 }

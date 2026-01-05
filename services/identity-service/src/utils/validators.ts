@@ -11,11 +11,14 @@ export function validateEmail(email: string): boolean {
 
 /**
  * Validate Philippine Mobile Number
- * Accepts formats: +63XXXXXXXXXX, 0XXXXXXXXXX
+ * Accepts formats: +639XXXXXXXXX (12 digits after +63), 09XXXXXXXXX (11 digits)
  */
 export function validatePhoneNumber(phone: string): boolean {
-  const phoneRegex = /^(\+63|0)9\d{9}$/;
-  return phoneRegex.test(phone.replace(/\D/g, ''));
+  const sanitized = phone.replace(/\D/g, '');
+  // +639XXXXXXXXX becomes 639XXXXXXXXX (12 digits)
+  // 09XXXXXXXXX (11 digits)
+  const phoneRegex = /^(639|09)\d{9}$/;
+  return phoneRegex.test(sanitized);
 }
 
 /**

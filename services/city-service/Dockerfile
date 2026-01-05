@@ -1,18 +1,14 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
 
-# Copy source and build
 COPY . .
 RUN npm run build
 
-# Clean up
-RUN rm -rf src tsconfig.json
+ENV PORT=3000
+EXPOSE 3000
 
-EXPOSE 3005
-
-CMD ["npm", "start"]
+CMD ["node", "dist/server.js"]

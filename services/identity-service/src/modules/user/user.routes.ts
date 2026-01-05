@@ -20,6 +20,16 @@ router.post(
     userController.registerCitizen(req, res).catch(next)
 );
 
+/**
+ * Register admin user
+ * Protected - only city admins can create admin users
+ */
+router.post(
+  '/admin/register',
+  (req, res, next) =>
+    userController.registerAdminUser(req, res).catch(next)
+);
+
 router.get(
   '/:userId',
   (req, res, next) =>

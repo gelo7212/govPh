@@ -64,7 +64,17 @@ export class IncidentController {
 
   /**
    * GET /incidents/city/:cityCode
-   * Get incidents by city code
+   * Get incidents by city code with filtering and sorting
+   * Query params:
+   *  - search: Search by title or description
+   *  - severity: Filter by severity (low, medium, high)
+   *  - status: Filter by status
+   *  - startDate: Filter by date range start (ISO 8601)
+   *  - endDate: Filter by date range end (ISO 8601)
+   *  - sortBy: Sort field (severity, status, title, createdAt)
+   *  - sortOrder: Sort order (asc, desc) - defaults to desc
+   *  - limit: Results per page (default: 50)
+   *  - skip: Number of results to skip (default: 0)
    */
   async getIncidentsByCity(req: Request, res: Response): Promise<void> {
     try {
@@ -72,12 +82,28 @@ export class IncidentController {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
       const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
 
+      // Extract filter parameters
+      const filters = {
+        search: req.query.search as string | undefined,
+        severity: req.query.severity as string | undefined,
+        status: req.query.status as string | undefined,
+        startDate: req.query.startDate as string | undefined,
+        endDate: req.query.endDate as string | undefined,
+      };
+
+      // Extract sort parameters
+      const sortBy = (req.query.sortBy as string) || 'createdAt';
+      const sortOrder = ((req.query.sortOrder as string) || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';
+
       const incidents = await incidentService.getIncidentsByCity(
         cityCode,
         limit,
-        skip
+        skip,
+        filters,
+        sortBy,
+        sortOrder
       );
-      const total = await incidentService.getIncidentCountByCity(cityCode);
+      const total = await incidentService.getIncidentCountByCity(cityCode, filters);
 
       res.json({
         success: true,
@@ -159,9 +185,18 @@ export class IncidentController {
   async updateIncidentStatus(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status , updatedBy, actorType, reason } = req.body;
 
-      const incident = await incidentService.updateIncidentStatus(id, status);
+      const report = await incidentService.getIncidentById(id);
+      if(!report){
+        res.status(404).json({
+          success: false,
+          message: 'Incident not found',
+        });
+        return;
+      }
+
+      const incident = await incidentService.updateIncidentStatus(id, status, updatedBy, actorType, report.status, reason);
 
       res.json({
         success: true,

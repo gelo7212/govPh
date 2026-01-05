@@ -37,13 +37,39 @@ export class IncidentServiceClient extends BaseClient {
   }
 
   /**
-   * Get incidents by city code
+   * Get incidents by city code with filtering and search
+   * @param cityCode - The city code to filter by
+   * @param filters - Optional filter parameters (search, severity, status, date range, sorting)
+   * @param limit - Number of results to return (default: 50)
+   * @param skip - Number of results to skip (default: 0)
    */
-  async getIncidentsByCity(cityCode: string, limit: number = 50, skip: number = 0): Promise<any> {
+  async getIncidentsByCity(
+    cityCode: string,
+    filters?: {
+      search?: string;
+      severity?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    },
+    limit: number = 50,
+    skip: number = 0
+  ): Promise<any> {
     try {
-      const response = await this.client.get(`/incidents/city/${cityCode}`, {
-        params: { limit, skip },
-      });
+      const params: any = { limit, skip };
+      
+      // Add filter parameters if provided
+      if (filters?.search) params.search = filters.search;
+      if (filters?.severity) params.severity = filters.severity;
+      if (filters?.status) params.status = filters.status;
+      if (filters?.startDate) params.startDate = filters.startDate;
+      if (filters?.endDate) params.endDate = filters.endDate;
+      if (filters?.sortBy) params.sortBy = filters.sortBy;
+      if (filters?.sortOrder) params.sortOrder = filters.sortOrder;
+
+      const response = await this.client.get(`/incidents/city/${cityCode}`, { params });
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -81,9 +107,16 @@ export class IncidentServiceClient extends BaseClient {
   /**
    * Update incident status
    */
-  async updateIncidentStatus(incidentId: string, status: string): Promise<any> {
+  async updateIncidentStatus(
+      incidentId: string,
+      status: string,
+      updatedBy: string,
+      actorType: string,
+      reason: string,
+    ): Promise<any> {
     try {
-      const response = await this.client.patch(`/incidents/${incidentId}/status`, { status });
+      const response = await this.client.patch(`/incidents/${incidentId}/status`, 
+        { status, updatedBy, actorType, reason });
       return response.data;
     } catch (error) {
       return this.handleError(error);

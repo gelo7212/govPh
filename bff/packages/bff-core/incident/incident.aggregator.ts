@@ -43,9 +43,10 @@ export class IncidentAggregator {
   async getIncidentsByCity(
     cityCode: string,
     limit?: number,
+    filters?: any,
     skip?: number
   ): Promise<IncidentResponse<IncidentEntity[]>> {
-    const incidents = await this.incidentClient.getIncidentsByCity(cityCode, limit, skip);
+    const incidents = await this.incidentClient.getIncidentsByCity(cityCode,filters, limit, skip);
     return incidents;
   }
 
@@ -77,9 +78,12 @@ export class IncidentAggregator {
    */
   async updateIncidentStatus(
     incidentId: string,
-    status: IncidentStatus
+    status: IncidentStatus,
+    updatedBy: string,
+    actorType: string,
+    reason: string
   ): Promise<IncidentResponse<IncidentEntity>> {
-    const result = await this.incidentClient.updateIncidentStatus(incidentId, status);
+    const result = await this.incidentClient.updateIncidentStatus(incidentId, status, updatedBy, actorType, reason);
     return result;
   }
 

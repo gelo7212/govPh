@@ -44,7 +44,7 @@ export type IncidentSeverity = 'low' | 'medium' | 'high';
 /**
  * Incident Status
  */
-export type IncidentStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected';
+export type IncidentStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'rejected' | 'for_review' | 'cancelled';
 
 /**
  * Incident Reporter

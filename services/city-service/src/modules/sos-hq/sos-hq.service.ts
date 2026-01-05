@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { ISosHQ } from '../../types';
+import { ISosHQ } from './sos-hq.schema';
 
 export class SosHQService {
   constructor(private sosHQModel: Model<ISosHQ>) {}

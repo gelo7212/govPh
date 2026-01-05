@@ -37,6 +37,9 @@ export class UserService {
         );
       }
 
+      // Generate ID for the new user
+      const userId = new mongoose.Types.ObjectId();
+
       if(user.role === 'CITIZEN') {
         if(!user.phone) {
           throw new Error('Phone number is required for citizen registration');
@@ -51,7 +54,7 @@ export class UserService {
       }
 
       const result = await collection.insertOne({
-        _id: new mongoose.Types.ObjectId(),
+        _id: userId,
         firebaseUid: user.firebaseUid,
         role: user.role,
         email: user.email ? encryptPhone(user.email) : undefined,
@@ -73,12 +76,12 @@ export class UserService {
       }
 
       logger.info('User created', {
-        userId: user.id,
+        userId: userId.toString(),
         firebaseUid: user.firebaseUid,
         role: user.role,
       });
 
-      return user;
+      return { ...user, id: userId.toString() };
     } catch (error) {
       if (error instanceof UserAlreadyExistsError) {
         throw error;
@@ -279,6 +282,28 @@ export class UserService {
     }
   }
 
+  async assignRole(userId: string, role: string): Promise<UserEntity> {
+    try {
+      const collection = getCollection('users');
+      const result = await collection.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $set: { role, updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      );  
+      if (!result?.value) {
+        throw new NotFoundError('User', userId);
+      }
+      return this.mapDocToEntity(result.value);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      logger.error('Failed to assign role to user', error);
+      throw new DatabaseError(
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
   /**
    * Map MongoDB document to UserEntity
    */

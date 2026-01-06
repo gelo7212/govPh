@@ -195,6 +195,27 @@ export class SosServiceClient extends BaseClient {
   }
 
   /**
+   * Create Anonymous Rescuer Identity for SOS
+  */
+  async createAnonRescuer(sosId: string, requestMissionId: string, cityCode: string, context: any) {
+    try {
+       this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+
+      const response = await this.client.post(`/api/sos/${sosId}/anon-rescuer`, {
+        requestMissionId
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
    * Save location snapshot from realtime service
    */
   async saveLocationSnapshot(sosId: string, data: any) {

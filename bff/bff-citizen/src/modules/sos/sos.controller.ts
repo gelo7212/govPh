@@ -39,6 +39,12 @@ export class SosController {
       const result = await this.aggregator.createSosRequest(sosData);
       res.status(201).json(result);
     } catch (error) {
+      if(error instanceof Error && error.message === 'No SOS HQ found near the provided location'){
+        res.status(404).json({ data:{
+           message: 'No SOS HQ found near the provided location'
+          } });
+        return;
+      }
       res.status(400).json({ error: (error as Error).message });
     }
   }
@@ -106,6 +112,39 @@ export class SosController {
       const result = await this.aggregator.updateSosTag(sosId, tag);
       res.json(result);
     } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  async getNearestSosHQ(req: Request, res: Response): Promise<void> {
+    try {
+      const { lat, lng } = req.query;
+      if (!lat || !lng) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required query parameters: lat, lng',
+        });
+        return;
+      }
+      const result = await this.aggregator.getNearestSosHQ(
+        parseFloat(lat as string),
+        parseFloat(lng as string),
+      );
+      if (!result || !result.data) {
+        res.status(404).json({
+          success: false,
+          error: 'No SOS HQ found near the provided location',
+        });
+        return;
+      }
+      res.json(result);
+    } catch (error) {
+      if(error instanceof Error && (error.message === 'No SOS HQ found near the provided location' || error.message.includes('No SOS HQ found nearby'))){
+        res.status(404).json({ data:{
+           message: 'No SOS HQ found near the provided location'
+          } });
+        return;
+      }
       res.status(400).json({ error: (error as Error).message });
     }
   }

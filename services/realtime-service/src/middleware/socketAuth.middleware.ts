@@ -30,14 +30,27 @@ export const socketAuthMiddleware = (socket: Socket, next: Function) => {
     }
 
     // Attach user data to socket
-    (socket as any).userId = decoded.identity.userId;
+    let userId = decoded.identity.userId;
+    if(decoded.actor?.type === 'ANON'){
+      if(decoded.identity.role === 'CITIZEN'){
+        userId = 'Citizen-Anon';
+      }
+      else if(decoded.identity.role === 'RESCUER'){
+        if(decoded.mission?.sosId){
+          userId = `Rescuer-Anon-${decoded.mission.sosId}`;
+        }else{
+          throw new Error('AUTHENTICATION_ERROR: Missing sosId for ANON RESCUER');
+        }
+      }
+    }
+    (socket as any).userId = userId;
     (socket as any).sosId = decoded.mission?.sosId;
     (socket as any).role = decoded.identity.role;
     (socket as any).cityCode = decoded.actor.cityCode;
 
     logger.info('Socket authenticated', {
       socketId: socket.id,
-      userId: decoded.identity.userId,
+      userId: userId,
     });
 
     next();

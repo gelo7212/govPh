@@ -3,9 +3,10 @@ import { SosController } from './sos.controller';
 import { SosAggregator } from './sos.aggregator';
 import { MessageController } from './sos.message.controller';
 import { MessageAggregator } from './sos.message.aggregator';
-import { SosServiceClient, UserContext } from '@gov-ph/bff-core';
+import { CityServiceClient, RealtimeServiceClient, SosServiceClient, UserContext } from '@gov-ph/bff-core';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema } from '../../utils/validators';
 import { authContextMiddleware } from '../../middlewares/authContext';
+import createSosParticipantsRoutes from './sos.participants.routes';
 
 export const sosRoutes = Router();
 
@@ -19,8 +20,12 @@ sosRoutes.options('/:sosId/tag', (req, res) => res.sendStatus(200));
 sosRoutes.options('/:sosId/messages', (req, res) => res.sendStatus(200));
 
 // Initialize SOS dependencies
+const realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || 'http://govph-realtime:3000';
+const realtimeClient = new RealtimeServiceClient(realtimeServiceUrl);
 const sosClient = new SosServiceClient(process.env.SOS_SERVICE_URL || 'http://govph-sos:3000');
-const sosAggregator = new SosAggregator(sosClient);
+const cityServiceUrl = process.env.CITY_SERVICE_URL || 'http://govph-city:3000';
+const cityServiceClient = new CityServiceClient(cityServiceUrl);
+const sosAggregator = new SosAggregator(sosClient, realtimeClient, cityServiceClient);
 const sosController = new SosController(sosAggregator);
 
 const messageAggregator = new MessageAggregator(sosClient);
@@ -52,3 +57,17 @@ sosRoutes.get('/:sosId/messages',authContextMiddleware, (req, res) => messageCon
  * GET /message/:messageId
  */
 sosRoutes.get('/message/:messageId',authContextMiddleware, (req, res) => messageController.getMessage(req, res));
+
+/**
+ * Get nearby SOS HQs based on coordinates
+ * GET /sos/nearest/location?lat={latitude}&lng={longitude}
+*/
+sosRoutes.get(
+  '/nearest/location',
+  authContextMiddleware,
+  (req: Request, res: Response) => sosController.getNearestSosHQ(req, res),
+);
+
+// Participant Routes - nested under SOS
+const participantsRoutes = createSosParticipantsRoutes();
+sosRoutes.use('/:sosId/participants', participantsRoutes);

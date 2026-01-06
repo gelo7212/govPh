@@ -9,8 +9,8 @@ export interface ISosHQ extends Document {
   contactNumber?: string;
   address?: string;
   location: {
-    lat: number;
-    lng: number;
+    type: 'Point';
+    coordinates: [number, number];
   };
   coverageRadiusKm?: number;
   supportedDepartmentCodes: string[];
@@ -70,8 +70,15 @@ export const SosHQSchema = new Schema(
     },
 
     location: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+      },
     },
 
     coverageRadiusKm: {
@@ -111,3 +118,6 @@ export const SosHQSchema = new Schema(
     collection: 'sos_headquarters',
   },
 );
+
+// Create geospatial index for location queries
+SosHQSchema.index({ location: '2dsphere' });

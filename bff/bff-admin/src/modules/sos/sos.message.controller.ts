@@ -21,6 +21,7 @@ export class MessageController {
       const { sosId } = req.params;
       const userId = req.context?.user?.id || req.context?.user?.userId;
       const userRole = req.context?.user?.role;
+      const userActor = req.context?.user?.actor?.type;
 
       if (!sosId) {
         res.status(400).json({
@@ -29,13 +30,14 @@ export class MessageController {
         });
         return;
       }
-
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          error: 'Unauthorized - User ID required',
-        });
-        return;
+      if(userActor !== 'ANON') {
+        if (!userId) {
+          res.status(401).json({
+            success: false,
+            error: 'Unauthorized - User ID required',
+          });
+          return;
+        }
       }
 
       const { senderDisplayName, contentType, content } = req.body;

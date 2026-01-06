@@ -46,11 +46,11 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       actorType,
     });
     // Check if this is an anonymous actor (citizen or rescuer)
-    const isAnonymousWithoutCity =
+    const isAnonymous =
       actorType === 'ANON' &&
       (userRole === UserRole.CITIZEN || userRole === UserRole.RESCUER);
 
-    if(isAnonymousWithoutCity){
+    if(isAnonymous){
       req.user = {
         id: undefined,
         role: userRole as UserRole,
@@ -90,7 +90,7 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
       };
     }
 
-    next();
+    return next();
   } catch (error) {
     res.status(500).json({ error: 'Role guard validation failed' });
   }

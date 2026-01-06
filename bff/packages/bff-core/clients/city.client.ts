@@ -422,6 +422,24 @@ export class CityServiceClient extends BaseClient {
     }
   }
 
+  /**
+   * Get nearest SOS HQs based on coordinates
+   * GET /api/sos-hq/nearest?lat=xxx&lng=yyy
+   */
+  async getNearestSosHQ(
+    lat: number,
+    lng: number,
+  ): Promise<SosHQResponse<SosHQData>> {
+    try {
+      const response = await this.client.get('/api/sos-hq/nearest/location', {
+        params: { lat, lng },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   // ==================== City Config ====================
 
   /**

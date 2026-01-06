@@ -200,8 +200,8 @@ export class SOSController {
    * Send Message (CITIZEN or ADMIN)
    */
   async sendMessage(req: Request, res: Response): Promise<void> {
-    if (!req.user || (req.user.role !== UserRole.CITIZEN && req.user.role !== UserRole.APP_ADMIN && req.user.role !== UserRole.CITY_ADMIN && req.user.role !== UserRole.SOS_ADMIN)) {
-      throw new ForbiddenError('Only citizens and admins can send messages');
+    if (!req.user || (req.user.role !== UserRole.CITIZEN && req.user.role !== UserRole.APP_ADMIN && req.user.role !== UserRole.CITY_ADMIN && req.user.role !== UserRole.SOS_ADMIN && req.user.role !== UserRole.RESCUER)) {
+      throw new ForbiddenError('Only citizens, rescuers and admins can send messages');
     }
 
     const { sosId } = req.params;
@@ -305,41 +305,60 @@ export class SOSController {
    * Internal endpoint - no auth check needed (internal service call)
    */
   async saveLocationSnapshot(req: Request, res: Response): Promise<void> {
-    const { sosId } = req.params;
-    const { latitude, longitude, accuracy , address} = req.body;
-    const cityId = req.headers['x-city-id'] as string;
-    const deviceId = req.headers['x-device-id'] as string;
-    
-    if( !deviceId ) {
-      throw new ValidationError('Missing deviceId in headers');
-    }
+    try {
+      const { sosId } = req.params;
+      const { latitude, longitude, accuracy , address} = req.body;
+      const cityId = req.headers['x-city-id'] as string;
+      const deviceId = req.headers['x-device-id'] as string;
+      
+      if( !deviceId ) {
+        throw new ValidationError('Missing deviceId in headers');
+      }
 
-    if (!sosId || latitude === undefined || longitude === undefined || address === undefined) {
-      throw new ValidationError(
-        'Missing required fields: sosId, latitude, longitude, address'
-      );
-    }
+      if (!sosId || latitude === undefined || longitude === undefined) {
+        throw new ValidationError(
+          'Missing required fields: sosId, latitude, longitude'
+        );
+      }
 
-    if(address.city === undefined || address.barangay === undefined) {
-      throw new ValidationError(
-        'Address must include city and barangay'
-      );
-    }
+      if(address === undefined) {
+        console.log('Saving location snapshot without address');
+        const result = await this.sosService.saveLocationSnapshot(sosId, {
+          latitude,
+          longitude,
+          accuracy: accuracy || 0,
+          deviceId,
+        }, cityId);
+        res.status(200).json({
+          success: true,
+          data: result,
+          timestamp: new Date(),
+        });
+        return;
+      }
 
-    // Save location snapshot without citizen auth check
-    // (called internally from realtime service)
-    const result = await this.sosService.saveLocationSnapshot(sosId, {
-      latitude,
-      longitude,
-      accuracy: accuracy || 0,
-      address,
-      deviceId,
-    }, cityId);
-    res.status(200).json({
-      success: true,
-      data: result,
-      timestamp: new Date(),
-    });
+      // Save location snapshot without citizen auth check
+      // (called internally from realtime service)
+      const result = await this.sosService.saveLocationSnapshot(sosId, {
+        latitude,
+        longitude,
+        accuracy: accuracy || 0,
+        address,
+        deviceId,
+      }, cityId);
+      res.status(200).json({
+        success: true,
+        data: result,
+        timestamp: new Date(),
+      });
+      return;
+    } catch (error) {
+      console.error('Error saving location snapshot', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   /**
@@ -357,6 +376,21 @@ export class SOSController {
     res.status(200).json({
       success: true,
       data: updatedSOS,
+      timestamp: new Date(),
+    });
+  }
+
+  async createAnonRescuer(req: Request, res: Response): Promise<void> {
+ 
+    const { sosId } = req.params;
+    const { requestMissionId } = req.body; 
+    const cityCode = req.headers['x-city-code'] as string;
+    const token = await this.sosService.createAnonRescuer(sosId, requestMissionId, cityCode);
+
+    res.status(201).json({
+      success: true,
+      data: token,
+      message: 'Anon rescuer created',
       timestamp: new Date(),
     });
   }

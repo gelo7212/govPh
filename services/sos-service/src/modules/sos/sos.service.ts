@@ -1,5 +1,6 @@
 import { SOSRepository } from './sos.repository';
 import { SOS } from './sos.model';
+import { identityClient } from '../../services/identity.client';
 
 export class SOSService {
   constructor(private repository: SOSRepository) {}
@@ -82,7 +83,20 @@ export class SOSService {
   async saveLocationSnapshot(sosId: string, location: any, cityId: string): Promise<SOS> {
     // Save location with timestamp for audit trail
     try {
+      if(cityId === undefined){
+        throw new Error('City ID is required to save location snapshot');
+      }
+      if(location.address == undefined || location.address === null ){
         return await this.repository.update(cityId, sosId, {
+          lastKnownLocation: {
+            type: 'Point',
+            coordinates: [location.longitude, location.latitude],
+          },
+          lastLocationUpdate: new Date(),
+        });
+      }
+      
+      return await this.repository.update(cityId, sosId, {
         lastKnownLocation: {
           type: 'Point',
           coordinates: [location.longitude, location.latitude],
@@ -114,4 +128,17 @@ export class SOSService {
   async deleteSOS(id: string, cityId: string): Promise<void> {
     await this.repository.delete(id, cityId);
   }
+
+  async createAnonRescuer(sosId: string, requestMissionId: string, cityCode: string): Promise<string | null> {
+    console.log(`Creating anon rescuer for SOS ${sosId} with mission ${requestMissionId} in city ${cityCode}`)
+
+    const token = await identityClient.generateRescuerSosToken(sosId, requestMissionId, cityCode);
+    if (token) {
+        console.log(`Generated Anon Rescuer SOS Token: ${token}`); 
+    } else {
+        console.error('Failed to generate Anon Rescuer SOS Token');
+    }
+    return token
+  }
+  
 }

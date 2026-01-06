@@ -1,30 +1,69 @@
 import { ParticipantRepository } from './participant.repository';
 import { SosParticipant } from './participant.model';
 import { Types } from 'mongoose';
+import RealtimeServiceClient from '../../services/realtime-service.client';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('SosParticipantService');
 
 export class SosParticipantService {
-  constructor(private repository: ParticipantRepository) {}
+  private realtimeClient: RealtimeServiceClient;
+
+  constructor(private repository: ParticipantRepository) {
+    this.realtimeClient = new RealtimeServiceClient();
+  }
 
   /**
    * Create a new participant record when user joins SOS
    */
   async joinSos(
     sosId: string,
-    userType: 'admin' | 'rescuer',
-    userId: Types.ObjectId,
+    userType: 'admin' | 'rescuer' | 'citizen',
+    userId?: Types.ObjectId,
+    actorType?: string,
   ): Promise<SosParticipant> {
-    return await this.repository.create({
+    // Save to DB
+    const participant = await this.repository.create({
       sosId,
       userType,
       userId,
+      actorType,
     });
+
+    // Notify realtime service to broadcast to connected clients
+    try {
+      await this.realtimeClient.broadcastParticipantJoined({
+        sosId,
+        userId: userId?.toString() || '',
+        userType,
+        joinedAt: participant.joinedAt,
+      });
+    } catch (error) {
+      logger.error('Failed to notify realtime service of participant join', error);
+      // Continue - participant is already saved in DB
+    }
+
+    return participant;
   }
 
   /**
    * Mark user as left from SOS
    */
   async leaveSos(sosId: string, userId: Types.ObjectId): Promise<void> {
+    // Remove from DB
     await this.repository.markAsLeft(sosId, userId);
+
+    // Notify realtime service to broadcast to connected clients
+    try {
+      await this.realtimeClient.broadcastParticipantLeft({
+        sosId,
+        userId: userId.toString(),
+        leftAt: new Date(),
+      });
+    } catch (error) {
+      logger.error('Failed to notify realtime service of participant leave', error);
+      // Continue - participant is already removed from DB
+    }
   }
 
   /**

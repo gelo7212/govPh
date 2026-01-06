@@ -17,6 +17,17 @@ export class MessageController {
       if(!sosId){
         throw new Error('sosId is required');
       }
+      
+      if(senderType === 'SOS_ADMIN'){
+        if(!senderId){
+          res.status(400).json({
+            success: false,
+            message:
+              'Missing required field: senderId for senderType SOS_ADMIN',
+          });
+          return;
+        }
+      }
 
       if (!senderType || !content) {
         res.status(400).json({
@@ -27,6 +38,7 @@ export class MessageController {
         return;
       }
 
+      
       const message = await this.messageService.sendMessage({
         sosId,
         senderType,

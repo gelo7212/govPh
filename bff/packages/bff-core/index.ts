@@ -5,6 +5,7 @@ export {
   BaseClient,
   IdentityServiceClient,
   SosServiceClient,
+  ParticipantsServiceClient,
   GeoServiceClient,
   IncidentServiceClient,
   RealtimeServiceClient,
@@ -17,6 +18,7 @@ export {
  */
 export { IdentityAggregator } from './identity/identity.aggregator';
 export { SosAggregator } from './sos/sos.aggregator';
+export { ParticipantsAggregator } from './sos/participants.aggregator';
 export { MessageAggregator } from './sos/message.aggregator';
 export { GeoAggregator } from './geo/geo.aggregator';
 export { IncidentAggregator } from './incident/incident.aggregator';

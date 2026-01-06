@@ -254,6 +254,15 @@ export class CityAggregator {
   async deactivateSosHQ(id: string): Promise<SosHQResponse<SosHQData>> {
     return this.cityClient.deactivateSosHQ(id);
   }
+  /**
+   * Get Nearby SOS HQs based on coordinates
+   */
+  async getNearestSosHQ(
+    latitude: number,
+    longitude: number,
+  ): Promise<SosHQResponse<SosHQData>> {
+    return this.cityClient.getNearestSosHQ(latitude, longitude);
+  }
 
   // ==================== City Config Operations ====================
 

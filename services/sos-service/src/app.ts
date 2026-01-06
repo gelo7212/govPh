@@ -9,7 +9,7 @@ import sosRoutes from './modules/sos/sos.routes';
 import rescuerRoutes from './modules/rescuer/rescuer.routes';
 import dispatchRoutes from './modules/dispatch/dispatch.routes';
 import messageRoutes from './modules/messages/message.routes';
-
+import participantRoutes from './modules/sos_participants/participant.routes';
 const logger = createLogger('App');
 
 const app: Express = express();
@@ -33,6 +33,7 @@ app.use('/api/sos', sosRoutes);
 app.use('/api/sos/:sosId/messages', messageRoutes);
 app.use('/api/rescuer', rescuerRoutes);
 app.use('/api/internal/dispatch', dispatchRoutes);
+app.use('/api/sos/:sosId/participants', participantRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

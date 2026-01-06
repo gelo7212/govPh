@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { IdentityController } from './identity.controller';
 import { IdentityAggregator } from './identity.aggregator';
-import { GeoAggregator, GeoServiceClient, IdentityServiceClient, SosAggregator, SosServiceClient } from '@gov-ph/bff-core';
+import { GeoAggregator, GeoServiceClient, IdentityServiceClient, RealtimeServiceClient, SosAggregator, SosServiceClient } from '@gov-ph/bff-core';
 import { authContextMiddleware } from '../../middlewares/authContext';
 export const identityRoutes = Router();
 
 
 // Initialize dependencies
 const sosClient = new SosServiceClient(process.env.SOS_SERVICE_URL || 'http://govph-sos:3000');
-const sosAggregator = new SosAggregator(sosClient);
+const realtimeClient = new RealtimeServiceClient(process.env.REALTIME_SERVICE_URL || 'http://govph-realtime:3000');
+const sosAggregator = new SosAggregator(sosClient, realtimeClient);
 const geoClient = new GeoServiceClient(process.env.GEO_SERVICE_URL || 'http://govph-geo:3000');
 const geoAggregator = new GeoAggregator(geoClient);
 

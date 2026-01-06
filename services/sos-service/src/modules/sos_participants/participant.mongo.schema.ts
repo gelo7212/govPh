@@ -6,6 +6,7 @@ export interface ISosParticipant extends Document {
   userId: Types.ObjectId;
   joinedAt: Date;
   leftAt?: Date | null;
+  actorType?: string;
 }
 
 const sosParticipantSchema = new Schema<ISosParticipant>(
@@ -14,14 +15,18 @@ const sosParticipantSchema = new Schema<ISosParticipant>(
       type: String,
       required: true,
     },
+    actorType:{
+      type: String,
+      required: false,
+    },
     userType: {
       type: String,
-      enum: ['admin', 'rescuer'],
+      enum: ['admin', 'rescuer', 'citizen'],
       required: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
-      required: true,
+      required: false,
     },
     joinedAt: {
       type: Date,

@@ -112,4 +112,13 @@ export class SosAggregator {
     const result = await this.realtimeClient.getSOSNearbyLocation(lat, lon, radiusMeters);
     return result;
   }
+
+  async createAnonRescuer(sosId: string, requestMissionId: string, cityCode: string, context: any): Promise<any> {
+    const result = await this.sosClient.createAnonRescuer(sosId, requestMissionId, cityCode, context);
+    return result;
+  }
+  async getSosState(sosId: string): Promise<any> {
+    const state = await this.realtimeClient.getSosState(sosId);
+    return state;
+  }
 }

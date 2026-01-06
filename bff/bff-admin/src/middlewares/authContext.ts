@@ -33,9 +33,13 @@ export async function authContextMiddleware(
         email: decodedToken.identity?.email || decodedToken.email,
         role: decodedToken.identity?.role,
         firebaseUid: decodedToken.identity?.firebaseUid,
-        actor: decodedToken.actor,
-        
+        actor: decodedToken.actor,   
+        sosAnonSosId: undefined,     
       };
+
+      if(decodedToken.identity?.actor?.type === 'ANON'){
+        user.sosAnonSosId = decodedToken.mission.sosId;
+      }
 
       const role = decodedToken.identity?.role;
       if(role !== 'SOS_ADMIN' && role !== 'RESCUER' && role !=='SK_YOUTH_ADMIN' && role !== 'APP_ADMIN' && role !== 'CITY_ADMIN'){

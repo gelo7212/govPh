@@ -78,4 +78,13 @@ router.post(
     sosHQController.deactivate(req, res).catch(next),
 );
 
+/**
+ * Get Nearby SOS HQs based on coordinates
+ */
+router.get(
+  '/nearest/location',
+  (req, res, next) =>
+    sosHQController.getNearestSosHQ(req, res).catch(next),
+);
+
 export default router;

@@ -1,4 +1,4 @@
-import { SosServiceClient, RealtimeServiceClient } from '@gov-ph/bff-core';
+import { SosServiceClient, RealtimeServiceClient, CityServiceClient } from '@gov-ph/bff-core';
 
 /**
  * SOS Aggregator - Orchestrates SOS operations
@@ -8,10 +8,12 @@ import { SosServiceClient, RealtimeServiceClient } from '@gov-ph/bff-core';
 export class SosAggregator {
   private sosClient: SosServiceClient;
   private realtimeClient: RealtimeServiceClient;
+  private cityServiceClient: CityServiceClient;
 
-  constructor(sosClient: SosServiceClient, realtimeClient?: RealtimeServiceClient) {
+  constructor(sosClient: SosServiceClient, realtimeClient: RealtimeServiceClient, cityServiceClient: CityServiceClient) {
     this.sosClient = sosClient;
     this.realtimeClient = realtimeClient || new RealtimeServiceClient();
+    this.cityServiceClient = cityServiceClient || new CityServiceClient(process.env.CITY_SERVICE_URL || 'http://govph-city:3000');
   }
 
   /**
@@ -23,6 +25,13 @@ export class SosAggregator {
     // Step 1: Create SOS in database
     // Step 2: Initialize realtime context (Redis + socket rooms)
     try {
+
+      //check if city is registered for SOS by location radius
+      const city = await this.cityServiceClient.getNearestSosHQ(data.location.latitude, data.location.longitude);
+      if(!city || !city.data || !city.data._id){
+        throw new Error('No SOS HQ found near the provided location');
+      }
+
       const sosResult = await this.sosClient.createSosRequest(data);
       const realtimeResult = await this.realtimeClient.initSosContext(
         sosResult.data.id,
@@ -38,6 +47,9 @@ export class SosAggregator {
     } catch (error) {
       // Log error but don't fail the SOS creation
       console.error('Failed to initialize realtime context:', error);
+      if(error instanceof Error && (error.message === 'No SOS HQ found nearby' || error.message === 'No SOS HQ found near the provided location')){
+        throw error;
+      }
       return {
         sosResult: null,
         realtimeInitialized: false,
@@ -112,6 +124,11 @@ export class SosAggregator {
 
   async updateSosTag(sosId: string, tag: string) {
     const result = await this.sosClient.updateTag(sosId, tag);
+    return result;
+  }
+
+  async getNearestSosHQ(latitude: number, longitude: number): Promise<any> {
+    const result = await this.cityServiceClient.getNearestSosHQ(latitude, longitude);
     return result;
   }
 }

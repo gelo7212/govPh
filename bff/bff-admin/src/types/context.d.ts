@@ -10,6 +10,7 @@ export interface User {
   actor?: Actor;
   identity?: Identity;
   firebaseUid?: string; // Firebase UID from identity.firebaseUid
+  sosAnonSosId?: string; // SOS ID for anonymous users
 }
 
 export interface Actor {

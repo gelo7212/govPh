@@ -16,6 +16,9 @@ export const authConfig = {
     
     // Refresh token validity: 7 days
     refreshTokenExpiry: 7 * 24 * 60 * 60, // seconds :: 7 days
+
+    // Access token validity for anonymous rescuers: 7 days
+    anonRescuerAccessTokenExpiry: 1 * 24 * 60 * 60, // seconds :: 1 days
   },
 
   // Get JWT private key for signing (RS256)

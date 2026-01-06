@@ -6,6 +6,8 @@ import { MessageAggregator } from './sos.message.aggregator';
 import { SosServiceClient, UserContext } from '@gov-ph/bff-core';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema } from '../../utils/validators';
 import { authContextMiddleware } from '../../middlewares/authContext';
+import { requireActor } from '../../middlewares/requireActor';
+import createSosParticipantsRoutes from './sos.participants.routes';
 
 export const sosRoutes = Router();
 
@@ -27,12 +29,15 @@ const messageAggregator = new MessageAggregator(sosClient);
 const messageController = new MessageController(messageAggregator);
 
 // Routes
-sosRoutes.get('/:sosId',authContextMiddleware, (req, res) => sosController.getSosRequest(req, res));
-sosRoutes.get('/user/requests',authContextMiddleware, (req, res) => sosController.getUserSosRequests(req, res));
-sosRoutes.get('/citizen/active',authContextMiddleware, (req, res) => sosController.getActiveSosByCitizen(req, res));
-sosRoutes.put('/:sosId/tag',authContextMiddleware, (req, res) => sosController.updateSosTag(req, res));
-sosRoutes.post('/:sosId/close',authContextMiddleware, (req, res) => sosController.closeSosRequest(req, res));
-sosRoutes.get('/states/nearby',authContextMiddleware, (req: Request, res: Response) => sosController.getNearbySOSStates(req, res));  
+sosRoutes.get('/:sosId',authContextMiddleware, requireActor('USER','ANON'), (req, res) => sosController.getSosRequest(req, res));
+sosRoutes.get('/user/requests',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getUserSosRequests(req, res));
+sosRoutes.get('/citizen/active',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getActiveSosByCitizen(req, res));
+sosRoutes.put('/:sosId/tag',authContextMiddleware, requireActor('USER'), (req, res) => sosController.updateSosTag(req, res));
+sosRoutes.post('/:sosId/close',authContextMiddleware,requireActor('USER'), (req, res) => sosController.closeSosRequest(req, res));
+sosRoutes.get('/states/nearby',authContextMiddleware,requireActor('USER'), (req: Request, res: Response) => sosController.getNearbySOSStates(req, res)); 
+sosRoutes.get('/:sosId/state',authContextMiddleware,requireActor('USER','ANON'), (req: Request, res: Response) => sosController.getSosState(req, res));
+sosRoutes.post('/:sosId/anon-rescuer',authContextMiddleware,requireActor('USER'), (req: Request, res: Response) => sosController.createAnonRescuer(req, res));
+
 // Message Routes - nested under SOS
 /**
  * Send a message to an SOS conversation
@@ -51,3 +56,7 @@ sosRoutes.get('/:sosId/messages',authContextMiddleware, (req, res) => messageCon
  * GET /message/:messageId
  */
 sosRoutes.get('/message/:messageId',authContextMiddleware, (req, res) => messageController.getMessage(req, res));
+
+// Participant Routes - nested under SOS
+const participantsRoutes = createSosParticipantsRoutes();
+sosRoutes.use('/:sosId/participants', participantsRoutes);

@@ -14,6 +14,7 @@ import { JwtPayload, TokenResponse, TokenValidationResult, UserRole, ActorType, 
 import { authConfig } from '../../config/auth';
 import { RevokedTokenModel } from './auth.mongo.schema';
 import { createLogger } from '../../utils/logger';
+import mongoose from 'mongoose';
 
 const logger = createLogger('AuthService');
 
@@ -174,12 +175,16 @@ export class AuthService {
    */
   static generateAnonRescuerToken(
     sosId: string,
-    rescuerMissionId: string,
+    rescuerMissionId: string | undefined,
     scopes: string[],
     cityCode?: string,
   ): string {
+    const uuid = crypto.randomUUID();
     const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
-      // No identity block (no pre-existing rescuer identity)
+      identity: {
+        role: 'RESCUER',
+        userId: new mongoose.Types.ObjectId().toString(), // Random userId for tracking
+      },
       actor: {
         type: 'ANON',
         cityCode : cityCode || 'UNKNOWN',
@@ -192,7 +197,7 @@ export class AuthService {
       tokenType: 'access',
     };
 
-    return this.generateAccessToken(basePayload);
+    return this.generateAccessToken(basePayload, authConfig.jwt.anonRescuerAccessTokenExpiry);
   }
 
   /**

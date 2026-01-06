@@ -15,7 +15,7 @@ export interface TokenIdentity {
  * JWT Token Actor Information
  */
 export interface TokenActor {
-  type: 'USER' | 'SERVICE' | 'SYSTEM';
+  type: 'USER' | 'SERVICE' | 'SYSTEM' | 'ANON';
   cityCode: string;
 }
 export interface MissionContext {

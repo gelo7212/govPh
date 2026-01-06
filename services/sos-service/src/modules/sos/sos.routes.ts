@@ -67,4 +67,8 @@ router.post('/:sosId/location-snapshot', (req, res, next) =>
   controller.saveLocationSnapshot(req, res).catch(next)
 );
 
+// Create anonymous rescuer identity for SOS
+router.post('/:sosId/anon-rescuer', (req, res, next) =>
+  controller.createAnonRescuer(req, res).catch(next)
+);
 export default router;

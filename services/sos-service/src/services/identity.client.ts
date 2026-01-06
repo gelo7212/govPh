@@ -14,7 +14,8 @@ export class IdentityClient {
   private identityServiceUrl: string;
 
   constructor() {
-    this.identityServiceUrl = process.env.IDENTITY_SERVICE_URL || 'http://localhost:3000';
+    this.identityServiceUrl = process.env.IDENTITY_SERVICE_URL || 'http://govph-identity:3000';
+    console.log(`Identity Service URL: ${this.identityServiceUrl}`);
   }
 
   /**
@@ -52,6 +53,51 @@ export class IdentityClient {
   async citizenExists(citizenId: string): Promise<boolean> {
     const citizen = await this.getCitizenInfo(citizenId);
     return citizen !== null;
+  }
+
+  /**
+   * Generate Anon Rescuer SOS token
+   * @param rescuerId - The ID of the rescuer
+   * @returns token string
+   */
+  async generateRescuerSosToken(sosId: string, requestMissionId: string, cityCode: string): Promise<string | null> {
+    try {
+      /*
+      request body
+       contextType
+        sosId
+        requestMissionId
+        cityCode
+        api rsponse
+            {
+              success: true,
+              data: token,
+              timestamp: new Date(),
+            } 
+      */
+      const response = await fetch(`${this.identityServiceUrl}/auth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contextType: 'ANON_RESCUER',
+          sosId,
+          requestMissionId,
+          cityCode,
+        }),
+      });
+      if (!response.ok) {
+        console.error(`Failed to generate rescuer SOS token: ${response.statusText}`);
+        return null;
+      }
+      const data = await response.json() as { data: string };
+      return data.data as string;
+    }
+    catch (error) {
+      console.error('Error generating rescuer SOS token:', error);
+      return null;
+    }
   }
 }
 

@@ -11,7 +11,7 @@ export const registerSOSEvents = (io: Server, socket: Socket): void => {
    */
   socket.on(SOCKET_EVENTS.SOS_INIT, async (data: any) => {
     try {
-      const userId = (socket as any).userId;
+      const userId = (socket as any).userId || 'Rescuer-Unknown';
       const sosId = data.sosId;
 
       if (!sosId) {

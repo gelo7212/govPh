@@ -77,9 +77,6 @@ services:
     container_name: govph-bff-admin
     networks:
       - govph-network
-    depends_on:
-      city-service:
-        condition: service_healthy
     # Internal only - accessed via Kong gateway
     # ports:
     #   - "3004:3000"
@@ -95,7 +92,7 @@ services:
       SOS_SERVICE_URL: "http://govph-sos:3000"
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
       INCIDENT_MS_URL: "http://govph-incident:3000"
-      CITY_SERVICE_URL: "http://govph-city:3000"
+      CITY_SERVICE_URL: "http://govph-city:3000"  
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
 
@@ -111,6 +108,7 @@ services:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3000
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
+      IDENTITY_SERVICE_URL: "http://govph-identity:3000"
 
   identity-service:
     build: ./services/identity-service

@@ -8,14 +8,16 @@ import { Types } from 'mongoose';
 export class ParticipantRepository {
   async create(data: {
     sosId: string;
-    userType: 'admin' | 'rescuer';
-    userId: Types.ObjectId;
+    userType: 'admin' | 'rescuer' | 'citizen';
+    userId?: Types.ObjectId;
+    actorType?: string;
   }): Promise<SosParticipant> {
     const participant = await SosParticipantModel.create({
       sosId: data.sosId,
       userType: data.userType,
       userId: data.userId,
       joinedAt: new Date(),
+      actorType: data.actorType,
     });
     return this.mapToDTO(participant);
   }
@@ -72,6 +74,7 @@ export class ParticipantRepository {
       userId: participant.userId,
       joinedAt: participant.joinedAt,
       leftAt: participant.leftAt,
+      actorType: participant.actorType,
     };
   }
 }

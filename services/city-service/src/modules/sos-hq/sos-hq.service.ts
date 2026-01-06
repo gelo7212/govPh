@@ -114,4 +114,25 @@ export class SosHQService {
     }
     return this.sosHQModel.find(query).lean().exec();
   }
+
+  async getNearestSosHQ(
+    latitude: number,
+    longitude: number,
+    maxDistanceKm: number = 6,
+  ): Promise<ISosHQ | null> {
+    const query: any = {
+      isActive: true,
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude], // Note: GeoJSON uses [longitude, latitude]
+          },
+          $maxDistance: maxDistanceKm * 1000, // Convert km to meters
+        },
+      },
+    };
+
+    return this.sosHQModel.findOne(query).lean().exec();
+  }
 }

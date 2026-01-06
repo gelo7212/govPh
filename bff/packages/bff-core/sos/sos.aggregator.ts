@@ -1,4 +1,4 @@
-import { SosServiceClient } from '../clients';
+import { RealtimeServiceClient, SosServiceClient } from '../clients';
 import { CreateSosRequest, SosRequest, SosResponse } from '../types';
 
 /**
@@ -6,7 +6,7 @@ import { CreateSosRequest, SosRequest, SosResponse } from '../types';
  * Handles SOS request management across all BFF services
  */
 export class SosAggregator {
-  constructor(private sosClient: SosServiceClient) {}
+  constructor(private sosClient: SosServiceClient, private realtimeClient: RealtimeServiceClient) {}
 
   /**
    * Create a new SOS request
@@ -110,4 +110,16 @@ export class SosAggregator {
     const updated = await this.sosClient.updateTag(sosId, tag);
     return updated;
   } 
+
+  /**
+   * Create anonymous rescuer identity for SOS
+   */
+  async createAnonRescuer(sosId: string, requestMissionId: string, cityCode: string, context: any): Promise<void> {
+    await this.sosClient.createAnonRescuer(sosId, requestMissionId, cityCode, context);
+  }
+
+  async getSosState(sosId: string): Promise<SosResponse> {
+    const state = await this.realtimeClient.getSosState(sosId);
+    return state;
+  }
 }

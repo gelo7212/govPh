@@ -7,4 +7,5 @@ export interface SosParticipant {
   userId: Types.ObjectId;
   joinedAt: Date;
   leftAt?: Date | null;
+  actorType?: string;
 }

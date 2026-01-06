@@ -6,6 +6,7 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import sosRoutes from './modules/sos/sos.routes';
 import createMessagingRoutes from './modules/messaging/messaging.routes';
+import { createParticipantsRoutes } from './modules/participants/participants.routes';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ export const createApp = (io?: SocketIOServer): Express => {
   app.use('/internal/realtime/sos', sosRoutes);
   if (io) {
     app.use('/internal/messaging', createMessagingRoutes(io));
+    app.use('/internal/participants', createParticipantsRoutes(io));
   }
 
   // 404 handler

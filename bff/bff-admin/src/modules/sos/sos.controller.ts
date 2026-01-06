@@ -10,6 +10,16 @@ export class SosController {
 
   async getSosRequest(req: Request, res: Response): Promise<void> {
     try {
+      const user = req.context?.user;
+      const isAnon = user?.actor?.type === 'ANON';
+      if(isAnon){
+        const anonSosId = user?.sosAnonSosId;
+        if(!anonSosId || anonSosId !== req.params.sosId){
+          res.status(403).json({ error: 'FORBIDDEN: ANON actor can only access their own SOS request' });
+          return;
+        }
+      }
+      
       const { sosId } = req.params;
       const result = await this.aggregator.getSosRequest(sosId);
       res.json(result);
@@ -100,5 +110,41 @@ export class SosController {
         error: 'Failed to retrieve nearby SOS states',
       });
     }
+  }
+  async getSosState(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const state = await this.aggregator.getSosState(sosId);
+      res.status(200).json({
+        success: true,
+        data: state.data,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve SOS state',
+      });
+    }
+  }
+
+  async createAnonRescuer(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const { requestMissionId, cityCode } = req.body;
+      const userContext = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const token = await this.aggregator.createAnonRescuer(sosId, requestMissionId, cityCode, userContext);
+      if(!token){
+        throw new Error('Failed to create anonymous rescuer identity');
+      }
+
+      res.status(201).json({ success: true , data: {token: token}, message: 'Anonymous Rescuer Identity created successfully' });
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    } 
   }
 }

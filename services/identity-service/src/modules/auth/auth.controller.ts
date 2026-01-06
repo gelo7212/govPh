@@ -145,6 +145,7 @@ export class AuthController {
       );
 
       logger.info(`Generated token pair for user ${userId}`);
+      return;
     } catch (error) {
       next(error);
     }

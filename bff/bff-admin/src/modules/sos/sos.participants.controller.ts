@@ -1,49 +1,64 @@
 import { Request, Response } from 'express';
-import { SosParticipantService } from './participant.service';
-import { Types } from 'mongoose';
+import { SosParticipantsAggregator } from './sos.participants.aggregator';
 
-export class SosParticipantController {
-  constructor(private service: SosParticipantService) {}
+/**
+ * Participants Controller - BFF Admin
+ * Handles HTTP requests for participant operations
+ */
+export class SosParticipantsController {
+  constructor(private aggregator: SosParticipantsAggregator) {}
 
   /**
-   * Join a SOS
+   * Join a SOS as a participant
    * POST /:sosId/participants/join
    */
   async joinSos(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
-      const { userType, userId, actorType } = req.body;
+      const userId = req.context?.user?.id || req.context?.user?.userId;
+      const userRole = req.context?.user?.role;
+      const actorType = req.context?.user?.actor?.type;
 
-      if (!sosId || !userType || !userId) {
+      if (!sosId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required fields: sosId, userType, userId',
+          error: 'Missing required parameter: sosId',
         });
         return;
       }
 
-      const participant = await this.service.joinSos(
-        sosId,
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Unauthorized - User ID required',
+        });
+        return;
+      }
+
+      // Map role to userType for participant system
+      const userType = req.body.userType || userRole || 'admin';
+
+      const result = await this.aggregator.joinSos(sosId, {
         userType,
-        new Types.ObjectId(userId),
+        userId,
         actorType,
-      );
+      });
 
       res.status(201).json({
         success: true,
-        data: participant,
+        data: result.data,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error joining SOS',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error joining SOS',
       });
     }
   }
 
   /**
-   * Leave a SOS
+   * Leave a SOS participation
    * PATCH /:sosId/participants/:userId/leave
    */
   async leaveSos(req: Request, res: Response): Promise<void> {
@@ -53,28 +68,28 @@ export class SosParticipantController {
       if (!sosId || !userId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required fields: sosId, userId',
+          error: 'Missing required parameters: sosId, userId',
         });
         return;
       }
 
-      await this.service.leaveSos(sosId, new Types.ObjectId(userId));
+      const result = await this.aggregator.leaveSos(sosId, userId);
 
       res.status(200).json({
         success: true,
-        message: 'User left the SOS',
+        message: 'Participant left SOS',
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error leaving SOS',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error leaving SOS',
       });
     }
   }
 
   /**
-   * Get active participants
+   * Get active participants in a SOS
    * GET /:sosId/participants/active
    */
   async getActiveParticipants(req: Request, res: Response): Promise<void> {
@@ -84,28 +99,29 @@ export class SosParticipantController {
       if (!sosId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required field: sosId',
+          error: 'Missing required parameter: sosId',
         });
         return;
       }
 
-      const participants = await this.service.getActiveParticipants(sosId);
+      const participants = await this.aggregator.getActiveParticipants(sosId);
 
       res.status(200).json({
         success: true,
         data: participants,
+        count: participants.length,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error fetching active participants',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error fetching active participants',
       });
     }
   }
 
   /**
-   * Get participant history
+   * Get participant history for a SOS
    * GET /:sosId/participants/history
    */
   async getParticipantHistory(req: Request, res: Response): Promise<void> {
@@ -115,22 +131,23 @@ export class SosParticipantController {
       if (!sosId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required field: sosId',
+          error: 'Missing required parameter: sosId',
         });
         return;
       }
 
-      const history = await this.service.getParticipantHistory(sosId);
+      const history = await this.aggregator.getParticipantHistory(sosId);
 
       res.status(200).json({
         success: true,
         data: history,
+        count: history.length,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error fetching participant history',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error fetching participant history',
       });
     }
   }
@@ -146,25 +163,22 @@ export class SosParticipantController {
       if (!sosId || !userId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required fields: sosId, userId',
+          error: 'Missing required parameters: sosId, userId',
         });
         return;
       }
 
-      const isActive = await this.service.isActiveParticipant(
-        sosId,
-        new Types.ObjectId(userId),
-      );
+      const isActive = await this.aggregator.isActiveParticipant(sosId, userId);
 
       res.status(200).json({
         success: true,
         data: { isActive },
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error checking participation status',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error checking participation status',
       });
     }
   }
@@ -173,34 +187,30 @@ export class SosParticipantController {
    * Get user's participation history
    * GET /user/:userId/history
    */
-  async getUserParticipationHistory(
-    req: Request,
-    res: Response,
-  ): Promise<void> {
+  async getUserParticipationHistory(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
 
       if (!userId) {
         res.status(400).json({
           success: false,
-          message: 'Missing required field: userId',
+          error: 'Missing required parameter: userId',
         });
         return;
       }
 
-      const history = await this.service.getUserParticipationHistory(
-        new Types.ObjectId(userId),
-      );
+      const history = await this.aggregator.getUserParticipationHistory(userId);
 
       res.status(200).json({
         success: true,
         data: history,
+        count: history.length,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error fetching user participation history',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Error fetching user participation history',
       });
     }
   }

@@ -3,6 +3,7 @@ import { IncidentController } from './incident.controller';
 import { authContextMiddleware } from '../../middlewares/authContext';
 import { IncidentAggregator } from './incident.aggregator';
 import { IncidentServiceClient, IncidentTimelineServiceClient } from '@gov-ph/bff-core';
+import { preventActor } from '../../middlewares/requireActor';
 export const incidentRoutes = Router();
 
 
@@ -18,12 +19,13 @@ const incidentController = new IncidentController(incidentAggregator);
  * Incident Module Routes
  */
 
-// ==================== Incident Lookup Endpoints ====================
-
 // Get report categories lookup
 incidentRoutes.get('/reports/types/lookup', (req, res) => incidentController.getReportCategoriesLookup(req, res));
 
 // ==================== Incident Endpoints ====================
+
+incidentRoutes.use(authContextMiddleware, preventActor('ANON'));
+// ==================== Incident Lookup Endpoints ====================
 
 // Get incidents by city code (MORE SPECIFIC - must come before /:id)
 incidentRoutes.get('/reports/city/:cityCode',authContextMiddleware, (req, res) =>

@@ -60,55 +60,55 @@ jobs:
         
         if [ "$ENV" = "PROD" ]; then
           cat << EOF > .env
-        LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}
-        MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}
-        EOF
-        elif [ "$ENV" = "PILOT" ]; then
-        cat << EOF > .env
-        CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
-        INVITE_LINK_HOST=${{ vars.INVITE_LINK_HOST }}
-        JWT_PUBLIC_KEY=${{ vars.JWT_PUBLIC_KEY }}
-        LOG_LEVEL=${{ vars.LOG_LEVEL }}
-        MONGODB_POOL_SIZE=${{ vars.MONGODB_POOL_SIZE }}
-        REDIS_DB=${{ vars.REDIS_DB }}
-        REDIS_PORT=${{ vars.REDIS_PORT }}
-        SEMAPHORE_API_URL=${{ vars.SEMAPHORE_API_URL }}
-        TOKEN_REVOCATION_CACHE_TTL=${{ vars.TOKEN_REVOCATION_CACHE_TTL }}
-        TOKEN_REVOCATION_ENABLED=${{ vars.TOKEN_REVOCATION_ENABLED }}
-        CITY_SERVICE_DB_NAME=${{ secrets.CITY_SERVICE_DB_NAME }}
-        CITY_SERVICE_MONGODB_URI=${{ secrets.CITY_SERVICE_MONGODB_URI }}
-        CITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.CITY_SERVICE_MONGODB_URI_OPTIONS }}
-        CLIENT_ID_ADMIN=${{ secrets.CLIENT_ID_ADMIN }}
-        CLIENT_ID_RESCUE=${{ secrets.CLIENT_ID_RESCUE }}
-        ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
-        FIREBASE_ADMIN_SDK_KEY=${{ secrets.FIREBASE_ADMIN_SDK_KEY }}
-        GEO_SERVICE_DB_NAME=${{ secrets.GEO_SERVICE_DB_NAME }}
-        GEO_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.GEO_SERVICE_MONGODB_URI_OPTIONS }}
-        IDENTITY_SERVICE_DB_NAME=${{ secrets.IDENTITY_SERVICE_DB_NAME }}
-        IDENTITY_SERVICE_MONGODB_URI=${{ secrets.IDENTITY_SERVICE_MONGODB_URI }}
-        IDENTITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.IDENTITY_SERVICE_MONGODB_URI_OPTIONS }}
-        INCIDENT_DB_NAME=${{ secrets.INCIDENT_DB_NAME }}
-        INCIDENT_MONGODB_URI=${{ secrets.INCIDENT_MONGODB_URI }}
-        INCIDENT_MONGODB_URI_OPTIONS=${{ secrets.INCIDENT_MONGODB_URI_OPTIONS }}
-        INTERNAL_AUTH_TOKEN=${{ secrets.INTERNAL_AUTH_TOKEN }}
-        JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
-        JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-        OTP_SECRET=${{ secrets.OTP_SECRET }}
-        REDIS_HOST=${{ secrets.REDIS_HOST }}
-        REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-        SEMAPHORE_API_KEY=${{ secrets.SEMAPHORE_API_KEY }}
-        SOS_SERVICE_MONGODB_URI=${{ secrets.SOS_SERVICE_MONGODB_URI }}
-        SOS_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.SOS_SERVICE_MONGODB_URI_OPTIONS }}
-        USER_SECRET=${{ secrets.USER_SECRET }}
-        LIGHTSAIL_HOST_PILOT=${{ secrets.LIGHTSAIL_HOST_PILOT }}
-
-        EOF
-        else
-          cat << EOF > .env
-        LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_DEV }}
-        MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}
-        EOF
-        fi
+          LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}
+          MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}
+          EOF
+                  elif [ "$ENV" = "PILOT" ]; then
+                    cat << EOF > .env
+          CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
+          INVITE_LINK_HOST=${{ vars.INVITE_LINK_HOST }}
+          JWT_PUBLIC_KEY=${{ vars.JWT_PUBLIC_KEY }}
+          LOG_LEVEL=${{ vars.LOG_LEVEL }}
+          MONGODB_POOL_SIZE=${{ vars.MONGODB_POOL_SIZE }}
+          REDIS_DB=${{ vars.REDIS_DB }}
+          REDIS_PORT=${{ vars.REDIS_PORT }}
+          SEMAPHORE_API_URL=${{ vars.SEMAPHORE_API_URL }}
+          TOKEN_REVOCATION_CACHE_TTL=${{ vars.TOKEN_REVOCATION_CACHE_TTL }}
+          TOKEN_REVOCATION_ENABLED=${{ vars.TOKEN_REVOCATION_ENABLED }}
+          CITY_SERVICE_DB_NAME=${{ secrets.CITY_SERVICE_DB_NAME }}
+          CITY_SERVICE_MONGODB_URI=${{ secrets.CITY_SERVICE_MONGODB_URI }}
+          CITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.CITY_SERVICE_MONGODB_URI_OPTIONS }}
+          CLIENT_ID_ADMIN=${{ secrets.CLIENT_ID_ADMIN }}
+          CLIENT_ID_RESCUE=${{ secrets.CLIENT_ID_RESCUE }}
+          ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+          FIREBASE_ADMIN_SDK_KEY=${{ secrets.FIREBASE_ADMIN_SDK_KEY }}
+          GEO_SERVICE_DB_NAME=${{ secrets.GEO_SERVICE_DB_NAME }}
+          GEO_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.GEO_SERVICE_MONGODB_URI_OPTIONS }}
+          IDENTITY_SERVICE_DB_NAME=${{ secrets.IDENTITY_SERVICE_DB_NAME }}
+          IDENTITY_SERVICE_MONGODB_URI=${{ secrets.IDENTITY_SERVICE_MONGODB_URI }}
+          IDENTITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.IDENTITY_SERVICE_MONGODB_URI_OPTIONS }}
+          INCIDENT_DB_NAME=${{ secrets.INCIDENT_DB_NAME }}
+          INCIDENT_MONGODB_URI=${{ secrets.INCIDENT_MONGODB_URI }}
+          INCIDENT_MONGODB_URI_OPTIONS=${{ secrets.INCIDENT_MONGODB_URI_OPTIONS }}
+          INTERNAL_AUTH_TOKEN=${{ secrets.INTERNAL_AUTH_TOKEN }}
+          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          OTP_SECRET=${{ secrets.OTP_SECRET }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          SEMAPHORE_API_KEY=${{ secrets.SEMAPHORE_API_KEY }}
+          SOS_SERVICE_MONGODB_URI=${{ secrets.SOS_SERVICE_MONGODB_URI }}
+          SOS_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.SOS_SERVICE_MONGODB_URI_OPTIONS }}
+          USER_SECRET=${{ secrets.USER_SECRET }}
+          LIGHTSAIL_HOST_PILOT=${{ secrets.LIGHTSAIL_HOST_PILOT }}
+          EOF
+                  else
+                    cat << EOF > .env
+          LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_DEV }}
+          MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}
+          EOF
+                  fi
+                  dos2unix .env || true
 
     - name: Add Lightsail SSH Key
       run: |

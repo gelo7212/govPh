@@ -13,9 +13,22 @@ on:
           - PILOT
           - PROD
       service:
-        description: 'Choose service to deploy (leave empty for all services)'
-        required: false
-        type: string
+        description: 'Choose service to deploy'
+        required: true
+        default: 'ALL'
+        type: choice
+        options:
+          - ALL
+          - nginx
+          - kong
+          - bff-citizen
+          - bff-admin
+          - sos-service
+          - identity-service
+          - geo-service
+          - realtime-service
+          - incident-service
+          - city-service
 
 jobs:
   deploy:
@@ -31,6 +44,10 @@ jobs:
       run: |
         ENV="${{ github.event.inputs.environment }}"
         SERVICE="${{ github.event.inputs.service }}"
+
+        if [ "$SERVICE" = "ALL" ]; then
+          SERVICE=""
+        fi
 
         echo "ENV_FILE=.env.${ENV,,}" >> $GITHUB_ENV
         echo "COMPOSE_FILE=docker-compose.${ENV,,}.yml" >> $GITHUB_ENV

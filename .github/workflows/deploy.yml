@@ -215,7 +215,7 @@ jobs:
         
           mkdir -p ~/.ssh
           cat << 'EOF' > ~/.ssh/lightsail-ci.pem
-          ${{ secrets.LIGHTSAIL_CI_KEY }}
+          ${{ secrets.LIGHTSAIL_KEY }}
           EOF
           chmod 400 ~/.ssh/lightsail-ci.pem
 

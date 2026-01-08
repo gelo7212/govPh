@@ -4,6 +4,9 @@
         "bff/packages/*",
         "bff/*"
     ],
+    "scripts": {
+        "build": "yarn workspace bff-core build && yarn workspaces run build"
+    },
     "devDependencies": {
         "prettier": "^3.7.4"
     }

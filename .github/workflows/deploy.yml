@@ -109,10 +109,10 @@ jobs:
         chmod 400 ~/.ssh/lightsail-key.pem
 
     - name: Write .env safely
+      env:
+        ENV_CONTENT: ${{ secrets.ENV_PILOT }}
       run: |
-        cat << 'EOF' > .env
-        ${{ env.ENV_FILE }}
-        EOF
+        printf '%s\n' "$ENV_CONTENT" > .env
 
     - name: Build and Save Docker Images
       run: |

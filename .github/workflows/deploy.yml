@@ -155,7 +155,7 @@ jobs:
         with open(".env", "w", newline="\n") as f:
           for key, value in env_vars.items():
             if value:
-              f.write(f"{key}={value}\n")
+              f.write(f'{key}="{value}"\n')
         PYSCRIPT
         dos2unix .env || true
 

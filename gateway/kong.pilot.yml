@@ -1,0 +1,42 @@
+_format_version: "3.0"
+
+services:
+  # =====================
+  # BFF Admin Service (FIRST - More Specific)
+  # =====================
+  - name: bff-admin
+    url: http://govph-bff-admin:3000
+    routes:
+      - name: admin-api
+        hosts:
+          - api.pilot.admin.e-citizen.click
+        paths:
+          - /api
+        strip_path: false
+
+  # =====================
+  # BFF Citizen Service (SECOND - Fallback)
+  # =====================
+  - name: bff-citizen
+    url: http://govph-bff-citizen:3000
+    routes:
+      - name: citizen-api
+        hosts:
+          - api.pilot.citizen.e-citizen.click
+        paths:
+          - /api
+        strip_path: false
+
+plugins:
+  - name: cors
+    config:
+      origins: ["*"]
+      methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]
+      headers: ["*"]
+      exposed_headers: ["*"]
+      credentials: false
+
+  - name: rate-limiting
+    config:
+      minute: 10000
+      policy: local

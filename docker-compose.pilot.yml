@@ -13,7 +13,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.pilot.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - kong
       - realtime-service
@@ -36,7 +36,7 @@ services:
     image: kong:3.6
     container_name: govph-kong-pilot
     volumes:
-      - ./gateway/kong.local.yml:/kong/declarative/kong.yml
+      - ./gateway/kong.pilot.yml:/kong/declarative/kong.yml
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
@@ -63,6 +63,7 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}
+      FIREBASE_ADMIN_SDK_KEY: ${FIREBASE_ADMIN_SDK_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
       IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
@@ -72,6 +73,7 @@ services:
       INCIDENT_MS_URL: http://govph-incident-pilot:3000
       CLIENT_ID_ADMIN: ${CLIENT_ID_ADMIN}
       CLIENT_ID_RESCUE: ${CLIENT_ID_RESCUE}
+      CITY_SERVICE_URL: http://govph-city-pilot:3000
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -93,6 +95,7 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}
+      FIREBASE_ADMIN_SDK_KEY: ${FIREBASE_ADMIN_SDK_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
       IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
@@ -103,6 +106,7 @@ services:
       CITY_SERVICE_URL: http://govph-city-pilot:3000
       CLIENT_ID_ADMIN: ${CLIENT_ID_ADMIN}
       CLIENT_ID_RESCUE: ${CLIENT_ID_RESCUE}
+      
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -122,13 +126,14 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI_PILOT}
+      MICROSERVICE_NAME: sos-service-pilot
       REALTIME_SERVICE_URL: http://govph-realtime-pilot:3000
       IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
-      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
-      OPEN_MAPS_API_KEY: ${OPEN_MAPS_API_KEY}
-      MAPBOX_API_KEY: ${MAPBOX_API_KEY}
-      DEFAULT_MAP_PROVIDER: ${DEFAULT_MAP_PROVIDER}
+      MONGODB_URI: ${SOS_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${SOS_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${SOS_SERVICE_DB_NAME}
+
+      
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -150,12 +155,22 @@ services:
     environment:
       NODE_ENV: pilot
       PORT: 3000
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      TOKEN_REVOCATION_ENABLED: ${TOKEN_REVOCATION_ENABLED}
+      TOKEN_REVOCATION_CACHE_TTL: ${TOKEN_REVOCATION_CACHE_TTL}
+      INVITE_LINK_HOST: ${INVITE_LINK_HOST}
       SEMAPHORE_API_KEY: ${SEMAPHORE_API_KEY}
+      SEMAPHORE_API_URL: ${SEMAPHORE_API_URL}
       USER_SECRET: ${USER_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       OTP_SECRET: ${OTP_SECRET}
-      INVITE_LINK_HOST: ${INVITE_LINK_HOST_PILOT}
-      MONGODB_URI: ${MONGODB_URI_PILOT}
+      MONGODB_URI: ${IDENTITY_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${IDENTITY_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${IDENTITY_SERVICE_DB_NAME}
+
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -174,7 +189,15 @@ services:
     environment:
       NODE_ENV: pilot
       PORT: 3000
-      MONGODB_URI: ${MONGODB_URI_PILOT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      MICROSERVICE_NAME: geo-service-pilot
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MONGODB_URI: ${GEO_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${GEO_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${GEO_SERVICE_DB_NAME}
+
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -194,6 +217,15 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SOS_MS_URL: http://govph-sos-pilot:3000
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+      SOS_SERVICE_URL: http://govph-sos-pilot:3000
+
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -213,8 +245,11 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI_PILOT}
+      MONGODB_URI: ${INCIDENT_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${INCIDENT_MONGODB_URI_OPTIONS}
+      DB_NAME: ${INCIDENT_DB_NAME}
       IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
+      LOG_LEVEL: ${LOG_LEVEL}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -234,7 +269,12 @@ services:
       NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI_PILOT}
+      MONGODB_URI: ${CITY_SERVICE_MONGODB_URI}
+      CITY_SERVICE_URL: http://govph-city-pilot:3000
+      MONGODB_URI_OPTIONS: ${CITY_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${CITY_SERVICE_DB_NAME}
+      MONGODB_POOL_SIZE: ${MONGODB_POOL_SIZE}
+      
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]

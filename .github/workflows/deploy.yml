@@ -100,6 +100,8 @@ jobs:
         SOS_SERVICE_MONGODB_URI=${{ secrets.SOS_SERVICE_MONGODB_URI }}
         SOS_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.SOS_SERVICE_MONGODB_URI_OPTIONS }}
         USER_SECRET=${{ secrets.USER_SECRET }}
+        LIGHTSAIL_HOST_PILOT=${{ secrets.LIGHTSAIL_HOST_PILOT }}
+
         EOF
         else
           cat << EOF > .env

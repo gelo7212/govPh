@@ -159,18 +159,6 @@ jobs:
         PYSCRIPT
         dos2unix .env || true
 
-    - name: Build and Deploy - PILOT
-      if: ${{ github.event.inputs.environment == 'PILOT' }}
-      env:
-        COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
-        SERVICE: ${{ env.SERVICE }}
-      run: |
-        if [ -n "$SERVICE" ]; then
-          docker compose -f "$COMPOSE_FILE" up --build -d $SERVICE
-        else
-          docker compose -f "$COMPOSE_FILE" up --build -d
-        fi
-
     - name: Build and Save Docker Images
       if: ${{ github.event.inputs.environment != 'PILOT' }}
       env:
@@ -199,7 +187,6 @@ jobs:
         fi
 
     - name: Deploy to Lightsail
-      if: ${{ github.event.inputs.environment != 'PILOT' }}
       env:
         COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -207,15 +194,22 @@ jobs:
         LIGHTSAIL_KEY: ${{ secrets.LIGHTSAIL_KEY }}
         LIGHTSAIL_HOST_PROD: ${{ secrets.LIGHTSAIL_HOST_PROD }}
         LIGHTSAIL_HOST_DEV: ${{ secrets.LIGHTSAIL_HOST_DEV }}
+        LIGHTSAIL_HOST_PILOT: ${{ secrets.LIGHTSAIL_HOST_PILOT }}
       run: |
         ENV="${{ github.event.inputs.environment }}"
         
         case $ENV in
           PROD)
             LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PROD
+            DEPLOY_MODE="tar"
+            ;;
+          PILOT)
+            LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PILOT
+            DEPLOY_MODE="compose"
             ;;
           *)
             LIGHTSAIL_HOST=$LIGHTSAIL_HOST_DEV
+            DEPLOY_MODE="tar"
             ;;
         esac
         
@@ -223,40 +217,62 @@ jobs:
         echo "$LIGHTSAIL_KEY" > ~/.ssh/lightsail-key.pem
         chmod 400 ~/.ssh/lightsail-key.pem
         
-        if [ -n "$SERVICE" ]; then
+        if [ "$DEPLOY_MODE" = "compose" ]; then
+          # PILOT: Copy compose file and .env, build and run on Lightsail
           scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
-            ${SERVICE}.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+            "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+          
+          ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@$LIGHTSAIL_HOST "
+            cd /home/ubuntu
+            # Stop existing containers
+            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
+            
+            if [ -n \"$SERVICE\" ]; then
+              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up --build -d $SERVICE
+            else
+              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up --build -d
+            fi
+            
+            # Cleanup
+            rm $COMPOSE_FILE .env
+          "
         else
-          scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
-            *.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
-        fi
-
-        # Deploy
-        ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@$LIGHTSAIL_HOST "
-          cd /home/ubuntu
-          # Stop existing containers
-          sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
-
-          if [ -n \"$SERVICE\" ]; then
-            sudo docker load < ${SERVICE}.tar
-            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d $SERVICE
+          # PROD/DEV: Use tar files (existing approach)
+          if [ -n "$SERVICE" ]; then
+            scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
+              ${SERVICE}.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
           else
-            sudo docker load < nginx.tar
-            sudo docker load < kong.tar
-            sudo docker load < bff-citizen.tar
-            sudo docker load < bff-admin.tar
-            sudo docker load < sos-service.tar
-            sudo docker load < identity-service.tar
-            sudo docker load < geo-service.tar
-            sudo docker load < realtime-service.tar
-            sudo docker load < incident-service.tar
-            sudo docker load < city-service.tar
-            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
+            scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
+              *.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
           fi
 
-          # Cleanup
-          rm *.tar $COMPOSE_FILE .env
-        "
+          # Deploy
+          ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@$LIGHTSAIL_HOST "
+            cd /home/ubuntu
+            # Stop existing containers
+            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
+
+            if [ -n \"$SERVICE\" ]; then
+              sudo docker load < ${SERVICE}.tar
+              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d $SERVICE
+            else
+              sudo docker load < nginx.tar
+              sudo docker load < kong.tar
+              sudo docker load < bff-citizen.tar
+              sudo docker load < bff-admin.tar
+              sudo docker load < sos-service.tar
+              sudo docker load < identity-service.tar
+              sudo docker load < geo-service.tar
+              sudo docker load < realtime-service.tar
+              sudo docker load < incident-service.tar
+              sudo docker load < city-service.tar
+              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
+            fi
+
+            # Cleanup
+            rm *.tar $COMPOSE_FILE .env
+          "
+        fi
 
     - name: Cleanup
       if: ${{ github.event.inputs.environment != 'PILOT' }}

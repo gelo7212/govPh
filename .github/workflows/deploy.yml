@@ -104,59 +104,60 @@ jobs:
         
         if env_type == "PROD":
           env_vars = {
-            "LIGHTSAIL_HOST": os.getenv("LIGHTSAIL_HOST_PROD"),
-            "MONGODB_URI": os.getenv("MONGODB_URI_PROD"),
+            "LIGHTSAIL_HOST": os.getenv("LIGHTSAIL_HOST_PROD", ""),
+            "MONGODB_URI": os.getenv("MONGODB_URI_PROD", ""),
           }
         elif env_type == "PILOT":
           env_vars = {
-            "CORS_ORIGIN": os.getenv("CORS_ORIGIN"),
-            "INVITE_LINK_HOST": os.getenv("INVITE_LINK_HOST"),
-            "JWT_PUBLIC_KEY": os.getenv("JWT_PUBLIC_KEY"),
-            "LOG_LEVEL": os.getenv("LOG_LEVEL"),
-            "MONGODB_POOL_SIZE": os.getenv("MONGODB_POOL_SIZE"),
-            "REDIS_DB": os.getenv("REDIS_DB"),
-            "REDIS_PORT": os.getenv("REDIS_PORT"),
-            "SEMAPHORE_API_URL": os.getenv("SEMAPHORE_API_URL"),
-            "TOKEN_REVOCATION_CACHE_TTL": os.getenv("TOKEN_REVOCATION_CACHE_TTL"),
-            "TOKEN_REVOCATION_ENABLED": os.getenv("TOKEN_REVOCATION_ENABLED"),
-            "CITY_SERVICE_DB_NAME": os.getenv("CITY_SERVICE_DB_NAME"),
-            "CITY_SERVICE_MONGODB_URI": os.getenv("CITY_SERVICE_MONGODB_URI"),
-            "CITY_SERVICE_MONGODB_URI_OPTIONS": os.getenv("CITY_SERVICE_MONGODB_URI_OPTIONS"),
-            "CLIENT_ID_ADMIN": os.getenv("CLIENT_ID_ADMIN"),
-            "CLIENT_ID_RESCUE": os.getenv("CLIENT_ID_RESCUE"),
-            "ENCRYPTION_KEY": os.getenv("ENCRYPTION_KEY"),
-            "FIREBASE_ADMIN_SDK_KEY": os.getenv("FIREBASE_ADMIN_SDK_KEY"),
-            "GEO_SERVICE_DB_NAME": os.getenv("GEO_SERVICE_DB_NAME"),
-            "GEO_SERVICE_MONGODB_URI_OPTIONS": os.getenv("GEO_SERVICE_MONGODB_URI_OPTIONS"),
-            "IDENTITY_SERVICE_DB_NAME": os.getenv("IDENTITY_SERVICE_DB_NAME"),
-            "IDENTITY_SERVICE_MONGODB_URI": os.getenv("IDENTITY_SERVICE_MONGODB_URI"),
-            "IDENTITY_SERVICE_MONGODB_URI_OPTIONS": os.getenv("IDENTITY_SERVICE_MONGODB_URI_OPTIONS"),
-            "INCIDENT_DB_NAME": os.getenv("INCIDENT_DB_NAME"),
-            "INCIDENT_MONGODB_URI": os.getenv("INCIDENT_MONGODB_URI"),
-            "INCIDENT_MONGODB_URI_OPTIONS": os.getenv("INCIDENT_MONGODB_URI_OPTIONS"),
-            "INTERNAL_AUTH_TOKEN": os.getenv("INTERNAL_AUTH_TOKEN"),
-            "JWT_ACCESS_SECRET": os.getenv("JWT_ACCESS_SECRET"),
-            "JWT_REFRESH_SECRET": os.getenv("JWT_REFRESH_SECRET"),
-            "OTP_SECRET": os.getenv("OTP_SECRET"),
-            "REDIS_HOST": os.getenv("REDIS_HOST"),
-            "REDIS_PASSWORD": os.getenv("REDIS_PASSWORD"),
-            "SEMAPHORE_API_KEY": os.getenv("SEMAPHORE_API_KEY"),
-            "SOS_SERVICE_MONGODB_URI": os.getenv("SOS_SERVICE_MONGODB_URI"),
-            "SOS_SERVICE_MONGODB_URI_OPTIONS": os.getenv("SOS_SERVICE_MONGODB_URI_OPTIONS"),
-            "USER_SECRET": os.getenv("USER_SECRET"),
-            "LIGHTSAIL_HOST_PILOT": os.getenv("LIGHTSAIL_HOST_PILOT"),
+            "CORS_ORIGIN": os.getenv("CORS_ORIGIN", ""),
+            "INVITE_LINK_HOST": os.getenv("INVITE_LINK_HOST", ""),
+            "JWT_PUBLIC_KEY": os.getenv("JWT_PUBLIC_KEY", ""),
+            "LOG_LEVEL": os.getenv("LOG_LEVEL", ""),
+            "MONGODB_POOL_SIZE": os.getenv("MONGODB_POOL_SIZE", ""),
+            "REDIS_DB": os.getenv("REDIS_DB", ""),
+            "REDIS_PORT": os.getenv("REDIS_PORT", ""),
+            "SEMAPHORE_API_URL": os.getenv("SEMAPHORE_API_URL", ""),
+            "TOKEN_REVOCATION_CACHE_TTL": os.getenv("TOKEN_REVOCATION_CACHE_TTL", ""),
+            "TOKEN_REVOCATION_ENABLED": os.getenv("TOKEN_REVOCATION_ENABLED", ""),
+            "CITY_SERVICE_DB_NAME": os.getenv("CITY_SERVICE_DB_NAME", ""),
+            "CITY_SERVICE_MONGODB_URI": os.getenv("CITY_SERVICE_MONGODB_URI", ""),
+            "CITY_SERVICE_MONGODB_URI_OPTIONS": os.getenv("CITY_SERVICE_MONGODB_URI_OPTIONS", ""),
+            "CLIENT_ID_ADMIN": os.getenv("CLIENT_ID_ADMIN", ""),
+            "CLIENT_ID_RESCUE": os.getenv("CLIENT_ID_RESCUE", ""),
+            "ENCRYPTION_KEY": os.getenv("ENCRYPTION_KEY", ""),
+            "FIREBASE_ADMIN_SDK_KEY": os.getenv("FIREBASE_ADMIN_SDK_KEY", ""),
+            "GEO_SERVICE_DB_NAME": os.getenv("GEO_SERVICE_DB_NAME", ""),
+            "GEO_SERVICE_MONGODB_URI_OPTIONS": os.getenv("GEO_SERVICE_MONGODB_URI_OPTIONS", ""),
+            "IDENTITY_SERVICE_DB_NAME": os.getenv("IDENTITY_SERVICE_DB_NAME", ""),
+            "IDENTITY_SERVICE_MONGODB_URI": os.getenv("IDENTITY_SERVICE_MONGODB_URI", ""),
+            "IDENTITY_SERVICE_MONGODB_URI_OPTIONS": os.getenv("IDENTITY_SERVICE_MONGODB_URI_OPTIONS", ""),
+            "INCIDENT_DB_NAME": os.getenv("INCIDENT_DB_NAME", ""),
+            "INCIDENT_MONGODB_URI": os.getenv("INCIDENT_MONGODB_URI", ""),
+            "INCIDENT_MONGODB_URI_OPTIONS": os.getenv("INCIDENT_MONGODB_URI_OPTIONS", ""),
+            "INTERNAL_AUTH_TOKEN": os.getenv("INTERNAL_AUTH_TOKEN", ""),
+            "JWT_ACCESS_SECRET": os.getenv("JWT_ACCESS_SECRET", ""),
+            "JWT_REFRESH_SECRET": os.getenv("JWT_REFRESH_SECRET", ""),
+            "OTP_SECRET": os.getenv("OTP_SECRET", ""),
+            "REDIS_HOST": os.getenv("REDIS_HOST", ""),
+            "REDIS_PASSWORD": os.getenv("REDIS_PASSWORD", ""),
+            "SEMAPHORE_API_KEY": os.getenv("SEMAPHORE_API_KEY", ""),
+            "SOS_SERVICE_MONGODB_URI": os.getenv("SOS_SERVICE_MONGODB_URI", ""),
+            "SOS_SERVICE_MONGODB_URI_OPTIONS": os.getenv("SOS_SERVICE_MONGODB_URI_OPTIONS", ""),
+            "USER_SECRET": os.getenv("USER_SECRET", ""),
+            "LIGHTSAIL_HOST_PILOT": os.getenv("LIGHTSAIL_HOST_PILOT", ""),
           }
         else:
           env_vars = {
-            "LIGHTSAIL_HOST": os.getenv("LIGHTSAIL_HOST_DEV"),
-            "MONGODB_URI": os.getenv("MONGODB_URI_DEV"),
+            "LIGHTSAIL_HOST": os.getenv("LIGHTSAIL_HOST_DEV", ""),
+            "MONGODB_URI": os.getenv("MONGODB_URI_DEV", ""),
           }
         
-        with open(".env", "w") as f:
+        with open(".env", "w", newline="\n") as f:
           for key, value in env_vars.items():
             if value:
               f.write(f"{key}={value}\n")
         PYSCRIPT
+        dos2unix .env || true
 
     - name: Build and Save Docker Images
       env:

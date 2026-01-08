@@ -10,8 +10,19 @@ let mongoClient: typeof mongoose | null = null;
  */
 export async function connectMongoDB(): Promise<typeof mongoose> {
   try {
-    const mongoUri =
-      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'incident-service'}`;
+    // const mongoUri =
+    //   process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'incident-service'}`;
+    const mongoCreds = process.env.MONGODB_URI || '';
+    const env = process.env.NODE_ENV || 'local';
+    const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+    let mongoDbName = 'incident-service';
+    if(env !== 'local'){
+      mongoDbName = `incident-service-${env}`;
+    }
+
+    const mongoUri = mongoOptions
+      ? `${mongoCreds}/${mongoDbName}?${mongoOptions}`
+      : `${mongoCreds}/${mongoDbName}`;
 
 
     console.log('Connecting to MongoDB at', mongoUri);

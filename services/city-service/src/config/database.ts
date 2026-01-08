@@ -1,9 +1,18 @@
 import mongoose from 'mongoose';
 
 export async function connectDatabase(): Promise<void> {
-  const mongoUri = process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'city-service'}`;
-  
-  
+  const mongoCreds = process.env.MONGODB_URI || '';
+  const env = process.env.NODE_ENV || 'local';
+  const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+  let mongoDbName = 'city-service';
+  if(env !== 'local'){
+    mongoDbName = `city-service-${env}`;
+  }
+
+  const mongoUri = mongoOptions
+    ? `${mongoCreds}/${mongoDbName}?${mongoOptions}`
+    : `${mongoCreds}/${mongoDbName}`;
+
   try {
     await mongoose.connect(mongoUri, {
       maxPoolSize: parseInt(process.env.MONGODB_POOL_SIZE || '10'),

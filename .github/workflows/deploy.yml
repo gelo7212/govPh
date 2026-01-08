@@ -1,0 +1,121 @@
+name: CI/CD Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Choose environment to deploy'
+        required: true
+        default: 'PILOT'
+        type: choice
+        options:
+          - DEV
+          - PILOT
+          - PROD
+      service:
+        description: 'Choose service to deploy (leave empty for all services)'
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up environment variables
+      id: set-env
+      run: |
+        ENV="${{ github.event.inputs.environment }}"
+        SERVICE="${{ github.event.inputs.service }}"
+
+        echo "ENV_FILE=.env.${ENV,,}" >> $GITHUB_ENV
+        echo "COMPOSE_FILE=docker-compose.${ENV,,}.yml" >> $GITHUB_ENV
+        echo "PROJECT_NAME=govph-${ENV,,}" >> $GITHUB_ENV
+        echo "SERVICE=$SERVICE" >> $GITHUB_ENV
+
+        # Set environment-specific variables
+        if [ "$ENV" = "PROD" ]; then
+          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}" >> $GITHUB_ENV
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}" >> $GITHUB_ENV
+        elif [ "$ENV" = "PILOT" ]; then
+          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PILOT }}" >> $GITHUB_ENV
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI_PILOT }}" >> $GITHUB_ENV
+        else
+          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_DEV }}" >> $GITHUB_ENV
+          echo "MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}" >> $GITHUB_ENV
+        fi
+
+    - name: Add Lightsail SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.LIGHTSAIL_KEY }}" > ~/.ssh/lightsail-key.pem
+        chmod 400 ~/.ssh/lightsail-key.pem
+
+    - name: Copy environment file
+      run: |
+        cp ${{ env.ENV_FILE }} .env
+
+    - name: Build and Save Docker Images
+      run: |
+        if [ -n "$SERVICE" ]; then
+          docker-compose -f ${{ env.COMPOSE_FILE }} -p ${{ env.PROJECT_NAME }} build $SERVICE
+          docker save ${{ env.PROJECT_NAME }}_${SERVICE}:latest -o ${SERVICE}.tar
+        else
+          # Build all services
+          docker-compose -f ${{ env.COMPOSE_FILE }} -p ${{ env.PROJECT_NAME }} build
+
+          # Save images
+          docker save ${{ env.PROJECT_NAME }}_nginx:latest -o nginx.tar
+          docker save ${{ env.PROJECT_NAME }}_kong:latest -o kong.tar
+          docker save ${{ env.PROJECT_NAME }}_bff-citizen:latest -o bff-citizen.tar
+          docker save ${{ env.PROJECT_NAME }}_bff-admin:latest -o bff-admin.tar
+          docker save ${{ env.PROJECT_NAME }}_sos-service:latest -o sos-service.tar
+          docker save ${{ env.PROJECT_NAME }}_identity-service:latest -o identity-service.tar
+          docker save ${{ env.PROJECT_NAME }}_geo-service:latest -o geo-service.tar
+          docker save ${{ env.PROJECT_NAME }}_realtime-service:latest -o realtime-service.tar
+          docker save ${{ env.PROJECT_NAME }}_incident-service:latest -o incident-service.tar
+          docker save ${{ env.PROJECT_NAME }}_city-service:latest -o city-service.tar
+        fi
+
+    - name: Deploy to Lightsail
+      run: |
+        if [ -n "$SERVICE" ]; then
+          scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
+            ${SERVICE}.tar ${{ env.COMPOSE_FILE }} .env ubuntu@${{ env.LIGHTSAIL_HOST }}:/home/ubuntu/
+        else
+          scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
+            *.tar ${{ env.COMPOSE_FILE }} .env ubuntu@${{ env.LIGHTSAIL_HOST }}:/home/ubuntu/
+        fi
+
+        # Deploy
+        ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@${{ env.LIGHTSAIL_HOST }} "
+          # Stop existing containers
+          sudo docker-compose -f ${{ env.COMPOSE_FILE }} -p ${{ env.PROJECT_NAME }} down || true
+
+          if [ -n \"$SERVICE\" ]; then
+            sudo docker load < ${SERVICE}.tar
+            sudo docker-compose -f ${{ env.COMPOSE_FILE }} -p ${{ env.PROJECT_NAME }} up -d $SERVICE
+          else
+            sudo docker load < nginx.tar
+            sudo docker load < kong.tar
+            sudo docker load < bff-citizen.tar
+            sudo docker load < bff-admin.tar
+            sudo docker load < sos-service.tar
+            sudo docker load < identity-service.tar
+            sudo docker load < geo-service.tar
+            sudo docker load < realtime-service.tar
+            sudo docker load < incident-service.tar
+            sudo docker load < city-service.tar
+            sudo docker-compose -f ${{ env.COMPOSE_FILE }} -p ${{ env.PROJECT_NAME }} up -d
+          fi
+
+          # Cleanup
+          rm *.tar ${{ env.COMPOSE_FILE }} .env
+        "
+
+    - name: Cleanup
+      run: rm *.tar

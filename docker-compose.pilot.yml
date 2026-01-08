@@ -8,21 +8,20 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
-    container_name: govph-nginx-prod
+    container_name: govph-nginx-pilot
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/letsencrypt:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - kong
       - realtime-service
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
-    restart: always
+      NODE_ENV: pilot
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
@@ -35,17 +34,15 @@ services:
   # =====================
   kong:
     image: kong:3.6
-    container_name: govph-kong-prod
+    container_name: govph-kong-pilot
     volumes:
-      - ./gateway/kong.prod.yml:/kong/declarative/kong.yml
+      - ./gateway/kong.local.yml:/kong/declarative/kong.yml
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      JWT_SECRET: ${JWT_SECRET}
-      KONG_LOG_LEVEL: warn
     networks:
       - govph-network
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "kong", "health"]
       interval: 10s
@@ -59,23 +56,23 @@ services:
     build:
       context: .
       dockerfile: bff/bff-citizen/Dockerfile
-    container_name: govph-bff-citizen-prod
+    container_name: govph-bff-citizen-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-      GEO_SERVICE_URL: ${GEO_SERVICE_URL}
-      SOS_SERVICE_URL: ${SOS_SERVICE_URL}
-      REALTIME_SERVICE_URL: ${REALTIME_SERVICE_URL}
-      INCIDENT_MS_URL: ${INCIDENT_MS_URL}
+      IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
+      GEO_SERVICE_URL: http://govph-geo-pilot:3000
+      SOS_SERVICE_URL: http://govph-sos-pilot:3000
+      REALTIME_SERVICE_URL: http://govph-realtime-pilot:3000
+      INCIDENT_MS_URL: http://govph-incident-pilot:3000
       CLIENT_ID_ADMIN: ${CLIENT_ID_ADMIN}
       CLIENT_ID_RESCUE: ${CLIENT_ID_RESCUE}
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -89,24 +86,24 @@ services:
     build:
       context: .
       dockerfile: bff/bff-admin/Dockerfile
-    container_name: govph-bff-admin-prod
+    container_name: govph-bff-admin-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       FIREBASE_SERVICE_ACCOUNT_KEY: ${FIREBASE_SERVICE_ACCOUNT_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-      GEO_SERVICE_URL: ${GEO_SERVICE_URL}
-      SOS_SERVICE_URL: ${SOS_SERVICE_URL}
-      REALTIME_SERVICE_URL: ${REALTIME_SERVICE_URL}
-      INCIDENT_MS_URL: ${INCIDENT_MS_URL}
-      CITY_SERVICE_URL: ${CITY_SERVICE_URL}
+      IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
+      GEO_SERVICE_URL: http://govph-geo-pilot:3000
+      SOS_SERVICE_URL: http://govph-sos-pilot:3000
+      REALTIME_SERVICE_URL: http://govph-realtime-pilot:3000
+      INCIDENT_MS_URL: http://govph-incident-pilot:3000
+      CITY_SERVICE_URL: http://govph-city-pilot:3000
       CLIENT_ID_ADMIN: ${CLIENT_ID_ADMIN}
       CLIENT_ID_RESCUE: ${CLIENT_ID_RESCUE}
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -118,21 +115,21 @@ services:
   # =====================
   sos-service:
     build: ./services/sos-service
-    container_name: govph-sos-prod
+    container_name: govph-sos-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI}
-      REALTIME_SERVICE_URL: ${REALTIME_SERVICE_URL}
-      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
+      MONGODB_URI: ${MONGODB_URI_PILOT}
+      REALTIME_SERVICE_URL: http://govph-realtime-pilot:3000
+      IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
       OPEN_MAPS_API_KEY: ${OPEN_MAPS_API_KEY}
       MAPBOX_API_KEY: ${MAPBOX_API_KEY}
       DEFAULT_MAP_PROVIDER: ${DEFAULT_MAP_PROVIDER}
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -147,19 +144,19 @@ services:
   # =====================
   identity-service:
     build: ./services/identity-service
-    container_name: govph-identity-prod
+    container_name: govph-identity-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       SEMAPHORE_API_KEY: ${SEMAPHORE_API_KEY}
       USER_SECRET: ${USER_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       OTP_SECRET: ${OTP_SECRET}
-      INVITE_LINK_HOST: ${INVITE_LINK_HOST}
-      MONGODB_URI: ${MONGODB_URI}
-    restart: always
+      INVITE_LINK_HOST: ${INVITE_LINK_HOST_PILOT}
+      MONGODB_URI: ${MONGODB_URI_PILOT}
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -171,14 +168,14 @@ services:
   # =====================
   geo-service:
     build: ./services/geo-service
-    container_name: govph-geo-prod
+    container_name: govph-geo-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
-      MONGODB_URI: ${MONGODB_URI}
-    restart: always
+      MONGODB_URI: ${MONGODB_URI_PILOT}
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -190,37 +187,35 @@ services:
   # =====================
   realtime-service:
     build: ./services/realtime-service
-    container_name: govph-realtime-prod
+    container_name: govph-realtime-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    deploy:
-      replicas: 3
 
   # =====================
   # Incident Service
   # =====================
   incident-service:
     build: ./services/incident-service
-    container_name: govph-incident-prod
+    container_name: govph-incident-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI}
-      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL}
-    restart: always
+      MONGODB_URI: ${MONGODB_URI_PILOT}
+      IDENTITY_SERVICE_URL: http://govph-identity-pilot:3000
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -232,15 +227,15 @@ services:
   # =====================
   city-service:
     build: ./services/city-service
-    container_name: govph-city-prod
+    container_name: govph-city-pilot
     networks:
       - govph-network
     environment:
-      NODE_ENV: production
+      NODE_ENV: pilot
       PORT: 3000
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
-      MONGODB_URI: ${MONGODB_URI}
-    restart: always
+      MONGODB_URI: ${MONGODB_URI_PILOT}
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s

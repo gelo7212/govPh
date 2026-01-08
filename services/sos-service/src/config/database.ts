@@ -4,8 +4,18 @@ let mongoConnection: Connection | null = null;
 
 export const connectMongoDB = async (): Promise<Connection> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'sos-service'}`;
-    console.log('MONGODB_URI =', process.env.MONGODB_URI);
+    const mongoCreds = process.env.MONGODB_URI || '';
+    const env = process.env.NODE_ENV || 'local';
+    const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+    let mongoDbName = 'sos-service';
+    if(env !== 'local'){
+      mongoDbName = `sos-service-${env}`;
+    }
+
+    const mongoUri = mongoOptions
+      ? `${mongoCreds}/${mongoDbName}?${mongoOptions}`
+      : `${mongoCreds}/${mongoDbName}`;
+
 
     if (mongoConnection) {
       console.log('MongoDB already connected');

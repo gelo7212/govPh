@@ -10,8 +10,17 @@ let mongoConnection: Connection | null = null;
 
 export const connectMongoDB = async (): Promise<Connection> => {
   try {
-    const mongoUri =
-      process.env.MONGODB_URI || `mongodb://host.docker.internal:27017/${process.env.MICROSERVICE_NAME || 'identity-service'}`;
+    const mongoCreds = process.env.MONGODB_URI || '';
+    const env = process.env.NODE_ENV || 'local';
+    const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+    let mongoDbName = 'identity-service';
+    if(env !== 'local'){
+      mongoDbName = `identity-service-${env}`;
+    }
+
+    const mongoUri = mongoOptions
+      ? `${mongoCreds}/${mongoDbName}?${mongoOptions}`
+      : `${mongoCreds}/${mongoDbName}`;
 
     if (mongoConnection) {
       logger.info('MongoDB already connected');

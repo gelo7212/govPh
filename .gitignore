@@ -17,3 +17,5 @@ yarn-error.log*
 coverage/
 .nyc_output/
 *firebase-service-account.json
+.env.pilot
+.env.production

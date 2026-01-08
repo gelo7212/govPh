@@ -64,7 +64,7 @@ jobs:
         MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}
         EOF
         elif [ "$ENV" = "PILOT" ]; then
-          cat << EOF > .env
+        cat << EOF > .env
         CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
         INVITE_LINK_HOST=${{ vars.INVITE_LINK_HOST }}
         JWT_PUBLIC_KEY=${{ vars.JWT_PUBLIC_KEY }}

@@ -108,9 +108,11 @@ jobs:
         echo "${{ secrets.LIGHTSAIL_KEY }}" > ~/.ssh/lightsail-key.pem
         chmod 400 ~/.ssh/lightsail-key.pem
 
-    - name: Copy environment file
+    - name: Write .env safely
       run: |
-        cp ${{ env.ENV_FILE }} .env
+        cat << 'EOF' > .env
+        ${{ env.ENV_FILE }}
+        EOF
 
     - name: Build and Save Docker Images
       run: |

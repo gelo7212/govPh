@@ -213,9 +213,12 @@ jobs:
             ;;
         esac
         
-        mkdir -p ~/.ssh
-        echo "$LIGHTSAIL_KEY" > ~/.ssh/lightsail-key.pem
-        chmod 400 ~/.ssh/lightsail-key.pem
+          mkdir -p ~/.ssh
+          cat << 'EOF' > ~/.ssh/lightsail-ci.pem
+          ${{ secrets.LIGHTSAIL_CI_KEY }}
+          EOF
+          chmod 400 ~/.ssh/lightsail-ci.pem
+
         
         if [ "$DEPLOY_MODE" = "compose" ]; then
           # PILOT: Copy compose file and .env, build and run on Lightsail

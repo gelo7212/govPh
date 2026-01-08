@@ -49,57 +49,63 @@ jobs:
           SERVICE=""
         fi
 
-        echo "ENV_FILE=.env.${ENV,,}" >> $GITHUB_ENV
         echo "COMPOSE_FILE=docker-compose.${ENV,,}.yml" >> $GITHUB_ENV
         echo "PROJECT_NAME=ecitizen-${ENV,,}" >> $GITHUB_ENV
         echo "SERVICE=$SERVICE" >> $GITHUB_ENV
+        echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}" >> $GITHUB_ENV
 
-        # Set environment-specific variables
+    - name: Create .env file
+      run: |
+        ENV="${{ github.event.inputs.environment }}"
+        
         if [ "$ENV" = "PROD" ]; then
-          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}" >> $GITHUB_ENV
-          echo "MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}" >> $GITHUB_ENV
+          cat << EOF > .env
+        LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PROD }}
+        MONGODB_URI=${{ secrets.MONGODB_URI_PROD }}
+        EOF
         elif [ "$ENV" = "PILOT" ]; then
-          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_PILOT }}" >> $GITHUB_ENV
-          # Non-secret environment variables
-          echo "CORS_ORIGIN=${{ vars.CORS_ORIGIN }}" >> $GITHUB_ENV
-          echo "INVITE_LINK_HOST=${{ vars.INVITE_LINK_HOST }}" >> $GITHUB_ENV
-          echo "JWT_PUBLIC_KEY=${{ vars.JWT_PUBLIC_KEY }}" >> $GITHUB_ENV
-          echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> $GITHUB_ENV
-          echo "MONGODB_POOL_SIZE=${{ vars.MONGODB_POOL_SIZE }}" >> $GITHUB_ENV
-          echo "REDIS_DB=${{ vars.REDIS_DB }}" >> $GITHUB_ENV
-          echo "REDIS_PORT=${{ vars.REDIS_PORT }}" >> $GITHUB_ENV
-          echo "SEMAPHORE_API_URL=${{ vars.SEMAPHORE_API_URL }}" >> $GITHUB_ENV
-          echo "TOKEN_REVOCATION_CACHE_TTL=${{ vars.TOKEN_REVOCATION_CACHE_TTL }}" >> $GITHUB_ENV
-          echo "TOKEN_REVOCATION_ENABLED=${{ vars.TOKEN_REVOCATION_ENABLED }}" >> $GITHUB_ENV
-          # Secret environment variables
-          echo "CITY_SERVICE_DB_NAME=${{ secrets.CITY_SERVICE_DB_NAME }}" >> $GITHUB_ENV
-          echo "CITY_SERVICE_MONGODB_URI=${{ secrets.CITY_SERVICE_MONGODB_URI }}" >> $GITHUB_ENV
-          echo "CITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.CITY_SERVICE_MONGODB_URI_OPTIONS }}" >> $GITHUB_ENV
-          echo "CLIENT_ID_ADMIN=${{ secrets.CLIENT_ID_ADMIN }}" >> $GITHUB_ENV
-          echo "CLIENT_ID_RESCUE=${{ secrets.CLIENT_ID_RESCUE }}" >> $GITHUB_ENV
-          echo "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" >> $GITHUB_ENV
-          echo "FIREBASE_ADMIN_SDK_KEY=${{ secrets.FIREBASE_ADMIN_SDK_KEY }}" >> $GITHUB_ENV
-          echo "GEO_SERVICE_DB_NAME=${{ secrets.GEO_SERVICE_DB_NAME }}" >> $GITHUB_ENV
-          echo "GEO_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.GEO_SERVICE_MONGODB_URI_OPTIONS }}" >> $GITHUB_ENV
-          echo "IDENTITY_SERVICE_DB_NAME=${{ secrets.IDENTITY_SERVICE_DB_NAME }}" >> $GITHUB_ENV
-          echo "IDENTITY_SERVICE_MONGODB_URI=${{ secrets.IDENTITY_SERVICE_MONGODB_URI }}" >> $GITHUB_ENV
-          echo "IDENTITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.IDENTITY_SERVICE_MONGODB_URI_OPTIONS }}" >> $GITHUB_ENV
-          echo "INCIDENT_DB_NAME=${{ secrets.INCIDENT_DB_NAME }}" >> $GITHUB_ENV
-          echo "INCIDENT_MONGODB_URI=${{ secrets.INCIDENT_MONGODB_URI }}" >> $GITHUB_ENV
-          echo "INCIDENT_MONGODB_URI_OPTIONS=${{ secrets.INCIDENT_MONGODB_URI_OPTIONS }}" >> $GITHUB_ENV
-          echo "INTERNAL_AUTH_TOKEN=${{ secrets.INTERNAL_AUTH_TOKEN }}" >> $GITHUB_ENV
-          echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> $GITHUB_ENV
-          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> $GITHUB_ENV
-          echo "OTP_SECRET=${{ secrets.OTP_SECRET }}" >> $GITHUB_ENV
-          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> $GITHUB_ENV
-          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> $GITHUB_ENV
-          echo "SEMAPHORE_API_KEY=${{ secrets.SEMAPHORE_API_KEY }}" >> $GITHUB_ENV
-          echo "SOS_SERVICE_MONGODB_URI=${{ secrets.SOS_SERVICE_MONGODB_URI }}" >> $GITHUB_ENV
-          echo "SOS_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.SOS_SERVICE_MONGODB_URI_OPTIONS }}" >> $GITHUB_ENV
-          echo "USER_SECRET=${{ secrets.USER_SECRET }}" >> $GITHUB_ENV
+          cat << EOF > .env
+        CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
+        INVITE_LINK_HOST=${{ vars.INVITE_LINK_HOST }}
+        JWT_PUBLIC_KEY=${{ vars.JWT_PUBLIC_KEY }}
+        LOG_LEVEL=${{ vars.LOG_LEVEL }}
+        MONGODB_POOL_SIZE=${{ vars.MONGODB_POOL_SIZE }}
+        REDIS_DB=${{ vars.REDIS_DB }}
+        REDIS_PORT=${{ vars.REDIS_PORT }}
+        SEMAPHORE_API_URL=${{ vars.SEMAPHORE_API_URL }}
+        TOKEN_REVOCATION_CACHE_TTL=${{ vars.TOKEN_REVOCATION_CACHE_TTL }}
+        TOKEN_REVOCATION_ENABLED=${{ vars.TOKEN_REVOCATION_ENABLED }}
+        CITY_SERVICE_DB_NAME=${{ secrets.CITY_SERVICE_DB_NAME }}
+        CITY_SERVICE_MONGODB_URI=${{ secrets.CITY_SERVICE_MONGODB_URI }}
+        CITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.CITY_SERVICE_MONGODB_URI_OPTIONS }}
+        CLIENT_ID_ADMIN=${{ secrets.CLIENT_ID_ADMIN }}
+        CLIENT_ID_RESCUE=${{ secrets.CLIENT_ID_RESCUE }}
+        ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+        FIREBASE_ADMIN_SDK_KEY=${{ secrets.FIREBASE_ADMIN_SDK_KEY }}
+        GEO_SERVICE_DB_NAME=${{ secrets.GEO_SERVICE_DB_NAME }}
+        GEO_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.GEO_SERVICE_MONGODB_URI_OPTIONS }}
+        IDENTITY_SERVICE_DB_NAME=${{ secrets.IDENTITY_SERVICE_DB_NAME }}
+        IDENTITY_SERVICE_MONGODB_URI=${{ secrets.IDENTITY_SERVICE_MONGODB_URI }}
+        IDENTITY_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.IDENTITY_SERVICE_MONGODB_URI_OPTIONS }}
+        INCIDENT_DB_NAME=${{ secrets.INCIDENT_DB_NAME }}
+        INCIDENT_MONGODB_URI=${{ secrets.INCIDENT_MONGODB_URI }}
+        INCIDENT_MONGODB_URI_OPTIONS=${{ secrets.INCIDENT_MONGODB_URI_OPTIONS }}
+        INTERNAL_AUTH_TOKEN=${{ secrets.INTERNAL_AUTH_TOKEN }}
+        JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+        JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+        OTP_SECRET=${{ secrets.OTP_SECRET }}
+        REDIS_HOST=${{ secrets.REDIS_HOST }}
+        REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+        SEMAPHORE_API_KEY=${{ secrets.SEMAPHORE_API_KEY }}
+        SOS_SERVICE_MONGODB_URI=${{ secrets.SOS_SERVICE_MONGODB_URI }}
+        SOS_SERVICE_MONGODB_URI_OPTIONS=${{ secrets.SOS_SERVICE_MONGODB_URI_OPTIONS }}
+        USER_SECRET=${{ secrets.USER_SECRET }}
+        EOF
         else
-          echo "LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_DEV }}" >> $GITHUB_ENV
-          echo "MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}" >> $GITHUB_ENV
+          cat << EOF > .env
+        LIGHTSAIL_HOST=${{ secrets.LIGHTSAIL_HOST_DEV }}
+        MONGODB_URI=${{ secrets.MONGODB_URI_DEV }}
+        EOF
         fi
 
     - name: Add Lightsail SSH Key
@@ -107,12 +113,6 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.LIGHTSAIL_KEY }}" > ~/.ssh/lightsail-key.pem
         chmod 400 ~/.ssh/lightsail-key.pem
-
-    - name: Write .env safely
-      env:
-        ENV_CONTENT: ${{ secrets.ENV_PILOT }}
-      run: |
-        printf '%s\n' "$ENV_CONTENT" > .env
 
     - name: Build and Save Docker Images
       run: |

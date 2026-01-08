@@ -20,6 +20,7 @@ export class AssignmentController {
         incidentId: req.body.incidentId,
         cityCode: req.body.cityCode,
         departmentCode: req.body.departmentCode,
+        departmentName: req.body.departmentName,
         assignedBy: req.body.assignedBy,
         status: 'pending',
         responderId: req.body.responderId,
@@ -232,7 +233,8 @@ export class AssignmentController {
   async completeAssignment(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const assignment = await assignmentService.completeAssignment(id);
+      const { notes } = req.body;
+      const assignment = await assignmentService.completeAssignment(id, notes);
 
       res.json({
         success: true,

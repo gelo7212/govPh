@@ -9,6 +9,7 @@ import adminRoutes from './modules/admin/admin.routes';
 import rescuerRoutes from './modules/rescuer/rescuer.routes';
 import { smsRoutes } from './modules/sms';
 import inviteRoutes from './modules/invite/invite.routes';
+import { requestLogger } from './middlewares/requestLogger.middleware';
 
 const logger = createLogger('App');
 
@@ -20,10 +21,7 @@ export const createApp = (): Express => {
   app.use(express.urlencoded({ extended: true }));
 
   // Request logging middleware
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    logger.info(`${req.method} ${req.path}`);
-    next();
-  });
+  app.use(requestLogger);
 
   // Health check endpoint
   app.get('/health', (req: Request, res: Response) => {

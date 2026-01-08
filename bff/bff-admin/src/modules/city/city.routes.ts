@@ -3,6 +3,7 @@ import { CityController } from './city.controller';
 import { AdminCityAggregator } from './city.aggregator';
 import { authContextMiddleware } from '../../middlewares/authContext';
 import { requireRole } from '../../middlewares/requireRole';
+import { preventActor } from '../../middlewares/requireActor';
 
 const router = Router();
 
@@ -12,13 +13,13 @@ const cityController = new CityController(cityAggregator);
 
 // ==================== Cities ====================
 
+router.use(authContextMiddleware, preventActor('ANON','SHARE_LINK'));
 /**
  * GET /api/admin/cities
  * Get all cities
  */
 router.get(
   '/',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getAllCities(req, res),
 );
@@ -29,7 +30,6 @@ router.get(
  */
 router.get(
   '/:cityCode',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getCityByCode(req, res),
 );
@@ -40,7 +40,6 @@ router.get(
  */
 router.post(
   '/',
-  authContextMiddleware,
   requireRole('APP_ADMIN','CITY_ADMIN'),
   (req, res) => cityController.createCity(req, res),
 );
@@ -51,7 +50,6 @@ router.post(
  */
 router.put(
   '/:cityCode',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateCity(req, res),
 );
@@ -62,7 +60,6 @@ router.put(
  */
 router.delete(
   '/:cityCode',
-  authContextMiddleware,
   requireRole('APP_ADMIN'),
   (req, res) => cityController.deleteCity(req, res),
 );
@@ -75,7 +72,6 @@ router.delete(
  */
 router.get(
   '/:cityCode/departments',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getDepartmentsByCity(req, res),
 );
@@ -86,7 +82,6 @@ router.get(
  */
 router.post(
   '/:cityCode/departments',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.createDepartment(req, res),
 );
@@ -97,7 +92,6 @@ router.post(
  */
 router.put(
   '/departments/:id',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateDepartment(req, res),
 );
@@ -108,7 +102,6 @@ router.put(
  */
 router.delete(
   '/departments/:id',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.deleteDepartment(req, res),
 );
@@ -121,7 +114,6 @@ router.delete(
  */
 router.get(
   '/:cityCode/sos-hq',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN'),
   (req, res) => cityController.getSosHQByCity(req, res),
 );
@@ -132,7 +124,6 @@ router.get(
  */
 router.post(
   '/:cityCode/sos-hq',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.createSosHQ(req, res),
 );
@@ -143,7 +134,6 @@ router.post(
  */
 router.put(
   '/sos-hq/:id',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateSosHQ(req, res),
 );
@@ -154,7 +144,6 @@ router.put(
  */
 router.delete(
   '/sos-hq/:id',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.deleteSosHQ(req, res),
 );
@@ -165,7 +154,6 @@ router.delete(
  */
 router.patch(
   '/sos-hq/:id/activate',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.activateSosHQ(req, res),
 );
@@ -176,7 +164,6 @@ router.patch(
  */
 router.patch(
   '/sos-hq/:id/deactivate',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.deactivateSosHQ(req, res),
 );
@@ -184,7 +171,7 @@ router.patch(
 /** GET /api/admin/cities/sos-hq/:id
  * Get SOS HQ by ID
  */
-router.get('/sos-hq/:id',  authContextMiddleware,
+router.get('/sos-hq/:id',
   requireRole('APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN'),
   (req, res) => cityController.getSosHQById(req, res),
 );
@@ -197,7 +184,6 @@ router.get('/sos-hq/:id',  authContextMiddleware,
  */
 router.get(
   '/:cityCode/config',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getCityConfig(req, res),
 );
@@ -208,7 +194,6 @@ router.get(
  */
 router.put(
   '/:cityCode/config',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateCityConfig(req, res),
 );
@@ -219,7 +204,6 @@ router.put(
  */
 router.patch(
   '/:cityCode/config/incident-rules',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateIncidentRules(req, res),
 );
@@ -230,7 +214,6 @@ router.patch(
  */
 router.patch(
   '/:cityCode/config/sos-rules',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateSosRules(req, res),
 );
@@ -241,7 +224,6 @@ router.patch(
  */
 router.patch(
   '/:cityCode/config/visibility-rules',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateVisibilityRules(req, res),
 );
@@ -254,7 +236,6 @@ router.patch(
  */
 router.post(
   '/:cityCode/setup/initialize',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.initializeSetup(req, res),
 );
@@ -265,7 +246,6 @@ router.post(
  */
 router.patch(
   '/:cityCode/setup/step',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateSetupStep(req, res),
 );
@@ -276,7 +256,6 @@ router.patch(
  */
 router.get(
   '/:cityCode/setup/status',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getSetupStatus(req, res),
 );
@@ -289,7 +268,6 @@ router.get(
  */
 router.get(
   '/:cityCode/complete-setup',
-  authContextMiddleware,
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.getCompleteCitySetup(req, res),
 );

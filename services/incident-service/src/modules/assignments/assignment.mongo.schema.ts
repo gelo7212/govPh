@@ -6,9 +6,9 @@ const IncidentAssignmentSchema = new mongoose.Schema(
     incidentId: { type: String, required: true, index: true },
     cityCode: { type: String, required: true, index: true },
     departmentCode: { type: String, required: true, index: true },
+    departmentName: { type: String, sparse: true },
     assignedBy: {
       type: String,
-      enum: ['system', 'admin'],
       required: true,
     },
     status: {

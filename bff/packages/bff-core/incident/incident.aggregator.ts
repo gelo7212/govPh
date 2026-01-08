@@ -158,6 +158,22 @@ export class IncidentAggregator {
     return assignments;
   }
 
+  async getAssignmentsByDepartmentId(
+    departmentId: string,
+    status: string,
+    limit: number,
+    skip: number
+  ): Promise<AssignmentResponse<IncidentAssignmentEntity[]>> {
+    const assignments = await this.incidentClient.getIncidentByDepartmentId(
+      departmentId,
+      status,
+      limit,
+      skip
+    );
+    return assignments;
+  }
+
+
   /**
    * Get assignments by responder ID
    */

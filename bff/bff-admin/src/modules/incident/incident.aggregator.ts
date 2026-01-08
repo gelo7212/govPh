@@ -85,6 +85,29 @@ export class IncidentAggregator {
     }
   }
 
+  async getIncidentByDepartmentId(
+    departmentId: string,
+    status: string,
+    limit: number,
+    skip: number
+  ): Promise<IncidentResponse<IncidentEntity[]>> {
+    try {
+
+      const result = await this.incidentClient.getIncidentByDepartmentId(
+        departmentId,
+        status,
+        limit,
+        skip
+
+      );
+      return result;
+    }
+    catch (error) {
+      console.error('Failed to get incidents by department ID:', error);
+      throw error;
+    }
+  }
+
   /**
    * Update incident
    */
@@ -229,10 +252,11 @@ export class IncidentAggregator {
    * Complete assignment
    */
   async completeAssignment(
-    assignmentId: string
+    assignmentId: string,
+    notes?: string
   ): Promise<AssignmentResponse<IncidentAssignmentEntity>> {
     try {
-      const result = await this.incidentClient.completeAssignment(assignmentId);
+      const result = await this.incidentClient.completeAssignment(assignmentId, notes);
       return result;
     } catch (error) {
       console.error('Failed to complete assignment:', error);

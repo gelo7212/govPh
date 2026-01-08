@@ -121,10 +121,6 @@ export function validateAssignmentCreationPayload(data: any): void {
     'departmentCode',
     'assignedBy',
   ]);
-
-  if (!['system', 'admin'].includes(data.assignedBy)) {
-    throw new ValidationError('assignedBy must be either system or admin');
-  }
 }
 
 /**

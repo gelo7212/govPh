@@ -30,7 +30,7 @@ inviteRoutes.get(
 );
 
 
-inviteRoutes.use(authContextMiddleware, preventActor('ANON'));
+inviteRoutes.use(authContextMiddleware, preventActor('ANON', 'SHARE_LINK'));
 inviteRoutes.post(
   '/',
   authContextMiddleware,

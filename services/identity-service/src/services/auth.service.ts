@@ -311,6 +311,7 @@ export class AuthService {
   /**
    * Revoke Token
    * Adds token to revocation blacklist
+   * Handles duplicate key errors gracefully (token already revoked)
    */
   static async revokeToken(token: string): Promise<void> {
     try {
@@ -333,8 +334,17 @@ export class AuthService {
 
       logger.info(`Revoked token for user ${userId}`);
     } catch (error) {
-      logger.error('Failed to revoke token', error);
-      throw error;
+      // Handle MongoDB duplicate key error (E11000) gracefully
+      // This occurs when the token is already revoked, which is not an error
+      if (error instanceof Error && error.message.includes('E11000')) {
+        logger.debug('Token already revoked - skipping revocation');
+        return;
+      }
+      
+      // For other errors, log but don't fail the request
+      // This ensures token refresh continues even if revocation fails
+      logger.warn(`Token revocation failed (non-critical): ${error instanceof Error ? error.message : String(error)}`);
+      // Don't re-throw - let the refresh continue
     }
   }
 

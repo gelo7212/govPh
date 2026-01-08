@@ -11,6 +11,7 @@ export {
   RealtimeServiceClient,
   IncidentTimelineServiceClient,
   CityServiceClient,
+  DeptTrackingClient,
 } from './clients';
 
 /**
@@ -24,6 +25,7 @@ export { GeoAggregator } from './geo/geo.aggregator';
 export { IncidentAggregator } from './incident/incident.aggregator';
 export { IncidentTimelineAggregator } from './incident/incident-timeline.aggregator';
 export { CityAggregator } from './city/city.aggregator';
+export { DeptTrackingAggregator, deptTrackingAggregator } from './dept-tracking/dept-tracking.aggregator';
 
 /**
  * Error Handling Utilities - Central export point

@@ -24,31 +24,37 @@ incidentRoutes.get('/reports/types/lookup', (req, res) => incidentController.get
 
 // ==================== Incident Endpoints ====================
 
-incidentRoutes.use(authContextMiddleware, preventActor('ANON'));
+
+
+incidentRoutes.get('/reports/:id', (req, res) => incidentController.getIncidentById(req, res));
+
+
+incidentRoutes.use(authContextMiddleware);
 // ==================== Incident Lookup Endpoints ====================
 
 // Get incidents by city code (MORE SPECIFIC - must come before /:id)
-incidentRoutes.get('/reports/city/:cityCode',authContextMiddleware, (req, res) =>
+incidentRoutes.get('/reports/city/:cityCode', preventActor('ANON','SHARE_LINK'),  (req, res) =>
   incidentController.getIncidentsByCity(req, res)
 );
 
-// Get incident by ID (LESS SPECIFIC - comes after more specific routes)
-incidentRoutes.get('/reports/:id', authContextMiddleware,  (req, res) => incidentController.getIncidentById(req, res));
 
 // Update incident status
-incidentRoutes.patch('/reports/:id/status',authContextMiddleware, (req, res) =>
+incidentRoutes.patch('/reports/:id/status', preventActor('ANON','SHARE_LINK'), (req, res) =>
   incidentController.updateIncidentStatus(req, res)
 );
 
 // Update incident
-incidentRoutes.put('/reports/:id',authContextMiddleware, (req, res) => incidentController.updateIncident(req, res));
+incidentRoutes.put('/reports/:id', preventActor('ANON','SHARE_LINK'), (req, res) => incidentController.updateIncident(req, res));
 
 // ==================== Assignment Endpoints ====================
 
 // Create assignment
-incidentRoutes.post('/assignments',authContextMiddleware, (req, res) =>
+incidentRoutes.post('/assignments', preventActor('ANON','SHARE_LINK'), (req, res) =>
   incidentController.createAssignment(req, res)
 );
+
+// Get incident by ID (LESS SPECIFIC - comes after more specific routes)
+incidentRoutes.use(authContextMiddleware, preventActor('ANON'));
 
 // Get assignment by ID
 incidentRoutes.get('/assignments/:id',authContextMiddleware, (req, res) =>

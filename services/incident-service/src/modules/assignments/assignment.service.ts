@@ -224,7 +224,7 @@ export class AssignmentService {
   /**
    * Complete assignment
    */
-  async completeAssignment(assignmentId: string): Promise<IncidentAssignmentEntity> {
+  async completeAssignment(assignmentId: string, notes?: string): Promise<IncidentAssignmentEntity> {
     try {
       const assignment = await this.getAssignmentById(assignmentId);
 
@@ -235,10 +235,10 @@ export class AssignmentService {
       }
 
       logger.info('Completing assignment', { assignmentId });
-      return await assignmentRepository.updateAssignmentStatus(
-        assignmentId,
-        'completed'
-      );
+      return await assignmentRepository.updateAssignment(assignmentId, {
+        status: 'completed',
+        notes: notes || assignment.notes,
+      });
     } catch (error) {
       logger.error('Error completing assignment', error);
       throw error;

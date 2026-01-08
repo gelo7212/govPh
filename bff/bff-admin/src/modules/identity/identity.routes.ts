@@ -26,10 +26,10 @@ identityRoutes.post('/token', (req, res) => identityController.getToken(req, res
 identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));
 identityRoutes.post('/admin/register', (req, res) => identityController.registerAdmin(req, res));
 
-identityRoutes.use(authContextMiddleware, preventActor('ANON'));
-identityRoutes.get('/profile',authContextMiddleware, (req, res) => identityController.getProfile(req, res));
-identityRoutes.post('/logout',authContextMiddleware, (req, res) => identityController.logout(req, res));
-identityRoutes.get('/firebase/:firebaseUid',authContextMiddleware, (req, res) => identityController.getFirebaseAccount(req, res));
-identityRoutes.post('/refresh',authContextMiddleware, (req, res) => identityController.refreshToken(req, res));
-identityRoutes.post('/validate',authContextMiddleware, (req, res) => identityController.validateToken(req, res));
-identityRoutes.get('/user/:userId',authContextMiddleware, (req, res) => identityController.getUserDetails(req, res));
+identityRoutes.use(authContextMiddleware, preventActor('ANON','SHARE_LINK'));
+identityRoutes.get('/profile', (req, res) => identityController.getProfile(req, res));
+identityRoutes.post('/logout', (req, res) => identityController.logout(req, res));
+identityRoutes.post('/refresh', (req, res) => identityController.refreshToken(req, res));
+identityRoutes.post('/validate', (req, res) => identityController.validateToken(req, res));
+identityRoutes.get('/user/:userId', (req, res) => identityController.getUserDetails(req, res));
+identityRoutes.get('/firebase/:firebaseUid', (req, res) => identityController.getFirebaseAccount(req, res));

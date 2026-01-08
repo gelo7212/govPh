@@ -8,6 +8,7 @@ import {
 import { createLogger } from '../../utils/logger';
 
 import { incidentTimelineService} from '../incident-timelines'
+import { assignmentService } from '../assignments/assignment.service';
 
 const logger = createLogger('IncidentService');
 
@@ -86,6 +87,31 @@ export class IncidentService {
       );
     } catch (error) {
       logger.error('Error retrieving incidents by city', error);
+      throw error;
+    }
+  }
+
+  async getIncidentByDepartmentId(
+    departmentId: string,
+    cityCode: string,
+    limit?: number,
+    skip?: number
+  ): Promise<IncidentEntity[]> {
+    try {
+      const departmentAssignments = await assignmentService.getAssignmentsByCityAndDepartment(
+        cityCode,
+        departmentId,
+        undefined,
+        limit,
+        skip  
+      );
+      if(departmentAssignments.length === 0) {
+        return [];
+      }
+
+      return  await incidentRepository.getIncidentsByIds(departmentAssignments.map(a => a.incidentId)); 
+    } catch (error) {
+      logger.error('Error retrieving incidents by department ID', error);
       throw error;
     }
   }

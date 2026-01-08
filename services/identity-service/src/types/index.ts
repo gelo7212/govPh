@@ -12,7 +12,7 @@ export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'R
  * ANON: No identity, no role (scopes come from mission context)
  * SYSTEM: Internal service calls (identity optional)
  */
-export type ActorType = 'USER' | 'ANON' | 'SYSTEM';
+export type ActorType = 'USER' | 'ANON' | 'SYSTEM' | 'SHARE_LINK' | string;
 
 /**
  * Identity Claims Block (OPTIONAL in token, but REQUIRED fields when present)
@@ -79,7 +79,14 @@ export interface JwtPayload {
   // Mission Context Block (OPTIONAL)
   // Present only when token is bound to SOS/rescue incident
   mission?: MissionContext;
-  tokenType: 'access' | 'refresh';
+  // Incident Assignment Context (OPTIONAL)
+  assignment?: {
+    incidentId: string;
+    departmentId?: string;
+    assignmentId?: string;
+    contextUsage?: 'REPORT_ASSIGNMENT' | 'REPORT_ASSIGNMENT_DEPARTMENT';
+  };
+  tokenType: 'access' | 'refresh' | 'share_link';
 }
 
 /**

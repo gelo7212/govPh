@@ -104,6 +104,7 @@ export class IdentityController {
 
   async refreshToken(req: Request, res: Response): Promise<void> {
     try {
+      console.log('Received token refresh request');
       const { refreshToken } = req.body;
       if (!refreshToken) {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'Refresh token is required');
@@ -111,14 +112,14 @@ export class IdentityController {
       }
       const decoded: DecodedToken | null = await decodeJWT(refreshToken);
       console.log('Decoded refresh token:', decoded);
-      const sosReport = await this.sosAggregator?.getActiveSosByCitizen(decoded?.identity.userId || '', decoded?.actor?.cityCode || '');
-      if (sosReport && sosReport.data) {
-        console.log('Active SOS report found for user during token refresh:', sosReport.data);
-      }
-      const newTokens = await this.aggregator.refreshToken(refreshToken, sosReport?.data?.id);
+      // const sosReport = await this.sosAggregator?.getActiveSosByCitizen(decoded?.identity.userId || '', decoded?.actor?.cityCode || '');
+      // if (sosReport && sosReport.data) {
+      //   console.log('Active SOS report found for user during token refresh:', sosReport.data);
+      // }
+      const newTokens = await this.aggregator.refreshToken(refreshToken);
       res.status(200).json({
         success: true,
-        data: newTokens,
+        data: newTokens.data,
         timestamp: new Date(),
       });
     }

@@ -65,6 +65,21 @@ export class IncidentRepository {
     }
   }
 
+  async getIncidentsByIds(ids: string[]): Promise<IncidentEntity[]> {
+    try {
+      const collection = getCollection('incidents');
+        const incidents = await collection
+        .find({ _id: { $in: ids.map(id => new mongoose.Types.ObjectId(id)) } })
+        .sort({ createdAt: -1 })
+        .toArray();
+      return incidents.map((doc) => this.mapDocumentToEntity(doc));
+    }
+    catch (error) {
+      logger.error('Error getting incidents by department ID', error);
+      throw new DatabaseError('Failed to retrieve incidents by department ID');
+    }
+  }
+
   /**
    * Get incidents by city code with filters and sorting
    */

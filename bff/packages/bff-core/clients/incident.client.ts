@@ -76,6 +76,23 @@ export class IncidentServiceClient extends BaseClient {
     }
   }
 
+  async getIncidentByDepartmentId( 
+    departmentId: string,
+    status: string,
+    limit: number,
+    skip: number
+    ): Promise<any> {
+    try {
+      const response = await this.client.get(`/incidents/department/${departmentId}`,{
+        params: { status, limit, skip },
+      });
+      return response.data;
+    }
+    catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   /**
    * Get incidents by user ID
    */
@@ -268,9 +285,9 @@ export class IncidentServiceClient extends BaseClient {
   /**
    * Complete assignment
    */
-  async completeAssignment(assignmentId: string): Promise<any> {
+  async completeAssignment(assignmentId: string, notes?: string): Promise<any> {
     try {
-      const response = await this.client.post(`/assignments/${assignmentId}/complete`);
+      const response = await this.client.post(`/assignments/${assignmentId}/complete`, { notes });
       return response.data;
     } catch (error) {
       return this.handleError(error);

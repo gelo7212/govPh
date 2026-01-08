@@ -121,6 +121,36 @@ export class IncidentController {
     }
   }
 
+  async getIncidentByDepartmentId(req: Request, res: Response): Promise<void> {
+    try {
+      const { departmentId } = req.params;
+      const cityCode = req.query.cityCode as string;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+      const incidents = await incidentService.getIncidentByDepartmentId(
+        departmentId,
+        cityCode,
+        limit,
+        skip
+      );
+      const total = incidents.length;
+      res.json({
+        success: true,
+        data: incidents,
+        pagination: {
+          total,
+          limit,
+          skip,
+        },
+      });
+    }
+    catch (error) {
+      logger.error('Error in getIncidentByDepartmentId', error);
+      const errorResponse = getErrorResponse(error);
+      res.status(errorResponse.statusCode).json(errorResponse);
+    }
+  }
+
   /**
    * GET /incidents/user/:userId
    * Get incidents by user ID

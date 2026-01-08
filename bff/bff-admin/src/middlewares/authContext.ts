@@ -51,6 +51,7 @@ export async function authContextMiddleware(
         requestId,
         timestamp: new Date(),
       };
+      console.log(`Auth context set for user ID: ${user.id}, role: ${user.role}`);
       next();
       return;
     } catch (error) {

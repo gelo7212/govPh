@@ -8,9 +8,10 @@ export const authConfig = {
   jwt: {
     issuer: 'identity.e-citizen',
     audience: 'e-citizen',
-    
+    shareLinkTokenExpiry: 20 * 60 * 60, // seconds :: 20 hours
+    shareLinkTokenExpiryDepartment: 7 * 24 * 60 * 60, // seconds :: 7 Days    
     // Access token validity: 1 hour
-    accessTokenExpiry: 60 * 15, // seconds :: 15
+    accessTokenExpiry: 60 * 2, // seconds :: 15
     // Access token validity for anonymous citizens: 180 days
     anonCitizenAccessTokenExpiry: 180 * 24 * 60 * 60, // seconds :: 180 Days
     

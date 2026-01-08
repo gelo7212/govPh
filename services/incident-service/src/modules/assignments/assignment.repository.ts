@@ -25,6 +25,7 @@ export class AssignmentRepository {
         incidentId: assignment.incidentId,
         cityCode: assignment.cityCode,
         departmentCode: assignment.departmentCode,
+        departmentName: assignment.departmentName,
         assignedBy: assignment.assignedBy,
         status: assignment.status,
         responderId: assignment.responderId,
@@ -169,7 +170,7 @@ export class AssignmentRepository {
         { returnDocument: 'after' }
       );
 
-      if (!result || !result.value) {
+      if (!result) {
         throw new NotFoundError('Assignment', assignmentId);
       }
 
@@ -200,12 +201,11 @@ export class AssignmentRepository {
         },
         { returnDocument: 'after' }
       );
-
-      if (!result || !result.value) {
+      if (!result) {
         throw new NotFoundError('Assignment', assignmentId);
       }
 
-      return this.mapDocumentToEntity(result.value);
+      return this.mapDocumentToEntity(result);
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       logger.error('Error updating assignment', error);
@@ -253,11 +253,12 @@ export class AssignmentRepository {
    */
   private mapDocumentToEntity(doc: any): IncidentAssignmentEntity {
     return {
-      id: doc._id,
-      _id: doc._id,
+      id: doc?._id,
+      _id: doc?._id,
       incidentId: doc.incidentId,
       cityCode: doc.cityCode,
       departmentCode: doc.departmentCode,
+      departmentName: doc?.departmentName,
       assignedBy: doc.assignedBy,
       status: doc.status,
       responderId: doc.responderId,

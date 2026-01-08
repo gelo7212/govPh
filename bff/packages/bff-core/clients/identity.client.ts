@@ -40,6 +40,7 @@ export class IdentityServiceClient extends BaseClient {
 
   async refreshToken(refreshToken: string, sosId?: string) {
     try {
+      console.log(`Refreshing token for sosId: ${sosId}`);
       const response = await this.client.post('/auth/refresh', { refreshToken, sosId });
       return response.data;
     }

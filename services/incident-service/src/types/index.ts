@@ -98,6 +98,7 @@ export interface IncidentAssignmentEntity {
   incidentId: string;
   cityCode: string;
   departmentCode: string;
+  departmentName?: string;
   assignedBy: 'system' | 'admin';
   status: AssignmentStatus;
   responderId?: string;

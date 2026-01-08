@@ -3,11 +3,12 @@
  * Handles authentication endpoints
  */
 
-import { Request, Response, NextFunction } from 'express';
+import e, { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { JwtPayload, ApiResponse, PERMISSION_MATRIX } from '../../types';
 import { createLogger } from '../../utils/logger';
 import { userService } from '../user/user.service';
+import { authConfig } from '../../config/auth';
 
 const logger = createLogger('AuthController');
 
@@ -22,7 +23,16 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { userId, firebaseUid, sosId, rescuerId ,requestMissionId , contextType, cityCode } = req.body;
+      const { 
+        userId,
+        firebaseUid,
+        sosId,
+        rescuerId,
+        requestMissionId,
+        contextType,
+        contextUsage,
+        incident,
+        cityCode } = req.body;
 
       let scopes: string[] = [];
 
@@ -42,6 +52,70 @@ export class AuthController {
         );
         return;
       }
+
+      /**
+       * Context type for share link city department incident/Report assignment :: City Admin department assignment
+       * Different from anon rescuer who respond to SOS 
+       */ 
+      if(contextType === 'SHARE_LINK'){
+        const { incidentId, assignmentId, departmentId } = incident || {};
+        // validate incident context usage incident Id required, one of assignmentId or departmentId required
+        if(!incidentId || (!assignmentId && !departmentId)){
+          res.status(400).json({
+            success: false,
+            error: {
+              code: 'INVALID_REQUEST',
+              message: 'Incident ID and either Assignment ID or Department ID are required for SHARE_LINK context',
+            },
+            timestamp: new Date(),
+          } as ApiResponse);
+          return;
+        }
+
+
+        if(contextUsage === 'REPORT_ASSIGNMENT' || contextUsage === 'REPORT_ASSIGNMENT_DEPARTMENT'){
+          scopes.push('report_incident_assignment');
+          
+          const token = AuthService.generateShareLinkToken(
+            incidentId,
+            cityCode,
+            contextUsage === 'REPORT_ASSIGNMENT' ? authConfig.jwt.shareLinkTokenExpiry : authConfig.jwt.shareLinkTokenExpiryDepartment,
+            assignmentId,
+            departmentId,
+            contextUsage,
+          );
+          let expiresAt = 0; // seconds
+          if(contextUsage === 'REPORT_ASSIGNMENT'){
+            expiresAt = authConfig.jwt.shareLinkTokenExpiry;
+          }
+          else{
+            expiresAt = authConfig.jwt.shareLinkTokenExpiryDepartment;
+          }
+
+          res.status(200).json(
+            {
+              success: true,
+              data: {
+                token: token,
+                expiresAt: expiresAt,
+              },
+              timestamp: new Date(),
+            } as ApiResponse
+          );
+        }
+        else{
+          res.status(400).json({
+            success: false,
+            error: {
+              code: 'INVALID_REQUEST',
+              message: 'Invalid context usage for SHARE_LINK',
+            },
+            timestamp: new Date(),
+          } as ApiResponse);
+          return;
+        }
+
+      } 
       
       if(contextType === 'ANON_RESCUER'){
         if(sosId){
@@ -227,6 +301,7 @@ export class AuthController {
       }
 
       const validation = await AuthService.validateRefreshToken(refreshToken);
+      console.log('Refresh token validation result:', validation);
 
       if (!validation.valid || !validation.payload) {
         res.status(401).json({
@@ -274,7 +349,7 @@ export class AuthController {
         data: {
           accessToken: newAccessToken,
           refreshToken: newRefreshToken,
-          expiresIn: 15 * 60,
+          expiresIn: authConfig.jwt.accessTokenExpiry,
           tokenType: 'Bearer',
         },
         timestamp: new Date(),

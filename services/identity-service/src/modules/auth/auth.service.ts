@@ -164,6 +164,44 @@ export class AuthService {
     };
   }
 
+  static generateShareLinkToken(
+    incidentId: string,
+    cityCode: string,
+    expiresIn?: number,
+    assignmentId?: string,
+    departmentId?: string,
+    contextUsage?: 'REPORT_ASSIGNMENT' | 'REPORT_ASSIGNMENT_DEPARTMENT',
+  ): string {
+    const now = Math.floor(Date.now() / 1000);
+    expiresIn = expiresIn ?? authConfig.jwt.shareLinkTokenExpiry;
+    const payload: JwtPayload = {
+      iss: authConfig.jwt.issuer,
+      aud: authConfig.jwt.audience,
+      iat: now,
+      exp: now + expiresIn,
+      identity:{
+        role:'CITY_ADMIN',
+      },
+      actor: {
+        type: 'SHARE_LINK',
+        cityCode,
+      },
+      assignment: {
+        incidentId,
+        assignmentId,
+        departmentId,
+        contextUsage,
+      },
+      tokenType: 'share_link',
+    };
+    const token = jwt.sign(payload, authConfig.getAccessTokenSecret(), {
+      algorithm: 'RS256',
+      noTimestamp: true,
+    });
+    logger.info(`Generated share link token for incident ${incidentId}`);
+    return token;
+  }
+
   /**
    * Generate Anonymous Rescuer Token (Mission-Based)
    * For walk-in / volunteer rescuers (no pre-existing identity)
@@ -306,6 +344,7 @@ export class AuthService {
   /**
    * Revoke Token
    * Adds token to revocation blacklist
+   * Handles duplicate key errors gracefully (token already revoked)
    */
   static async revokeToken(token: string): Promise<void> {
     try {
@@ -328,8 +367,17 @@ export class AuthService {
 
       logger.info(`Revoked token for user ${userId}`);
     } catch (error) {
-      logger.error('Failed to revoke token', error);
-      throw error;
+      // Handle MongoDB duplicate key error (E11000) gracefully
+      // This occurs when the token is already revoked, which is not an error
+      if (error instanceof Error && error.message.includes('E11000')) {
+        logger.debug('Token already revoked - skipping revocation');
+        return;
+      }
+      
+      // For other errors, log but don't fail the request
+      // This ensures token refresh continues even if revocation fails
+      logger.warn(`Token revocation failed (non-critical): ${error instanceof Error ? error.message : String(error)}`);
+      // Don't re-throw - let the refresh continue
     }
   }
 

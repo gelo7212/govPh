@@ -96,7 +96,7 @@ services:
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
 
-  sos-service:
+  sos-service: 
     build: ./services/sos-service
     container_name: govph-sos
     networks:

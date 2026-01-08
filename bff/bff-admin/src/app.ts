@@ -1,10 +1,13 @@
-import express, { Express } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { identityRoutes } from './modules/identity/identity.routes';
 import { sosRoutes } from './modules/sos/sos.routes';
 import { cityRoutes } from './modules/city/city.routes';
 import { geoRoutes } from './modules/geo/geo.routes';
 import { inviteRoutes } from './modules/invite/invite.routes';
 import { incidentRoutes } from './modules/incident/incident.routes';
+import deptTrackingRoutes from './modules/dept-tracking/dept-tracking.routes';
+import { requestLogger } from './middlewares/requestLogger';
+
 
 export function createApp(): Express {
   const app = express();
@@ -12,6 +15,9 @@ export function createApp(): Express {
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // Request logging middleware
+  app.use(requestLogger);
 
   // Admin routes with role protection
   app.use('/api/identity',  identityRoutes);
@@ -20,6 +26,7 @@ export function createApp(): Express {
   app.use('/api/geo', geoRoutes);
   app.use('/api/invites', inviteRoutes);
   app.use('/api/incidents', incidentRoutes);
+  app.use('/api/sharelink', deptTrackingRoutes);
   
   // Health check
   app.get('/health', (req, res) => {

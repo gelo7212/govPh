@@ -135,7 +135,7 @@ export class IdentityController {
       const newTokens = await this.aggregator.refreshToken(refreshToken, sosReport?.data?.id);
       res.status(200).json({
         success: true,
-        data: newTokens,
+        data: newTokens.data,
         timestamp: new Date(),
       });
     }
@@ -160,7 +160,7 @@ export class IdentityController {
         const token = await this.aggregator.getToken(firebaseUid, undefined, undefined, 'ANON_CITIZEN');
         res.status(200).json({
           success: true,
-          data: token,
+          data: token.data,
           timestamp: new Date(),
         });
         return;
@@ -188,7 +188,7 @@ export class IdentityController {
       const result = await this.aggregator.getToken(firebaseUid, user.data.id, sosReport?.data?.id);
       res.status(200).json({
         success: true,
-        data: result,
+        data: result.data,
         timestamp: new Date(),
       });
     } catch (error) {

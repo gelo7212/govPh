@@ -63,6 +63,17 @@ export class IncidentController {
     }
   }
 
+  async getIncidentByDepartmentId(req: Request, res: Response): Promise<void> {
+    try {
+      const { departmentId } = req.params;
+      const { status, limit, skip } = req.query;
+      const result = await this.aggregator.getIncidentByDepartmentId(departmentId, status as string, limit ? parseInt(limit as string) : 50, skip ? parseInt(skip as string) : 0);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
   /**
    * PATCH /incidents/:id/status
    * Update incident status
@@ -108,6 +119,12 @@ export class IncidentController {
   async createAssignment(req: Request, res: Response): Promise<void> {
     try {
       const assignmentData = req.body;
+      const user = req.context?.user;
+      if(!user) {
+        throw new Error('Unauthorized: User information is missing');
+      }
+      assignmentData.assignedBy = user.id;
+      assignmentData.departmentCode = assignmentData?.departmentId || assignmentData.departmentCode;
       const result = await this.aggregator.createAssignment(assignmentData);
       res.status(201).json(result);
     } catch (error) {
@@ -226,7 +243,8 @@ export class IncidentController {
   async completeAssignment(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const result = await this.aggregator.completeAssignment(id);
+      const { notes } = req.body;
+      const result = await this.aggregator.completeAssignment(id, notes);
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

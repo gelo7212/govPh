@@ -41,4 +41,8 @@ router.delete('/:id', (req, res) =>
   incidentController.deleteIncident(req, res)
 );
 
+router.get('/department/:departmentId', (req, res) =>
+  incidentController.getIncidentByDepartmentId(req, res)
+);
+
 export default router;

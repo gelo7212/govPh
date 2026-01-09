@@ -32,7 +32,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: ${{ github.event.inputs.environment }}
 
     steps:
@@ -223,143 +223,73 @@ jobs:
         PROJECT_NAME: ${{ env.PROJECT_NAME }}
         SERVICE: ${{ env.SERVICE }}
       run: |
-        echo "Skipping local build - will build on server"
+        if [ -n "$SERVICE" ]; then
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build $SERVICE
+        else
+          # Build all services
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build
+        fi
 
     - name: Deploy to Server
       env:
         COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         PROJECT_NAME: ${{ env.PROJECT_NAME }}
         SERVICE: ${{ env.SERVICE }}
-        LIGHTSAIL_KEY: ${{ secrets.LIGHTSAIL_KEY }}
-        LIGHTSAIL_HOST_PROD: ${{ secrets.LIGHTSAIL_HOST_PROD }}
-        LIGHTSAIL_HOST_DEV: ${{ secrets.LIGHTSAIL_HOST_DEV }}
-        LIGHTSAIL_HOST_PILOT: ${{ secrets.LIGHTSAIL_HOST_PILOT }}
       run: |
-        ENV="${{ github.event.inputs.environment }}"
+        echo "=========================================="
+        echo "Deployment started at $(date)"
+        echo "=========================================="
+        echo "COMPOSE_FILE: $COMPOSE_FILE"
+        echo "PROJECT_NAME: $PROJECT_NAME"
+        echo "SERVICE: $SERVICE"
+        echo ""
         
-        case $ENV in
-          PROD)
-            LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PROD
-            ;;
-          PILOT)
-            LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PILOT
-            ;;
-          *)
-            LIGHTSAIL_HOST=$LIGHTSAIL_HOST_DEV
-            ;;
-        esac
+        # Check if compose file exists
+        if [ ! -f "$COMPOSE_FILE" ]; then
+          echo "ERROR: Compose file not found: $COMPOSE_FILE"
+          ls -la
+          exit 1
+        fi
         
-        # Setup SSH key
-        mkdir -p ~/.ssh
-        cat << 'EOF' > ~/.ssh/lightsail.pem
-        ${{ secrets.LIGHTSAIL_KEY }}
-        EOF
-        chmod 600 ~/.ssh/lightsail.pem
+        # Validate compose file
+        echo "Validating compose file..."
+        docker-compose -f "$COMPOSE_FILE" config > /dev/null || {
+          echo "ERROR: Invalid docker compose file"
+          exit 1
+        }
         
-        # Add server to known_hosts to avoid interactive prompt
-        ssh-keyscan -H $LIGHTSAIL_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+        # Stop existing containers
+        echo "Stopping existing containers for project $PROJECT_NAME..."
+        docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" down || true
         
-        # Copy docker compose file and .env to server
-        echo "Copying compose file to server..."
-        scp -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 \
-          "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+        # Deploy containers
+        echo "Starting containers..."
+        if [ -n "$SERVICE" ]; then
+          echo "Deploying service: $SERVICE"
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d $SERVICE
+        else
+          echo "Deploying all services..."
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d
+        fi
         
-        echo "Copying source code and config to server for building..."
-        scp -r -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 \
-          services bff nginx gateway docs \
-          Dockerfile* docker-compose*.yml package.json tsconfig.json \
-          ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+        # Verify deployment - wait a moment for containers to start
+        sleep 3
+        echo "Checking running containers..."
+        docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" ps
         
-        echo "Files copied. Listing remote files..."
-        ssh -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 ubuntu@$LIGHTSAIL_HOST "ls -lh /home/ubuntu/ | head -20"
-        
-        # Deploy on server
-        ssh -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 ubuntu@$LIGHTSAIL_HOST \
-          COMPOSE_FILE="$COMPOSE_FILE" \
-          PROJECT_NAME="$PROJECT_NAME" \
-          SERVICE="$SERVICE" << 'DEPLOY_SCRIPT'
-          set -e
-          cd /home/ubuntu
-          
-          echo "=========================================="
-          echo "Deployment started at $(date)"
-          echo "=========================================="
-          echo "COMPOSE_FILE: $COMPOSE_FILE"
-          echo "PROJECT_NAME: $PROJECT_NAME"
-          echo "SERVICE: $SERVICE"
+        # Check if any containers exited with error
+        echo ""
+        echo "Checking container health..."
+        STATUS=$(docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" ps --status=exited 2>/dev/null || echo "")
+        if [ ! -z "$STATUS" ]; then
+          echo "WARNING: Some containers have exited:"
+          echo "$STATUS"
           echo ""
-          
-          # Detect docker compose command (could be 'docker compose' or 'docker-compose')
-          if command -v docker-compose &> /dev/null; then
-            DOCKER_COMPOSE="docker-compose"
-            echo "Using: docker-compose"
-          else
-            DOCKER_COMPOSE="docker compose"
-            echo "Using: docker compose"
-          fi
-          echo ""
-          
-          # Check if compose file exists
-          if [ ! -f "$COMPOSE_FILE" ]; then
-            echo "ERROR: Compose file not found: $COMPOSE_FILE"
-            ls -la
-            exit 1
-          fi
-          
-          # Validate compose file
-          echo "Validating compose file..."
-          sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" config > /dev/null || {
-            echo "ERROR: Invalid docker compose file"
-            exit 1
-          }
-          
-          # Build Docker images on server
-          echo ""
-          echo "Building Docker images on server..."
-          if [ -n "$SERVICE" ]; then
-            echo "Building service: $SERVICE"
-            sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build $SERVICE
-          else
-            echo "Building all services..."
-            sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build
-          fi
-          
-          # Stop existing containers
-          echo "Stopping existing containers for project $PROJECT_NAME..."
-          sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" down || true
-          
-          # Deploy containers
-          echo "Starting containers..."
-          if [ -n "$SERVICE" ]; then
-            echo "Deploying service: $SERVICE"
-            sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d $SERVICE
-          else
-            echo "Deploying all services..."
-            sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d
-          fi
-          
-          # Verify deployment - wait a moment for containers to start
-          sleep 3
-          echo "Checking running containers..."
-          sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" ps
-          
-          # Check if any containers exited with error
-          echo ""
-          echo "Checking container health..."
-          STATUS=$(sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" ps --status=exited)
-          if [ ! -z "$STATUS" ]; then
-            echo "WARNING: Some containers have exited:"
-            echo "$STATUS"
-            echo ""
-            echo "Checking logs for errors..."
-            sudo $DOCKER_COMPOSE -f "$COMPOSE_FILE" -p "$PROJECT_NAME" logs --tail=50
-          fi
-          
-          # Cleanup temp files
-          rm "$COMPOSE_FILE" .env
-          
-          echo ""
-          echo "=========================================="
-          echo "Deployment completed successfully!"
-          echo "=========================================="
-        DEPLOY_SCRIPT
+          echo "Checking logs for errors..."
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" logs --tail=50
+        fi
+        
+        echo ""
+        echo "=========================================="
+        echo "Deployment completed successfully!"
+        echo "=========================================="

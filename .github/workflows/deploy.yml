@@ -39,6 +39,17 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Install Node.js if needed
+      run: |
+        if ! command -v npm &> /dev/null; then
+          echo "npm not found, installing Node.js..."
+          curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+        else
+          echo "npm already installed: $(npm --version)"
+          echo "node version: $(node --version)"
+        fi
+
     - name: Set up environment variables
       id: set-env
       run: |

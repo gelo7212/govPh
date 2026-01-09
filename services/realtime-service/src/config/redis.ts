@@ -8,7 +8,6 @@ const redisClient = createClient({
     host: config.REDIS_HOST,
     port: config.REDIS_PORT,
     reconnectStrategy: (retries: number) => {
-      console.log("Connecting to redis..."+ process.env.REDIS_HOST, process.env.REDIS_PORT, process.env.REDIS_PASSWORD);
       if (retries > 10) {
         logger.error('Too many reconnection attempts, giving up.');
         return new Error('Too many reconnection retries.');

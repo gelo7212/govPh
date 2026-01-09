@@ -159,8 +159,47 @@ jobs:
         PYSCRIPT
         dos2unix .env || true
 
-    - name: Build and Save Docker Images
-      if: ${{ github.event.inputs.environment != 'PILOT' }}
+    - name: Test
+      run: |
+        echo "Test - Not implemented in code yet"
+
+    - name: Lint
+      run: |
+        SERVICE="${{ github.event.inputs.service }}"
+        
+        if [ "$SERVICE" = "ALL" ]; then
+          # Lint all services that have lint script
+          for dir in services/* bff/*; do
+            if [ -f "$dir/package.json" ] && grep -q '"lint"' "$dir/package.json"; then
+              echo "Linting $dir"
+              cd "$dir"
+              npm run lint
+              cd ../../..
+            fi
+          done
+        elif [ "$SERVICE" = "nginx" ] || [ "$SERVICE" = "kong" ]; then
+          echo "No lint for $SERVICE"
+        else
+          if [ -f "services/$SERVICE/package.json" ]; then
+            cd "services/$SERVICE"
+            if grep -q '"lint"' package.json; then
+              npm run lint
+            else
+              echo "No lint script for $SERVICE"
+            fi
+            cd ../../..
+          elif [ -f "bff/$SERVICE/package.json" ]; then
+            cd "bff/$SERVICE"
+            if grep -q '"lint"' package.json; then
+              npm run lint
+            else
+              echo "No lint script for $SERVICE"
+            fi
+            cd ../../..
+          fi
+        fi
+
+    - name: Build Docker Images
       env:
         COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -168,25 +207,12 @@ jobs:
       run: |
         if [ -n "$SERVICE" ]; then
           docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build $SERVICE
-          docker save ${PROJECT_NAME}_${SERVICE}:latest -o ${SERVICE}.tar
         else
           # Build all services
           docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build
-
-          # Save images
-          docker save ${PROJECT_NAME}_nginx:latest -o nginx.tar
-          docker save ${PROJECT_NAME}_kong:latest -o kong.tar
-          docker save ${PROJECT_NAME}_bff-citizen:latest -o bff-citizen.tar
-          docker save ${PROJECT_NAME}_bff-admin:latest -o bff-admin.tar
-          docker save ${PROJECT_NAME}_sos-service:latest -o sos-service.tar
-          docker save ${PROJECT_NAME}_identity-service:latest -o identity-service.tar
-          docker save ${PROJECT_NAME}_geo-service:latest -o geo-service.tar
-          docker save ${PROJECT_NAME}_realtime-service:latest -o realtime-service.tar
-          docker save ${PROJECT_NAME}_incident-service:latest -o incident-service.tar
-          docker save ${PROJECT_NAME}_city-service:latest -o city-service.tar
         fi
 
-    - name: Deploy to Lightsail
+    - name: Deploy to Server
       env:
         COMPOSE_FILE: ${{ env.COMPOSE_FILE }}
         PROJECT_NAME: ${{ env.PROJECT_NAME }}
@@ -201,82 +227,53 @@ jobs:
         case $ENV in
           PROD)
             LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PROD
-            DEPLOY_MODE="tar"
             ;;
           PILOT)
             LIGHTSAIL_HOST=$LIGHTSAIL_HOST_PILOT
-            DEPLOY_MODE="compose"
             ;;
           *)
             LIGHTSAIL_HOST=$LIGHTSAIL_HOST_DEV
-            DEPLOY_MODE="tar"
             ;;
         esac
         
-          mkdir -p ~/.ssh
-          cat << 'EOF' > ~/.ssh/lightsail-ci.pem
-          ${{ secrets.LIGHTSAIL_KEY }}
-          EOF
-          chmod 400 ~/.ssh/lightsail-ci.pem
-
+        # Setup SSH key
+        mkdir -p ~/.ssh
+        cat << 'EOF' > ~/.ssh/lightsail.pem
+        ${{ secrets.LIGHTSAIL_KEY }}
+        EOF
+        chmod 400 ~/.ssh/lightsail.pem
         
-        if [ "$DEPLOY_MODE" = "compose" ]; then
-          # PILOT: Copy compose file and .env, build and run on Lightsail
-          scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
-            "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+        # Copy docker compose file and .env to server
+        scp -i ~/.ssh/lightsail.pem -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+        
+        # Deploy on server
+        ssh -i ~/.ssh/lightsail.pem -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null ubuntu@$LIGHTSAIL_HOST << 'DEPLOY_SCRIPT'
+          set -e
+          cd /home/ubuntu
           
-          ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@$LIGHTSAIL_HOST "
-            cd /home/ubuntu
-            # Stop existing containers
-            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
-            
-            if [ -n \"$SERVICE\" ]; then
-              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up --build -d $SERVICE
-            else
-              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up --build -d
-            fi
-            
-            # Cleanup
-            rm $COMPOSE_FILE .env
-          "
-        else
-          # PROD/DEV: Use tar files (existing approach)
+          # Stop existing containers
+          echo "Stopping existing containers for project $PROJECT_NAME..."
+          sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
+          
+          # Deploy containers
+          echo "Starting containers..."
           if [ -n "$SERVICE" ]; then
-            scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
-              ${SERVICE}.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+            echo "Deploying service: $SERVICE"
+            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d $SERVICE
           else
-            scp -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no \
-              *.tar "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
+            echo "Deploying all services..."
+            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
           fi
-
-          # Deploy
-          ssh -i ~/.ssh/lightsail-key.pem -o StrictHostKeyChecking=no ubuntu@$LIGHTSAIL_HOST "
-            cd /home/ubuntu
-            # Stop existing containers
-            sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down || true
-
-            if [ -n \"$SERVICE\" ]; then
-              sudo docker load < ${SERVICE}.tar
-              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d $SERVICE
-            else
-              sudo docker load < nginx.tar
-              sudo docker load < kong.tar
-              sudo docker load < bff-citizen.tar
-              sudo docker load < bff-admin.tar
-              sudo docker load < sos-service.tar
-              sudo docker load < identity-service.tar
-              sudo docker load < geo-service.tar
-              sudo docker load < realtime-service.tar
-              sudo docker load < incident-service.tar
-              sudo docker load < city-service.tar
-              sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
-            fi
-
-            # Cleanup
-            rm *.tar $COMPOSE_FILE .env
-          "
-        fi
-
-    - name: Cleanup
-      if: ${{ github.event.inputs.environment != 'PILOT' }}
-      run: rm *.tar
+          
+          # Verify deployment
+          echo "Checking running containers..."
+          sudo docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps
+          
+          # Cleanup temp files
+          rm $COMPOSE_FILE .env
+          
+          echo "Deployment completed successfully!"
+        DEPLOY_SCRIPT

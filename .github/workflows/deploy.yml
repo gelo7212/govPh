@@ -267,9 +267,15 @@ jobs:
           exit 1
         }
         
-        # Stop existing containers
-        echo "Stopping existing containers for project $PROJECT_NAME..."
-        docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" down || true
+        # Stop and remove only the specific service (if specified) or all services
+        echo "Stopping containers for project $PROJECT_NAME..."
+        if [ -n "$SERVICE" ]; then
+          echo "Stopping service: $SERVICE"
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" rm -sf $SERVICE || true
+        else
+          echo "Stopping all services..."
+          docker-compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" down || true
+        fi
         
         # Deploy containers
         echo "Starting containers..."

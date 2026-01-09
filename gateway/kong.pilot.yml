@@ -5,7 +5,7 @@ services:
   # BFF Admin Service (FIRST - More Specific)
   # =====================
   - name: bff-admin
-    url: http://govph-bff-admin:3000
+    url: http://govph-bff-admin-pilot:3000
     routes:
       - name: admin-api
         hosts:
@@ -18,7 +18,7 @@ services:
   # BFF Citizen Service (SECOND - Fallback)
   # =====================
   - name: bff-citizen
-    url: http://govph-bff-citizen:3000
+    url: http://govph-bff-citizen-pilot:3000
     routes:
       - name: citizen-api
         hosts:

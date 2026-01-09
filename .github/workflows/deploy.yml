@@ -259,16 +259,17 @@ jobs:
         cat << 'EOF' > ~/.ssh/lightsail.pem
         ${{ secrets.LIGHTSAIL_KEY }}
         EOF
-        chmod 400 ~/.ssh/lightsail.pem
+        chmod 600 ~/.ssh/lightsail.pem
+        
+        # Add server to known_hosts to avoid interactive prompt
+        ssh-keyscan -H $LIGHTSAIL_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
         
         # Copy docker compose file and .env to server
-        scp -i ~/.ssh/lightsail.pem -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null \
+        scp -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 \
           "$COMPOSE_FILE" .env ubuntu@$LIGHTSAIL_HOST:/home/ubuntu/
         
         # Deploy on server
-        ssh -i ~/.ssh/lightsail.pem -o StrictHostKeyChecking=no \
-          -o UserKnownHostsFile=/dev/null ubuntu@$LIGHTSAIL_HOST << 'DEPLOY_SCRIPT'
+        ssh -i ~/.ssh/lightsail.pem -o ConnectTimeout=10 ubuntu@$LIGHTSAIL_HOST << 'DEPLOY_SCRIPT'
           set -e
           cd /home/ubuntu
           

@@ -21,7 +21,7 @@ export const connectMongoDB = async (): Promise<Connection> => {
       console.log('MongoDB already connected');
       return mongoConnection;
     }
-    console.info('Attempting to connect to MongoDB');
+    console.info('Attempting to connect to MongoDB', { mongoUri });
 
     await mongoose.connect(mongoUri, {
       retryWrites: true,

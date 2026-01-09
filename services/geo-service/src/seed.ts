@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { connectDatabase, disconnectDatabase } from '../src/config/database';
+import { connectDatabase, disconnectDatabase } from './../src/config/database';
 import { BoundariesSeeder } from './modules/boundaries/boundaries.seeder';
-import { logger } from '../src/utils/logger';
+import { logger } from './../src/utils/logger';
 
 export const seedDatabase = async (options: { standalone?: boolean } = {}) => {
   const { standalone = false } = options;

@@ -36,7 +36,7 @@ services:
     image: kong:3.6
     container_name: govph-kong-pilot
     ports:
-      - "8000:8000"
+      - "8800:8000"
     volumes:
       - ./gateway/kong.pilot.yml:/kong/declarative/kong.yml
     environment:

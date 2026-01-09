@@ -13,11 +13,6 @@ COPY package.json ./
 COPY bff ./bff
 
 # --------------------
-# Copy environment files
-# --------------------
-COPY bff/bff-citizen/.env* ./bff/bff-citizen/
-
-# --------------------
 # Install & build
 # --------------------
 RUN yarn install --frozen-lockfile

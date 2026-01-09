@@ -78,7 +78,7 @@ jobs:
         FIREBASE_ADMIN_SDK_KEY: ${{ secrets.FIREBASE_ADMIN_SDK_KEY }}
         GEO_SERVICE_DB_NAME: ${{ secrets.GEO_SERVICE_DB_NAME }}
         GEO_SERVICE_MONGODB_URI_OPTIONS: ${{ secrets.GEO_SERVICE_MONGODB_URI_OPTIONS }}
-        GEO_SERVICE_MONGODB_URI : ${{ secrets.GEO_SERVICE_MONGODB_URI }}
+        GEO_SERVICE_MONGODB_URI: ${{ secrets.GEO_SERVICE_MONGODB_URI }}
         IDENTITY_SERVICE_DB_NAME: ${{ secrets.IDENTITY_SERVICE_DB_NAME }}
         IDENTITY_SERVICE_MONGODB_URI: ${{ secrets.IDENTITY_SERVICE_MONGODB_URI }}
         IDENTITY_SERVICE_MONGODB_URI_OPTIONS: ${{ secrets.IDENTITY_SERVICE_MONGODB_URI_OPTIONS }}
@@ -148,7 +148,7 @@ jobs:
             "USER_SECRET": os.getenv("USER_SECRET", ""),
             "LIGHTSAIL_HOST_PILOT": os.getenv("LIGHTSAIL_HOST_PILOT", ""),
             "SOS_SERVICE_DB_NAME": os.getenv("SOS_SERVICE_DB_NAME", ""),
-            "GEO_SERVICE_MONGODB_URI ": os.getenv("GEO_SERVICE_MONGODB_URI", ""),
+            "GEO_SERVICE_MONGODB_URI": os.getenv("GEO_SERVICE_MONGODB_URI", ""),
           }
         else:
           env_vars = {

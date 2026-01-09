@@ -156,10 +156,16 @@ services:
       - govph-network
     # Internal only - accessed via Kong gateway
     # ports:
-    #   - "3006:3000"
+    #   - "3006:3004"
     environment:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
-      PORT: 3000
+      PORT: 3004
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   city-service:
     build: ./services/city-service

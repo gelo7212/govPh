@@ -244,7 +244,7 @@ services:
       - govph-network
     environment:
       NODE_ENV: pilot
-      PORT: 3000
+      PORT: 3004
       INTERNAL_AUTH_TOKEN: ${INTERNAL_AUTH_TOKEN}
       MONGODB_URI: ${INCIDENT_MONGODB_URI}
       MONGODB_URI_OPTIONS: ${INCIDENT_MONGODB_URI_OPTIONS}
@@ -253,14 +253,11 @@ services:
       LOG_LEVEL: ${LOG_LEVEL}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
-    depends_on:
-      identity-service:
-        condition: service_healthy
 
   # =====================
   # City Service

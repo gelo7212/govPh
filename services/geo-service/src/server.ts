@@ -8,6 +8,7 @@ import { logger } from './utils/logger';
 import { config } from './types/index';
 import { createClient } from 'redis';
 import { reverseGeocodingController } from './modules/reverse-geocoding/reverse-geocoding.routes';
+import { seedDatabase } from './seed';
 
 const PORT = config.port;
 
@@ -49,6 +50,11 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDatabase();
+
+    // Run database seeder
+    logger.info('Starting database seeder...');
+    await seedDatabase();
+    logger.info('Database seeding completed');
 
     // Initialize Redis for reverse geocoding cache
     const redisClient = await initializeRedisClient();

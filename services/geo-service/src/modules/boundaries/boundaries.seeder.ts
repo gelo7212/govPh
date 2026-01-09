@@ -41,13 +41,18 @@ export class BoundariesSeeder {
         return;
       }
 
-      // Clear existing data
-      await ProvinceModel.deleteMany({});
+      // Upsert provinces
+      const bulkOps = provinces.map((province) => ({
+        updateOne: {
+          filter: { code: province.code },
+          update: { $set: province },
+          upsert: true,
+        },
+      }));
 
-      // Insert provinces
-      const result = await ProvinceModel.insertMany(provinces, { ordered: false });
+      const result = await ProvinceModel.bulkWrite(bulkOps);
 
-      logger.info(`Successfully seeded ${result.length} provinces`);
+      logger.info(`Successfully seeded provinces - Matched: ${result.matchedCount}, Upserted: ${result.upsertedCount}, Modified: ${result.modifiedCount}`);
     } catch (error) {
       logger.error('Error seeding provinces:', error);
       throw error;
@@ -68,15 +73,20 @@ export class BoundariesSeeder {
         return;
       }
 
-      // Clear existing data
-      await MunicipalityModel.deleteMany({});
+      // Upsert municipalities
+      const bulkOps = municipalities.map((municipality) => ({
+        updateOne: {
+          filter: { code: municipality.code },
+          update: { $set: municipality },
+          upsert: true,
+        },
+      }));
 
-      // Insert municipalities
-      const result = await MunicipalityModel.insertMany(municipalities, {
-        ordered: false,
-      });
+      const result = await MunicipalityModel.bulkWrite(bulkOps);
 
-      logger.info(`Successfully seeded ${result.length} municipalities`);
+      logger.info(
+        `Successfully seeded municipalities - Matched: ${result.matchedCount}, Upserted: ${result.upsertedCount}, Modified: ${result.modifiedCount}`
+      );
     } catch (error) {
       logger.error('Error seeding municipalities:', error);
       throw error;
@@ -97,15 +107,20 @@ export class BoundariesSeeder {
         return;
       }
 
-      // Clear existing data
-      await BarangayModel.deleteMany({});
+      // Upsert barangays
+      const bulkOps = barangays.map((barangay) => ({
+        updateOne: {
+          filter: { _id: barangay._id },
+          update: { $set: barangay },
+          upsert: true,
+        },
+      }));
 
-      // Insert barangays
-      const result = await BarangayModel.insertMany(barangays, {
-        ordered: false,
-      });
+      const result = await BarangayModel.bulkWrite(bulkOps);
 
-      logger.info(`Successfully seeded ${result.length} barangays`);
+      logger.info(
+        `Successfully seeded barangays - Matched: ${result.matchedCount}, Upserted: ${result.upsertedCount}, Modified: ${result.modifiedCount}`
+      );
     } catch (error) {
       logger.error('Error seeding barangays:', error);
       throw error;

@@ -11,7 +11,6 @@ COPY package.json ./
 # Workspace folders
 # --------------------
 COPY bff ./bff
-COPY bff/packages ./bff/packages
 
 # --------------------
 # Copy environment files
@@ -22,6 +21,7 @@ COPY bff/bff-citizen/.env* ./bff/bff-citizen/
 # Install & build
 # --------------------
 RUN yarn install --frozen-lockfile
+RUN yarn workspace bff-core build
 RUN yarn workspace bff-citizen build
 
 # --------------------

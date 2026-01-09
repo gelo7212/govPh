@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 export async function connectDatabase(): Promise<void> {
   const mongoCreds = process.env.MONGODB_URI || '';
   const env = process.env.NODE_ENV || 'local';
-  const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+  const mongoOptions = process.env.MONGODB_URI_OPTIONS || undefined;
   let mongoDbName = 'city-service';
   if(env !== 'local'){
     mongoDbName = `city-service-${env}`;

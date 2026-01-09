@@ -12,7 +12,7 @@ export const connectMongoDB = async (): Promise<Connection> => {
   try {
     const mongoCreds = process.env.MONGODB_URI || '';
     const env = process.env.NODE_ENV || 'local';
-    const mongoOptions = process.env.MONGODB_URI_OPTIONS || '';
+    const mongoOptions = process.env.MONGODB_URI_OPTIONS || undefined;
     let mongoDbName = 'identity-service';
     if(env !== 'local'){
       mongoDbName = `identity-service-${env}`;

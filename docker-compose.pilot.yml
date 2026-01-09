@@ -16,10 +16,8 @@ services:
     volumes:
       - ./nginx/nginx.pilot.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      kong:
-        condition: service_healthy
-      realtime-service:
-        condition: service_healthy
+      - kong
+      - realtime-service
     networks:
       - govph-network
     environment:
@@ -30,7 +28,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 5s
 
   # =====================
   # API Gateway (Kong)
@@ -43,17 +41,14 @@ services:
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      KONG_PROXY_LISTEN: 0.0.0.0:8000
-      KONG_ADMIN_LISTEN: 127.0.0.1:8001
     networks:
       - govph-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/health"]
+      test: ["CMD", "kong", "health"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
   # =====================
   # BFF – Citizen (Mobile)
@@ -146,12 +141,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
     depends_on:
-      realtime-service:
-        condition: service_healthy
-      identity-service:
-        condition: service_healthy
+      - realtime-service
+      - identity-service
 
   # =====================
   # Identity Service
@@ -186,7 +178,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
 
   # =====================
   # Geo Service
@@ -242,7 +233,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
 
   # =====================
   # Incident Service

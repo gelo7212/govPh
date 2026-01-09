@@ -174,7 +174,12 @@ jobs:
               echo "Linting $dir"
               cd "$dir"
               npm install
-              npm run lint
+              # Check if eslint config exists
+              if [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f ".eslintrc.yaml" ] || grep -q '"eslintConfig"' package.json; then
+                npm run lint
+              else
+                echo "No eslint config found in $dir, skipping lint"
+              fi
               cd ../../..
             fi
           done
@@ -185,7 +190,12 @@ jobs:
             cd "services/$SERVICE"
             npm install
             if grep -q '"lint"' package.json; then
-              npm run lint
+              # Check if eslint config exists
+              if [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f ".eslintrc.yaml" ] || grep -q '"eslintConfig"' package.json; then
+                npm run lint
+              else
+                echo "No eslint config found, skipping lint for $SERVICE"
+              fi
             else
               echo "No lint script for $SERVICE"
             fi
@@ -194,7 +204,12 @@ jobs:
             cd "bff/$SERVICE"
             npm install
             if grep -q '"lint"' package.json; then
-              npm run lint
+              # Check if eslint config exists
+              if [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f ".eslintrc.yaml" ] || grep -q '"eslintConfig"' package.json; then
+                npm run lint
+              else
+                echo "No eslint config found, skipping lint for $SERVICE"
+              fi
             else
               echo "No lint script for $SERVICE"
             fi

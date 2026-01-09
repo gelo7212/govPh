@@ -81,6 +81,41 @@ export class AuthService {
     }
   }
 
+  static generateTemporaryAccessToken(
+    userId: string,
+    firebaseUid: string,
+    userRole: 'TEMPORARY_ACCESS',
+    cityCode: string,
+    scopes: string[],
+    options?: {
+      sosId?: string;
+    }): TokenResponse {
+      // For temporary access, we treat it as an authenticated user token
+      const basePayload: Omit<JwtPayload, 'iss' | 'aud' | 'exp' | 'iat'> = {
+        identity: {
+          userId,
+          firebaseUid,
+          role: userRole,
+          scopes,
+        },
+        actor: {
+          type: 'USER',
+          cityCode,
+        },
+        mission: options?.sosId ? { sosId: options.sosId } : undefined,
+        tokenType: 'access',
+      };
+
+      const accessToken = this.generateAccessToken(basePayload, authConfig.jwt.temporaryAccessTokenExpiry);
+      const refreshToken = this.generateRefreshToken(basePayload);
+      return {
+        accessToken,
+        refreshToken: refreshToken, // No refresh token for temporary access
+        expiresIn: authConfig.jwt.temporaryAccessTokenExpiry,
+        tokenType: 'Bearer',
+      };
+  }
+
   /**
    * Generate Authenticated User Token Pair
    * For users who have logged in (have identity)
@@ -94,7 +129,7 @@ export class AuthService {
   static generateAuthenticatedUserTokens(
     userId: string,
     firebaseUid: string,
-    userRole: UserRole,
+    userRole: UserRole ,
     cityCode: string,
     scopes: string[],
     options?: {

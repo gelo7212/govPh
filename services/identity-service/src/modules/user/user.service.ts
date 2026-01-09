@@ -8,7 +8,7 @@ import {
 } from '../../errors';
 import { createLogger } from '../../utils/logger';
 import mongoose from 'mongoose';
-import { encryptPhone, hashString } from '../../utils/crypto';
+import { decryptPhone, encryptPhone, hashString } from '../../utils/crypto';
 
 const logger = createLogger('UserService');
 
@@ -100,7 +100,7 @@ export class UserService {
     try {
       const collection = getCollection('users');
       const doc = await collection.findOne({ _id: new mongoose.Types.ObjectId(id) });
-
+      console.log('Fetched user doc:', doc);
       if (!doc) {
         return null;
       }
@@ -180,18 +180,34 @@ export class UserService {
    * Get all admins in a municipality
    */
   async getAdminsByMunicipality(
-    municipalityCode: string
+    municipalityCode: string,
+    role?: string
   ): Promise<UserEntity[]> {
     try {
       const collection = getCollection('users');
-      const docs = await collection
-        .find({
-          municipalityCode,
-          role: { $in: ['city_admin', 'sos_admin'] },
+      if(role) {
+        const docs = await collection
+          .find({ municipalityCode, role })
+          .toArray();
+        
+        const data = (docs).map(doc => this.mapDocToEntity(doc));
+        data.map(docs =>{
+          docs.phone = decryptPhone(docs.phone!);
+          return docs;
         })
-        .toArray();
-
-    return (docs).map(doc => this.mapDocToEntity(doc));
+        return data;
+      } else {
+        const docs = await collection
+          .find({ municipalityCode, role: { $in: ['city_admin', 'sos_admin', 'sk_admin'] } })
+          .toArray();
+          
+        const data = (docs).map(doc => this.mapDocToEntity(doc));
+        data.map(docs =>{
+          docs.phone = decryptPhone(docs.phone!);
+          return docs;
+        })
+        return data;
+      }
     } catch (error) {
       logger.error('Failed to get admins by municipality', error);
       throw new DatabaseError(
@@ -199,6 +215,7 @@ export class UserService {
       );
     }
   }
+  
 
   /**
    * Get all users in a municipality
@@ -242,7 +259,7 @@ export class UserService {
         { returnDocument: 'after' }
       );
 
-      if (!result?.value) {
+      if (!result) {
         throw new NotFoundError('User', userId);
       }
 
@@ -251,7 +268,7 @@ export class UserService {
         newStatus: status,
       });
 
-      return this.mapDocToEntity(result.value);
+      return this.mapDocToEntity(result);
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
@@ -290,15 +307,38 @@ export class UserService {
         { $set: { role, updatedAt: new Date() } },
         { returnDocument: 'after' }
       );  
-      if (!result?.value) {
+      if (!result) {
         throw new NotFoundError('User', userId);
       }
-      return this.mapDocToEntity(result.value);
+      return this.mapDocToEntity(result);
     } catch (error) {
       if (error instanceof NotFoundError) {
         throw error;
       }
       logger.error('Failed to assign role to user', error);
+      throw new DatabaseError(
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
+  async disableUser(userId: string): Promise<UserEntity> {
+    try {
+      const collection = getCollection('users');
+      const result = await collection.findOneAndUpdate( 
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $set: { registrationStatus: 'DISABLED', updatedAt: new Date() } },
+        { returnDocument: 'after' }
+      ); 
+      if (!result) {
+        throw new NotFoundError('User', userId);
+      }
+      return this.mapDocToEntity(result);
+    }
+    catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      logger.error('Failed to disable user', error);
       throw new DatabaseError(
         error instanceof Error ? error.message : 'Unknown error'
       );

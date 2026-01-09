@@ -10,6 +10,7 @@ export const authConfig = {
     audience: 'e-citizen',
     shareLinkTokenExpiry: 20 * 60 * 60, // seconds :: 20 hours
     shareLinkTokenExpiryDepartment: 7 * 24 * 60 * 60, // seconds :: 7 Days    
+    temporaryAccessTokenExpiry: 15 * 60, // seconds :: 15 minutes
     // Access token validity: 1 hour
     accessTokenExpiry: 60 * 2, // seconds :: 15
     // Access token validity for anonymous citizens: 180 days

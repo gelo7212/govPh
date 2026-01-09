@@ -15,7 +15,7 @@ const InviteSchema = new mongoose.Schema<InviteDocument>(
     },
     role: {
       type: String,
-      enum: ['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN'],
+      enum: ['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN', 'RESCUER'],
       required: true,
       index: true,
     },

@@ -175,8 +175,13 @@ export class IdentityController {
       const userRole = user.data.role.toLocaleLowerCase();
       // app_admin city_admin sos_admin
 
-      if(userRole !== 'app_admin' && userRole !== 'city_admin' && userRole !== 'sos_admin') {
-        sendErrorResponse(res, 403, 'FORBIDDEN', 'User does not have admin or rescue privileges');
+      if(userRole !== 'app_admin' && userRole !== 'city_admin' && userRole !== 'sos_admin' && userRole !== 'rescuer' && userRole !== 'sk_admin') {
+        const result = await this.aggregator.getToken(firebaseUid, user.data.id,'TEMPORARY_ACCESS');
+        res.status(200).json({
+          success: true,
+          data: result.data,
+          timestamp: new Date(),
+        });
         return;
       }
       
@@ -295,6 +300,28 @@ export class IdentityController {
       });
     }catch (error) {
       const errorInfo = handleServiceError(error, 'Failed to register admin user');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
+
+  async listAdminUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const municipalityCode = req.query.municipalityCode as string | undefined;
+      const role = req.query.role as string | undefined;
+      const { authorization } = req.headers;
+      const token = authorization && authorization.startsWith('Bearer ') ? authorization.replace('Bearer ', '') : null;
+      if(!token) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
+        return;
+      }
+      const users = await this.aggregator.listAdminUsers(municipalityCode, role, token);
+      res.status(200).json({
+        success: true,
+        data: users.data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to list admin users');
       sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
     }
   }

@@ -22,7 +22,7 @@ export class DispatchController {
    */
   async assignRescuer(req: Request, res: Response): Promise<void> {
     // In production, verify internal service authentication
-    const { sosId, rescuerId } = req.validatedBody;
+    const { sosId, rescuerId } = req.body;
     const { cityId } = req.user || { cityId: req.headers['x-city-id'] };
 
     if (!cityId) {
@@ -62,5 +62,20 @@ export class DispatchController {
       },
       timestamp: new Date(),
     });
+  }
+
+  async getDispatcherHistory(req: Request, res: Response): Promise<void> {
+    const { assignedRescuerId } = req.params;
+    const cityId = req.headers['x-city-id'];
+
+    if (!cityId) {
+      throw new ValidationError('Missing city ID in headers');
+    }
+    const history = await this.sosRepository.findByRescuerId(cityId as string, assignedRescuerId);
+    res.status(200).json({
+      success: true,
+      data: history,
+      timestamp: new Date(),
+    }); 
   }
 }

@@ -121,4 +121,23 @@ export class SosAggregator {
     const state = await this.realtimeClient.getSosState(sosId);
     return state;
   }
+
+  async dispatchRescue(sosData: any, context: any): Promise<any> {
+    const  {
+        sosId,
+        rescuerId
+    } = sosData;
+    const result = await this.sosClient.dispatchRescue(sosId, rescuerId, context);
+    return result;
+  }
+
+  async getRescuerAssignment(context: any): Promise<any> {
+    const result = await this.sosClient.getRescuerAssignment(context);
+    return result;
+  }
+
+  async updateRescuerLocation(location: any, context: any): Promise<any> {
+    const result = await this.sosClient.updateRescuerLocation(location, context);
+    return result;
+  }
 }

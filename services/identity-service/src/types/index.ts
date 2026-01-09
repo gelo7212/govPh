@@ -2,7 +2,7 @@
  * User Role Types - Authoritative role definitions
  * Only exists in authenticated identity context
  */
-export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER' | 'SK_ADMIN';
+export type UserRole = 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER' | 'SK_ADMIN' | 'TEMPORARY_ACCESS';
 
 /**
  * Actor Type - WHO IS ACTING RIGHT NOW?
@@ -24,7 +24,7 @@ export type ActorType = 'USER' | 'ANON' | 'SYSTEM' | 'SHARE_LINK' | string;
 export interface IdentityClaims {
   userId?: string;      // USER-UUID (must exist if identity block present)
   firebaseUid?: string; // Firebase UID (must exist if identity block present)
-  role: UserRole;      // Role ALWAYS exists when identity block present
+  role?: UserRole;      // Role ALWAYS exists when identity block present
   scopes?: string[];   // Optional scopes for the user
 }
 
@@ -220,6 +220,7 @@ export type AuditAction =
   | 'create_rescuer_mission'
   | 'revoke_rescuer_mission'
   | 'view_users'
+  | 'disable_admin'
   | 'view_audit_logs';
 
 /**
@@ -251,12 +252,13 @@ export interface ApiResponse<T = unknown> {
  * Dictates who can create/manage whom
  */
 export const AUTHORITY_RULES: Record<UserRole, Readonly<UserRole[]>> = {
-  APP_ADMIN: ['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN'],
-  CITY_ADMIN: ['SOS_ADMIN', 'SK_ADMIN'],
-  SOS_ADMIN: [],
+  APP_ADMIN: ['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN', 'RESCUER'],
+  CITY_ADMIN: ['SOS_ADMIN', 'SK_ADMIN', 'RESCUER'],
+  SOS_ADMIN: ['RESCUER'],
   CITIZEN: [],
   RESCUER: [],
   SK_ADMIN: [],
+  TEMPORARY_ACCESS: [],
 };
 
 /**
@@ -325,5 +327,13 @@ export const PERMISSION_MATRIX: Record<UserRole, Record<Permission, boolean>> = 
     assign_rescuer: false,
     respond_to_sos: false,
     create_sos: false,
-  }
+  },
+  TEMPORARY_ACCESS: {
+    manage_cities: false,
+    manage_admins: false,
+    view_all_sos: false,
+    assign_rescuer: false,
+    respond_to_sos: false,
+    create_sos: false,
+  },
 };

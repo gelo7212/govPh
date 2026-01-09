@@ -74,6 +74,9 @@ const municipalitySchema = new Schema<MunicipalityDocument>(
   }
 );
 
+// add index for province field and name field for faster search
+municipalitySchema.index({ province: 1, name: 1 });
+
 export const MunicipalityModel = mongoose.model<MunicipalityDocument>(
   'Municipality',
   municipalitySchema,

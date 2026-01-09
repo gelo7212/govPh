@@ -32,9 +32,9 @@ export class BoundariesService {
   /**
    * Get municipalities by province name from database
    */
-  async getMunicipalitiesByProvinceName(provinceName: string): Promise<Municipality[]> {
+  async getMunicipalitiesByProvinceName(provinceName?: string, key?: string): Promise<Municipality[]> {
     if (!provinceName) {
-      throw new Error('Province name is required');
+      return await this.municipalityRepository.getAll(key);
     }
 
     const municipalities = await this.municipalityRepository.findByProvinceName(

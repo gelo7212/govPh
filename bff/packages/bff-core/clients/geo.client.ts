@@ -26,10 +26,10 @@ export class GeoServiceClient extends BaseClient {
    * Get municipalities by province name
    * GET /boundaries/municipalities?province=<province_name>
    */
-  async getMunicipalitiesByProvince(province: string) {
+  async getMunicipalitiesByProvince(province?: string , query?: string) {
     try {
       const response = await this.client.get('/geo/boundaries/municipalities', {
-        params: { province },
+        params: { province, query },
       });
       return response.data;
     } catch (error) {

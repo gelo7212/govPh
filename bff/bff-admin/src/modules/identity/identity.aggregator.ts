@@ -78,4 +78,9 @@ export class IdentityAggregator {
     const registered = await this.identityClient.registerAdminUser(data);
     return registered;
   }
+
+  async listAdminUsers(municipalityCode?: string, role?: string, accessToken?: string): Promise<any> {
+    const admins = await this.identityClient.listAdminUsers(municipalityCode, role, accessToken);
+    return admins;
+  }
 }

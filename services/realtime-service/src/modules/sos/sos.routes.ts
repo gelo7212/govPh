@@ -46,4 +46,8 @@ router.post('/:sosId/location', (req, res) => {
   controller.saveLocationSnapshot(req, res);
 }); 
 
+router.post('/:sosId/rescue', (req, res) => {
+  controller.upsertRescuerLocation(req, res);
+});
+
 export default router;

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { IdentityController } from './identity.controller';
 import { IdentityAggregator } from './identity.aggregator';
 import { GeoAggregator, GeoServiceClient, IdentityServiceClient, RealtimeServiceClient, SosAggregator, SosServiceClient } from '@gov-ph/bff-core';
-import { authContextMiddleware } from '../../middlewares/authContext';
+import { authContextForTemporaryAccessMiddleware, authContextMiddleware } from '../../middlewares/authContext';
 import { preventActor } from '../../middlewares/requireActor';
 
 export const identityRoutes = Router();
@@ -26,10 +26,12 @@ identityRoutes.post('/token', (req, res) => identityController.getToken(req, res
 identityRoutes.post('/register', (req, res) => identityController.registerCitizen(req, res));
 identityRoutes.post('/admin/register', (req, res) => identityController.registerAdmin(req, res));
 
+
+identityRoutes.post('/refresh',authContextForTemporaryAccessMiddleware, (req, res) => identityController.refreshToken(req, res));
 identityRoutes.use(authContextMiddleware, preventActor('ANON','SHARE_LINK'));
 identityRoutes.get('/profile', (req, res) => identityController.getProfile(req, res));
 identityRoutes.post('/logout', (req, res) => identityController.logout(req, res));
-identityRoutes.post('/refresh', (req, res) => identityController.refreshToken(req, res));
 identityRoutes.post('/validate', (req, res) => identityController.validateToken(req, res));
 identityRoutes.get('/user/:userId', (req, res) => identityController.getUserDetails(req, res));
 identityRoutes.get('/firebase/:firebaseUid', (req, res) => identityController.getFirebaseAccount(req, res));
+identityRoutes.get('/admin/users', (req, res) => identityController.listAdminUsers(req, res));

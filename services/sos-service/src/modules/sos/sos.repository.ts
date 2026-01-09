@@ -72,6 +72,20 @@ export class SOSRepository {
     return this.mapToDTO(sos);
   }
 
+  async updateStatus(sosId: string, status: string): Promise<SOS> {
+    const sos = await SOSModel.findOneAndUpdate(
+      {
+        _id: sosId,
+      },
+      { status: status },
+      { new: true }
+    );
+    if (!sos) {
+      throw new Error('SOS request not found');
+    }
+    return this.mapToDTO(sos);
+  }
+
   async update(cityId: string, id: string, data: any): Promise<SOS> {
     const sos = await SOSModel.findOneAndUpdate(
       { cityId, _id: id },

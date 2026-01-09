@@ -29,9 +29,9 @@ export const isValidInviteCode = (code: string): boolean => {
  */
 export const generateInviteLink = (
     inviteId: string,
-    baseUrl: string = 'https://app.e-citizen.ph'
+    baseUrl: string = 'https://pilot.e-citizen.click/invites'
 ): string => {
-    return `${baseUrl}/invite/accept?id=${inviteId}`;
+    return `${baseUrl}/${inviteId}`;
 };
 
 /**

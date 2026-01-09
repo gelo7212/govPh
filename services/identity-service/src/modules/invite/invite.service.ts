@@ -72,7 +72,7 @@ export class InviteService {
       targetMunicipalityCode,
       creatorUserId
     );
-    const INVITE_LINK_HOST = process.env.INVITE_LINK_HOST || 'https://gov.ph/invite'; 
+    const INVITE_LINK_HOST = process.env.INVITE_LINK_HOST || 'https://pilot.e-citizen.click/invites'; 
 
     logger.info(
       `Invite created: ${invite.id} for ${targetRole} in ${targetMunicipalityCode}`
@@ -169,16 +169,20 @@ export class InviteService {
       throw new InvalidInviteCodeError();
     }
 
-    // Mark as used
-    const usedInvite = await this.repository.markAsUsed(inviteId, userId);
     const findUser = await this.userService.getUserById(userId);
     if (!findUser) {
       throw new Error(`User not found: ${userId}`);
     }
-    // user has a role assigned already:: throw error.
-    if (findUser.role === 'APP_ADMIN' || findUser.role === 'CITY_ADMIN' || findUser.role === 'SOS_ADMIN' || findUser.role === 'SK_ADMIN') {
-      throw new Error(`User already has a role assigned: ${findUser.role}`);
+   
+    if (findUser.role === 'APP_ADMIN') {
+      throw new Error(`User cannot accept invite: ${userId} is an APP_ADMIN`);
     }
+ 
+    // Mark as used
+    const usedInvite = await this.repository.markAsUsed(inviteId, userId);
+    
+    // Allow role reassignment.
+
     await this.userService.assignRole(userId, invite.role);
 
     logger.info(

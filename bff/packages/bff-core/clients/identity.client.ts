@@ -103,6 +103,19 @@ export class IdentityServiceClient extends BaseClient {
       return this.handleError(error);
     }
   }
+  async listAdminUsers(municipalityCode?: string, role?: string, accessToken?: string): Promise<any> {
+    try {
+      const response = await this.client.get('/admin/users', {
+        params: { municipalityCode, role },
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 
   async registerCitizenUser(data: CitizenRegistrationData) {
     try {

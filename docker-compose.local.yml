@@ -67,6 +67,7 @@ services:
       INCIDENT_MS_URL: "http://govph-incident:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
+      
   # =====================
   # BFF – Admin (Web)
   # =====================
@@ -109,6 +110,12 @@ services:
       PORT: 3000
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
       IDENTITY_SERVICE_URL: "http://govph-identity:3000"
+      NODE_ENV: local
+      MICROSERVICE_NAME: sos-service
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MONGODB_URI: ${SOS_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${SOS_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${SOS_SERVICE_DB_NAME}
 
   identity-service:
     build: ./services/identity-service
@@ -124,7 +131,7 @@ services:
       USER_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
       ENCRYPTION_KEY: n++mnwYjzA/umoe981HWgdI4idmTRgPZ+fpd0Hu5ua0=
       OTP_SECRET: 526bb7e8b6efb4dacd6548111ae563f0131ce8de476d10b38a8a8ea189b34657
-      INVITE_LINK_HOST: http://localhost:3000
+      INVITE_LINK_HOST: http://localhost:3000/invites
 
   geo-service:
     build: ./services/geo-service
@@ -136,6 +143,14 @@ services:
     #   - "3003:3000"
     environment:
       PORT: 3000
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      MICROSERVICE_NAME: geo-service
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MONGODB_URI: ${GEO_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${GEO_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${GEO_SERVICE_DB_NAME}
 
   realtime-service:
     build: ./services/realtime-service
@@ -148,6 +163,9 @@ services:
     environment:
       PORT: 3000
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
 
   incident-service:
     build: ./services/incident-service
@@ -160,6 +178,14 @@ services:
     environment:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3004
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      MICROSERVICE_NAME: geo-service-pilot
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MONGODB_URI: ${INCIDENT_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${INCIDENT_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${INCIDENT_SERVICE_DB_NAME}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health"]
       interval: 10s
@@ -178,6 +204,14 @@ services:
     environment:
       INTERNAL_AUTH_TOKEN: "N71p4faxRennjHmag79N8L16xWYGsytxKnOGjGwTC8A="
       PORT: 3000
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      MICROSERVICE_NAME: geo-service
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      MONGODB_URI: ${CITY_SERVICE_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${CITY_SERVICE_MONGODB_URI_OPTIONS}
+      DB_NAME: ${CITY_SERVICE_DB_NAME}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 10s

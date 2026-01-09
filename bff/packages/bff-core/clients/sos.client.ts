@@ -232,8 +232,15 @@ export class SosServiceClient extends BaseClient {
   /**
    * Get assigned SOS for a rescuer
    */
-  async getRescuerAssignment() {
+  async getRescuerAssignment(context: any) {
     try {
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+
       const response = await this.client.get('/api/rescuer/assignment');
       return response.data;
     } catch (error) {
@@ -244,8 +251,14 @@ export class SosServiceClient extends BaseClient {
   /**
    * Update rescuer location
    */
-  async updateRescuerLocation(location: any) {
+  async updateRescuerLocation(location: any, context: any) {
     try {
+       this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
       const response = await this.client.post('/api/rescuer/location', location);
       return response.data;
     } catch (error) {
@@ -258,11 +271,30 @@ export class SosServiceClient extends BaseClient {
   /**
    * Assign a rescuer to an SOS request (internal endpoint)
    */
-  async assignRescuer(sosId: string, rescuerId: string) {
+  async dispatchRescue(sosId: string, rescuerId: string, context: any) {
     try {
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
       const response = await this.client.post('/api/internal/dispatch/assign', {
         sosId,
         rescuerId,
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getDispatchHistory(assignedRescuerId: string, cityId: string) {
+    try {
+      const response = await this.client.get(`/api/internal/dispatch/rescuer/${assignedRescuerId}/history`, {
+        headers: {
+          'x-city-id': cityId
+        }
       });
       return response.data;
     } catch (error) {

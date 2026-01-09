@@ -20,6 +20,8 @@ sosRoutes.options('/citizen/active', (req, res) => res.sendStatus(200));
 sosRoutes.options('/:sosId/tag', (req, res) => res.sendStatus(200));
 sosRoutes.options('/:sosId/messages', (req, res) => res.sendStatus(200));
 
+// ==================== SOS Routes ====================
+
 // Initialize SOS dependencies
 const sosClient = new SosServiceClient(process.env.SOS_SERVICE_URL || 'http://govph-sos:3000');
 const sosAggregator = new SosAggregator(sosClient);
@@ -38,6 +40,15 @@ sosRoutes.get('/states/nearby',authContextMiddleware,requireActor('USER'), (req:
 sosRoutes.get('/:sosId/state',authContextMiddleware,requireActor('USER','ANON'), (req: Request, res: Response) => sosController.getSosState(req, res));
 sosRoutes.post('/:sosId/anon-rescuer',authContextMiddleware,requireActor('USER'), (req: Request, res: Response) => sosController.createAnonRescuer(req, res));
 
+
+// dispatch 
+sosRoutes.post('/:sosId/dispatch/rescue',authContextMiddleware, requireActor('USER'), (req, res) => sosController.dispatchRescue(req, res));
+
+
+// Rescuer Routes
+
+sosRoutes.get('/rescuer/assignment',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getRescuerAssignment(req, res));
+sosRoutes.put('/rescuer/location',authContextMiddleware, requireActor('USER'), validate(updateLocationSchema), (req, res) => sosController.updateRescuerLocation(req, res));
 // Message Routes - nested under SOS
 /**
  * Send a message to an SOS conversation
@@ -56,6 +67,8 @@ sosRoutes.get('/:sosId/messages',authContextMiddleware, (req, res) => messageCon
  * GET /message/:messageId
  */
 sosRoutes.get('/message/:messageId',authContextMiddleware, (req, res) => messageController.getMessage(req, res));
+
+
 
 // Participant Routes - nested under SOS
 const participantsRoutes = createSosParticipantsRoutes();

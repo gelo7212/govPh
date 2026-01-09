@@ -55,9 +55,9 @@ export class InviteController {
         );
       }
 
-      if (!['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN'].includes(role)) {
+      if (!['CITY_ADMIN', 'SOS_ADMIN', 'SK_ADMIN', 'RESCUER'].includes(role)) {
         throw new ValidationError(
-          'Invalid invite role. Must be: CITY_ADMIN, SOS_ADMIN, or SK_ADMIN',
+          'Invalid invite role. Must be: CITY_ADMIN, SOS_ADMIN, SK_ADMIN, or RESCUER',
           'role'
         );
       }

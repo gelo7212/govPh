@@ -147,4 +147,61 @@ export class SosController {
       res.status(400).json({ error: (error as Error).message });
     } 
   }
+  async dispatchRescue(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const { rescuerId } = req.body;
+      const sosData = {
+        sosId,
+        rescuerId
+      };
+
+      const userContext = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const result = await this.aggregator.dispatchRescue(sosData, userContext);
+      res.status(201).json(result);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+  async updateRescuerLocation(req: Request, res: Response): Promise<void> {
+    try {
+      const { lat, lng } = req.body;
+      const location = {
+        latitude: lat,
+        longitude: lng
+      };
+      const userContext = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const result = await this.aggregator.updateRescuerLocation(location, userContext);
+      res.status(201).json(result);
+    }
+    catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  async getRescuerAssignment(req: Request, res: Response): Promise<void> {
+    try {
+      const userContext = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const result = await this.aggregator.getRescuerAssignment(userContext);
+      res.status(200).json(result);
+    }
+    catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
 }

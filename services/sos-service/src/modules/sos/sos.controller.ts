@@ -270,6 +270,17 @@ export class SOSController {
     });
   }
 
+  async updateSOSStatus(req: Request, res: Response): Promise<void> {
+    const { sosId } = req.params;
+    const { status } = req.body;
+    const updatedSOS = await this.sosService.updateSOSStatus(sosId, status);
+    res.status(200).json({
+      success: true,
+      data: updatedSOS,
+      timestamp: new Date(),
+    });
+  }
+
   /**
    * POST /sos/{sosId}/close
    * Close/Resolve SOS (ADMIN only)

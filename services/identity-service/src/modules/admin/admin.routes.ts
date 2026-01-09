@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { adminController } from './admin.controller';
 import { requireCityAdmin, requireAppAdmin } from '../../middlewares/requireRole';
+import { authMiddleware } from '../auth';
 
 const router = Router();
 
@@ -29,9 +30,16 @@ router.post(
  */
 router.get(
   '/users',
-  requireCityAdmin(),
+  authMiddleware,
   (req, res, next) =>
     adminController.listUsers(req, res).catch(next)
+);
+
+router.delete(
+  '/users/:userId',
+  requireAppAdmin(),
+  (req, res, next) =>
+    adminController.disableAdmin(req, res).catch(next)
 );
 
 /**

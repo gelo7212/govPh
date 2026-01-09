@@ -179,6 +179,39 @@ export class SOSController {
       });
     }
   }
+
+  async upsertRescuerLocation(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const { rescuerId, latitude, longitude, accuracy } = req.body;
+      if (!rescuerId || !latitude || !longitude) {
+        res.status(400).json({
+          success: false,
+          error: 'rescuerId, latitude, and longitude are required fields',
+        });
+        return;
+      }
+      await this.sosService.upsertRescuerLocation(
+        rescuerId,
+        {
+          latitude,
+          longitude,
+          accuracy,
+        },
+        sosId
+      );
+      res.status(200).json({
+        success: true,
+        message: 'Rescuer location upserted successfully',
+      });
+    } catch (error) {
+      logger.error('Error upserting rescuer location', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to upsert rescuer location',
+      });
+    }
+  }
 }
 
 export default SOSController;

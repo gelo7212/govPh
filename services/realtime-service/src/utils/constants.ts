@@ -35,6 +35,7 @@ export const REDIS_KEYS = {
   SOS_ROOMS: 'sos:rooms',
   USER_PRESENCE: 'user:presence',
   SOS_STATE: 'sos:state',
+  RESCUER_LOCATION: 'rescuer:location',
 };
 
 export const HTTP_HEADERS = {

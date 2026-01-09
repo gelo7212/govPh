@@ -86,7 +86,38 @@ export class MunicipalityRepository {
   /**
    * Get all municipalities
    */
-  async getAll(): Promise<Municipality[]> {
+  async getAll(query?: any): Promise<Municipality[]> {
+    if (query) {
+      const decodedQuery = decodeURIComponent(query as string);
+      const parts = decodedQuery
+        .split(/[\s\-\/]+/)
+        .map((p: string) => p.trim())
+        .filter(Boolean);
+
+      if (parts.length === 0) {
+        return MunicipalityModel.find()
+          .sort({ province: 1, name: 1 })
+          .lean();
+      }
+
+      // 2️⃣ escape each word separately
+      const conditions = parts.map((part: string) => {
+        const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        return {
+          $or: [
+            { name: { $regex: escaped, $options: 'i' } },
+            { province: { $regex: escaped, $options: 'i' } }
+          ]
+        };
+      });
+
+      console.log('Search conditions:', JSON.stringify(conditions, null, 2));
+
+      return MunicipalityModel.find({ $and: conditions })
+        .sort({ province: 1, name: 1 })
+        .lean();
+    }
     return MunicipalityModel.find().sort({ province: 1, name: 1 }).lean();
   }
 

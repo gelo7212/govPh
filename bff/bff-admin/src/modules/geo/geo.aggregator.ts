@@ -22,8 +22,8 @@ export class GeoAggregator {
   /**
    * Get municipalities by province name
    */
-  async getMunicipalitiesByProvince(province: string) {
-    const municipalities = await this.geoClient.getMunicipalitiesByProvince(province);
+  async getMunicipalitiesByProvince(province?: string, query?: string) {
+    const municipalities = await this.geoClient.getMunicipalitiesByProvince(province, query);
     return municipalities;
   }
 

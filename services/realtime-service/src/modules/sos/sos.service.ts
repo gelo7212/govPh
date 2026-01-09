@@ -1,14 +1,14 @@
 import redisClient from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { REDIS_KEYS } from '../../utils/constants';
+import { SOSMSClient } from '../../services/sos-ms.client';
 
 /**
  * SOS Service - Manages realtime SOS state
  */
 export class SOSService {
-  /**
-   * Initialize SOS realtime context
-   */
+  private sosMSClient: SOSMSClient = new SOSMSClient;
+
   async initSOS(sosId: string, citizenId: string, location: any, address: any): Promise<any> {
     try {
       const state = {
@@ -242,6 +242,58 @@ export class SOSService {
     } catch (error) {
       logger.error('Error getting nearby SOS by location', error);
       return [];
+    }
+  }
+
+  async upsertRescuerLocation(rescuerId: string, location: any, sosId: string): Promise<void> {
+    try {
+      const key = `${REDIS_KEYS.RESCUER_LOCATION}:${rescuerId}:${sosId}`;
+      await redisClient.setEx(key, 86400, JSON.stringify({
+        rescuerId,
+        location,
+        updatedAt: Date.now(),
+        sosId,
+      }));
+
+      if(sosId){
+        const sosState = await this.getSOSState(sosId);
+        if (sosState && sosState.location?.latitude && sosState.location?.longitude) {
+          const distance = this.calculateDistance(
+            location.latitude,
+            location.longitude,
+            sosState.location.latitude,
+            sosState.location.longitude
+          );
+          
+          // If within 100 meters, auto-transition to "arrived"
+          if (distance < 0.1) {
+            sosState.status = 'arrived';
+            sosState.arrivedAt = Date.now();
+            sosState.arrivedBy = rescuerId;
+            const sosKey = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
+            await redisClient.setEx(sosKey, 86400, JSON.stringify(sosState));
+
+            // Update SOS status in database
+            await this.sosMSClient.updateStatus(sosId, 'ARRIVED');
+            
+            logger.info('SOS status auto-transitioned to arrived', { sosId, rescuerId, distance });
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error upserting rescuer location', error);
+      throw error;
+    }
+  }
+
+  async getRescuerLocation(rescuerId: string, sosId: string): Promise<any> {
+    try {
+      const key = `${REDIS_KEYS.RESCUER_LOCATION}:${rescuerId}:${sosId}`;
+      const data = await redisClient.get(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      logger.error('Error getting rescuer location', error);
+      return null;
     }
   }
 }

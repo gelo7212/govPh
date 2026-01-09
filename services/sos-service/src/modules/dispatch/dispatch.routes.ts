@@ -9,14 +9,13 @@ const sosRepository = new SOSRepository();
 const statusMachine = new StatusMachineService(sosRepository);
 const controller = new DispatchController(sosRepository, statusMachine);
 
-/**
- * Internal API endpoints
- * These should be protected by service-to-service authentication
- */
-
 // Assign rescuer to SOS
 router.post('/assign', validate(dispatchAssignSchema), (req, res, next) =>
   controller.assignRescuer(req, res).catch(next)
+);
+
+router.get('/rescuer/:assignedRescuerId/history', (req, res, next) =>
+  controller.getDispatcherHistory(req, res).catch(next)
 );
 
 export default router;

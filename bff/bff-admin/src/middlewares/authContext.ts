@@ -64,3 +64,58 @@ export async function authContextMiddleware(
     return;
   }
 }
+
+export const authContextForTemporaryAccessMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const requestId = uuidv4();
+  // Extract JWT token from Authorization header
+  const authHeader = req.headers.authorization;
+  let user = undefined;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const publicKey = process.env.JWT_PUBLIC_KEY;
+      if (!publicKey) {
+        throw new Error('JWT_PUBLIC_KEY environment variable is not set');
+      }
+      // Verify and decode JWT token using public key
+      
+      const decodedToken = jwt.verify(token, publicKey) as any;
+
+      if(!decodedToken.identity?.scopes?.includes('temporary_access')){
+        authContextMiddleware(req, res, next);
+        return;
+      }
+      user = {
+        id: decodedToken.identity?.userId || decodedToken.uid || decodedToken.sub,
+        email: decodedToken.identity?.email || decodedToken.email,
+        role: decodedToken.identity?.role || (decodedToken.identity?.scopes?.includes('temporary_access') ? 'TEMPORARY_ACCESS' : undefined),
+        firebaseUid: decodedToken.identity?.firebaseUid,
+        actor: decodedToken.actor,   
+        sosAnonSosId: undefined,     
+      };
+      if(decodedToken.identity?.actor?.type === 'ANON'){
+        user.sosAnonSosId = decodedToken.mission.sosId;
+      }
+      req.context = {
+        user,
+        requestId,
+        timestamp: new Date(),
+      };
+      console.log(`Auth context set for user ID: ${user.id}, role: ${user.role}`);
+      next();
+      return;
+    }
+    catch (error) {
+      console.error('Failed to parse auth token', error);
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
+    }
+  } else {
+    res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
+    return;
+  }
+}

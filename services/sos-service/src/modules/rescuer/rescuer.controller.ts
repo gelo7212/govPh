@@ -66,7 +66,7 @@ export class RescuerController {
       throw new ForbiddenError('Only rescuers can update location');
     }
 
-    const { lat, lng } = req.validatedBody;
+    const { lat, lng } = req.body;
     const { id: rescuerId, cityId } = req.user;
 
     if (!cityId) {

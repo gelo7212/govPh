@@ -50,6 +50,11 @@ export class SOSService {
     const sosList = await this.repository.findAll(cityId);
     return sosList;
   }
+  
+  async updateSOSStatus(sosId: string,  status: string): Promise<SOS> {
+    const sos = await this.repository.updateStatus(sosId, status);
+    return sos;
+  }
 
   async listByStatus(cityId: string, status: string): Promise<SOS[]> {
     const sosList = await this.repository.findByStatus(cityId, status);

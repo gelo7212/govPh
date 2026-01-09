@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { InviteController } from './invite.controller';
 import { InviteAggregator } from './invite.aggregator';
 import { IdentityServiceClient } from '@gov-ph/bff-core';
-import { authContextMiddleware } from '../../middlewares/authContext';
+import { authContextForTemporaryAccessMiddleware, authContextMiddleware } from '../../middlewares/authContext';
 import { preventActor, requireActor } from '../../middlewares/requireActor';
 
 export const inviteRoutes = Router();
@@ -28,17 +28,6 @@ inviteRoutes.get(
   '/:inviteId',
   (req, res) => inviteController.validateInvite(req, res)
 );
-
-
-inviteRoutes.use(authContextMiddleware, preventActor('ANON', 'SHARE_LINK'));
-inviteRoutes.post(
-  '/',
-  authContextMiddleware,
-  (req, res) => inviteController.createInvite(req, res)
-);
-
-
-
 /**
  * POST /invites/:inviteId/accept
  * Accept invite with 6-digit code
@@ -46,8 +35,14 @@ inviteRoutes.post(
  */
 inviteRoutes.post(
   '/:inviteId/accept',
-  authContextMiddleware,
+  authContextForTemporaryAccessMiddleware,
   (req, res) => inviteController.acceptInvite(req, res)
+);
+
+inviteRoutes.use(authContextMiddleware, preventActor('ANON', 'SHARE_LINK'));
+inviteRoutes.post(
+  '/',
+  (req, res) => inviteController.createInvite(req, res)
 );
 
 /**
@@ -57,6 +52,5 @@ inviteRoutes.post(
  */
 inviteRoutes.get(
   '/',
-  authContextMiddleware,
   (req, res) => inviteController.listInvites(req, res)
 );

@@ -75,24 +75,24 @@ export class SosAggregator {
   /**
    * Assign rescuer to SOS request (internal dispatch endpoint)
    */
-  async assignRescuer(sosId: string, rescuerId: string): Promise<SosRequest> {
-    const assigned = await this.sosClient.assignRescuer(sosId, rescuerId);
+  async assignRescuer(sosId: string, rescuerId: string, context: any): Promise<SosRequest> {
+    const assigned = await this.sosClient.dispatchRescue(sosId, rescuerId, context);
     return assigned;
   }
 
   /**
    * Get assigned SOS for a rescuer
    */
-  async getRescuerAssignment(): Promise<SosRequest> {
-    const assignment = await this.sosClient.getRescuerAssignment();
+  async getRescuerAssignment(context: any): Promise<SosRequest> {
+    const assignment = await this.sosClient.getRescuerAssignment(context);
     return assignment;
   }
 
   /**
    * Update rescuer location
    */
-  async updateRescuerLocation(location: any): Promise<any> {
-    const result = await this.sosClient.updateRescuerLocation(location);
+  async updateRescuerLocation(location: any, context: any): Promise<any> {
+    const result = await this.sosClient.updateRescuerLocation(location, context);
     return result;
   }
 

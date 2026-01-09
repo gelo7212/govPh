@@ -47,6 +47,10 @@ router.post('/:sosId/location', validate(updateLocationSchema), (req, res, next)
   controller.updateLocation(req, res).catch(next)
 );
 
+router.patch('/:sosId/status', validate(updateLocationSchema), (req, res, next) =>
+  controller.updateSOSStatus(req, res).catch(next)
+);
+
 // // Send message
 // router.post('/:sosId/messages', validate(sendMessageSchema), (req, res, next) =>
 //   controller.sendMessage(req, res).catch(next)

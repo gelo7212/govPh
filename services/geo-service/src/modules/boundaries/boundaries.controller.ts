@@ -45,20 +45,12 @@ export class BoundariesController {
     res: Response
   ): Promise<void> {
     try {
-      const { province } = req.query;
+      const { province , query } = req.query;
 
-      if (!province || typeof province !== 'string') {
-        const response: ApiResponse<null> = {
-          success: false,
-          message: 'Province name is required',
-          error: 'Missing or invalid province query parameter',
-        };
-        res.status(400).json(response);
-        return;
-      }
 
       const municipalities = await this.service.getMunicipalitiesByProvinceName(
-        province
+        province as string | undefined,
+        query as string | undefined
       );
 
       const response: PaginatedResponse<Municipality> = {

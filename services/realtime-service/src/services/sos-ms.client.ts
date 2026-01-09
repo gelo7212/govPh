@@ -50,6 +50,23 @@ export class SOSMSClient {
     }
   }
 
+  async updateStatus(sosId: string, status: string): Promise<void> {
+    try {
+      await axios.patch(
+        `${this.baseURL}/api/sos/${sosId}/status`,
+        { status },
+        {
+          headers: {
+            'x-internal-token': config.INTERNAL_AUTH_TOKEN,
+          },
+        }
+      );
+    } catch (error) {
+      logger.error('Error updating SOS status', { sosId, status, error });
+      // Don't throw - log and continue
+    }
+  }
+
   /**
    * Get SOS details from SOS MS
    */

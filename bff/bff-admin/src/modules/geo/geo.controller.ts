@@ -27,12 +27,13 @@ export class GeoController {
    */
   async getMunicipalitiesByProvince(req: Request, res: Response): Promise<void> {
     try {
-      const { province } = req.query;
-      if (!province || typeof province !== 'string') {
-        res.status(400).json({ error: 'Province name is required' });
-        return;
+      const { province , query } = req.query;
+
+      if(province && query){
+        throw new Error('Provide either province or query parameter, not both.');
       }
-      const municipalities = await this.aggregator.getMunicipalitiesByProvince(province);
+      
+      const municipalities = await this.aggregator.getMunicipalitiesByProvince(province as string | undefined, query as string | undefined);
       res.json(municipalities);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

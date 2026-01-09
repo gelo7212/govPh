@@ -34,6 +34,53 @@ export class AdminController {
     return this.auditLogger;
   }
 
+  async disableAdmin(req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError('User not authenticated');
+      }
+      // Only app_admin can disable admins
+      if (req.user.role !== 'APP_ADMIN') {
+        throw new UnauthorizedError('Only app_admin can disable admins');
+      }
+      const user = await userService.getUserById(userId);
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+      if (!['city_admin', 'sos_admin'].includes(user.role)) {
+        throw new ValidationError(
+          'Can only disable users with role city_admin or sos_admin'
+        );
+      }
+      await userService.disableUser(userId);
+
+      // Log the action
+      await this.getAuditLogger().log(
+        req.user.userId,
+        req.user.role,
+        'disable_admin',
+        { 
+          count: 1,
+          details:{
+            disabledUserId: userId,
+            disabledUserRole: user.role
+          },
+          municipalityCode: user.municipalityCode
+        }
+      );
+      res.status(200).json({
+        success: true,
+        message: `User ${userId} disabled successfully`,
+      });
+    }
+    catch (error) {
+      logger.error('Failed to disable admin', error);
+      throw error;
+    }
+  }
+
   /**
    * POST /admin/users
    * Create a new admin user (city_admin or sos_admin)
@@ -173,18 +220,23 @@ export class AdminController {
 
       if (req.user.role === 'APP_ADMIN') {
         // App admin sees all users - not implemented yet for full scope
-        users = [];
+        const {municipalityCode} = req.query;
+        if(!municipalityCode)
+          throw new ValidationError('municipalityCode query parameter is required for APP_ADMIN');
+
+        users = await userService.getAdminsByMunicipality(municipalityCode as string, req.query.role as string | undefined);
       } else if (
         req.user.role === 'CITY_ADMIN' ||
         req.user.role === 'SOS_ADMIN'
       ) {
-        // City admin and SOS admin see users in their municipality
+        // City admin and SOS admin see admins in their municipality
         if (!req.user.municipalityCode) {
           throw new Error('INVALID_MUNICIPALITY_SCOPE');
         }
 
-        users = await userService.getUsersByMunicipality(
-          req.user.municipalityCode
+        users = await userService.getAdminsByMunicipality(
+          req.user.municipalityCode,
+          req.query.role as string | undefined
         );
       }
 

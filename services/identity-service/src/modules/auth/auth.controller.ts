@@ -142,6 +142,19 @@ export class AuthController {
         }
       }
 
+      if(contextType === 'TEMPORARY_ACCESS'){
+        scopes.push('temporary_access');
+        const tokens = AuthService.generateTemporaryAccessToken(userId, firebaseUid, 'TEMPORARY_ACCESS', cityCode || '', scopes);
+
+        res.status(200).json(
+          {
+            success: true,
+            data: tokens,
+            timestamp: new Date(),
+          } as ApiResponse
+        );
+      }
+
       
       const user = await userService.getUserByFirebaseUid(firebaseUid);
 

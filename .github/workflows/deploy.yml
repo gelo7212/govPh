@@ -173,6 +173,7 @@ jobs:
             if [ -f "$dir/package.json" ] && grep -q '"lint"' "$dir/package.json"; then
               echo "Linting $dir"
               cd "$dir"
+              npm install
               npm run lint
               cd ../../..
             fi
@@ -182,6 +183,7 @@ jobs:
         else
           if [ -f "services/$SERVICE/package.json" ]; then
             cd "services/$SERVICE"
+            npm install
             if grep -q '"lint"' package.json; then
               npm run lint
             else
@@ -190,6 +192,7 @@ jobs:
             cd ../../..
           elif [ -f "bff/$SERVICE/package.json" ]; then
             cd "bff/$SERVICE"
+            npm install
             if grep -q '"lint"' package.json; then
               npm run lint
             else

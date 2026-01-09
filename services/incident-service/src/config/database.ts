@@ -25,7 +25,7 @@ export async function connectMongoDB(): Promise<typeof mongoose> {
       : `${mongoCreds}/${mongoDbName}`;
 
 
-    console.log('Connecting to MongoDB at', mongoUri);
+    console.log('Connecting to MongoDB ');
     if (mongoClient && mongoClient.connection.readyState === 1) {
       logger.info('Already connected to MongoDB');
       return mongoClient;

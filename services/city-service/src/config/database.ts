@@ -14,7 +14,7 @@ export async function connectDatabase(): Promise<void> {
     : `${mongoCreds}/${mongoDbName}`;
 
   try {
-    console.log('Connecting to MongoDB at', mongoUri);
+    
     await mongoose.connect(mongoUri, {
       maxPoolSize: parseInt(process.env.MONGODB_POOL_SIZE || '10'),
       minPoolSize: 2,

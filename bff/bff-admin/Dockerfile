@@ -7,7 +7,6 @@ COPY bff ./bff
 COPY bff/packages ./bff/packages
 
 RUN yarn install --frozen-lockfile
-RUN yarn workspace bff-core build
 RUN yarn workspace bff-admin build
 
 EXPOSE 3000

@@ -4,30 +4,30 @@ services:
   # =====================
   # NGINX Reverse Proxy
   # =====================
-  nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: govph-nginx-pilot
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.pilot.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - kong
-      - realtime-service
-    networks:
-      - govph-network
-    environment:
-      NODE_ENV: pilot
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
+  # nginx:
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   container_name: govph-nginx-pilot
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.pilot.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - kong
+  #     - realtime-service
+  #   networks:
+  #     - govph-network
+  #   environment:
+  #     NODE_ENV: pilot
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 5s
 
   # =====================
   # API Gateway (Kong)
@@ -35,6 +35,8 @@ services:
   kong:
     image: kong:3.6
     container_name: govph-kong-pilot
+    ports:
+      - "8000:8000"
     volumes:
       - ./gateway/kong.pilot.yml:/kong/declarative/kong.yml
     environment:

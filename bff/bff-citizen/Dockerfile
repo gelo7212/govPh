@@ -21,7 +21,7 @@ COPY bff/bff-citizen/.env* ./bff/bff-citizen/
 # Install & build
 # --------------------
 RUN yarn install --frozen-lockfile
-RUN yarn workspace bff-core build
+RUN yarn workspace @gov-ph/bff-core build
 RUN yarn workspace bff-citizen build
 
 # --------------------

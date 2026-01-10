@@ -10,6 +10,12 @@ import rescuerRoutes from './modules/rescuer/rescuer.routes';
 import dispatchRoutes from './modules/dispatch/dispatch.routes';
 import messageRoutes from './modules/messages/message.routes';
 import participantRoutes from './modules/sos_participants/participant.routes';
+
+// Import event handlers and services
+import { SOSEventHandlers } from './modules/messages/sos.event-handlers';
+import { MessageService } from './modules/messages';
+import { MessageRepository } from './modules/messages';
+
 const logger = createLogger('App');
 
 const app: Express = express();
@@ -27,7 +33,6 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Role guard middleware - validates trusted headers
 app.use(roleGuard);
-
 // Routes
 app.use('/api/sos', sosRoutes);
 app.use('/api/sos/:sosId/messages', messageRoutes);

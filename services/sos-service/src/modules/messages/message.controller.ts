@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { MessageService } from './message.service';
+import { UserRole } from '../../types';
 
 export class MessageController {
   constructor(private messageService: MessageService) {}
@@ -13,6 +14,7 @@ export class MessageController {
         senderDisplayName,
         contentType,
         content,
+        options,
       } = req.body;
       if(!sosId){
         throw new Error('sosId is required');
@@ -46,6 +48,7 @@ export class MessageController {
         senderDisplayName,
         contentType,
         content,
+        options,
       });
 
       res.status(201).json({
@@ -74,10 +77,13 @@ export class MessageController {
         return;
       }
 
+      const userRole = req.headers['x-user-role'] as UserRole | undefined;
+
       const result = await this.messageService.getMessagesBySosId(
         sosId,
         Number(skip),
         Number(limit),
+        userRole
       );
 
       res.status(200).json({

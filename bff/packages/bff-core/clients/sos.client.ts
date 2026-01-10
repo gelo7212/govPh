@@ -131,8 +131,18 @@ export class SosServiceClient extends BaseClient {
    * Get a specific message by ID
    * GET /message/:messageId
    */
-  async getMessage(messageId: string) {
+  async getMessage(messageId: string, data: {
+    senderType: 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
+    senderId?: string | null;
+    cityId: string;
+  }) {
     try {
+       this.setUserContext({
+        userId: data.senderId || undefined,
+        actorType: data.senderType,
+        role: data.senderType,
+        cityId: data.cityId
+      });
       const response = await this.client.get(`/api/sos/message/${messageId}`);
       return response.data;
     } catch (error) {

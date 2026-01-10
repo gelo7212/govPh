@@ -2,11 +2,11 @@ import { SOSRepository } from './sos.repository';
 import { SOS } from './sos.model';
 import { identityClient } from '../../services/identity.client';
 import { MessageService } from '../messages';
+import { eventBus, SOS_EVENTS, type SOSCreatedEvent, type SOSStatusChangedEvent, type SOSTaggedEvent } from '../events';
 
 export class SOSService {
   constructor(
     private repository: SOSRepository,
-    private messageService: MessageService
   ) {}
 
   async createSOS(data: {
@@ -38,34 +38,32 @@ export class SOSService {
       deviceId : data.deviceId
     });
 
-    try {
-      await this.messageService.sendMessage({
-        sosId: sos.id,
-        content: `🚨 New SOS created successfully.
+    // Emit event for other modules to handle (e.g., send initial message)
+    const sosCreatedEvent: SOSCreatedEvent = {
+      sosId: sos.id,
+      citizenId: data.citizenId,
+      cityId: data.cityId,
+      sosNo: data.sosNo,
+      longitude: data.longitude,
+      latitude: data.latitude,
+      message: data.message,
+      type: data.type,
+      address: data.address,
+    };
+    eventBus.emit(SOS_EVENTS.CREATED, sosCreatedEvent);
 
-        🆔 SOS ID: ${sos.id}
-
-        📞 For faster communication, please share your mobile number.
-
-        ℹ️ Tips to help us assist you quicker:
-        • Clearly describe your situation and urgency
-        • Share your exact location if possible
-        • Stay active in the chat for updates
-
-        Our support team has been notified and will reach out as soon as possible.`,
-        senderType: 'SYSTEM',
-        senderDisplayName: 'System',
-        contentType: 'text',
-        senderId: null,
-      });
-    }catch (error) {
-      console.error('Failed to notify identity service about new SOS:', error);
-    }
     return sos;
   }
 
   async updateTag(sosId: string,  tag: string): Promise<SOS> {
     const sos = await this.repository.updateTag(sosId, tag);
+    
+    const sosTaggedEvent: SOSTaggedEvent = {
+      sosId: sos.id,
+      tag,
+    };
+    eventBus.emit(SOS_EVENTS.TAGGED, sosTaggedEvent);
+    
     return sos;
   }
 
@@ -81,6 +79,15 @@ export class SOSService {
   
   async updateSOSStatus(sosId: string,  status: string): Promise<SOS> {
     const sos = await this.repository.updateStatus(sosId, status);
+    
+    const sosStatusChangedEvent: SOSStatusChangedEvent = {
+      sosId: sos.id,
+      cityId: sos.cityId,
+      previousStatus: sos.status, // Note: You may need to fetch previous status from repo
+      newStatus: status,
+    };
+    eventBus.emit(SOS_EVENTS.STATUS_CHANGED, sosStatusChangedEvent);
+    
     return sos;
   }
 

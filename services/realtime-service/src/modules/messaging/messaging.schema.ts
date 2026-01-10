@@ -5,7 +5,7 @@ export const messageBroadcastSchema = Joi.object({
   message: Joi.object({
     id: Joi.string().required(),
     sosId: Joi.string().required(),
-    senderType: Joi.string().valid('CITIZEN', 'SOS_ADMIN', 'RESCUER').required(),
+    senderType: Joi.string().valid('CITIZEN', 'SOS_ADMIN', 'RESCUER', 'SYSTEM').required(),
     senderId: Joi.string().allow(null).optional(),
     senderDisplayName: Joi.string().required(),
     contentType: Joi.string().valid('text', 'system').required(),

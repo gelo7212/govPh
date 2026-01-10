@@ -1,6 +1,7 @@
 import { SosMessageModel, ISosMessage } from './message.mongo.schema';
 import { SosMessage } from './message.model';
 import { Types } from 'mongoose';
+import { UserRole } from '../../types';
 
 /**
  * Message Repository - handles MongoDB persistence
@@ -13,6 +14,7 @@ export class MessageRepository {
     senderDisplayName: string;
     contentType: 'text' | 'system';
     content: string;
+    options: any;
   }): Promise<SosMessage> {
     const message = await SosMessageModel.create({
       sosId: data.sosId,
@@ -21,6 +23,7 @@ export class MessageRepository {
       senderDisplayName: data.senderDisplayName,
       contentType: data.contentType,
       content: data.content,
+      options: data.options,
     });
     return this.mapToDTO(message);
   }
@@ -35,8 +38,42 @@ export class MessageRepository {
     sosId: string,
     skip: number = 0,
     limit: number = 50,
+    userRole?: UserRole
   ): Promise<{ messages: SosMessage[]; total: number }> {
-    const messages = await SosMessageModel.find({ sosId })
+
+    // If userRole is provided, dont show messages intended for other roles
+    // if role is CITIZEN, show only messages intended for CITIZEN
+    // if role is ADMIN, show only messages intended for SOS_ADMIN
+    // if role is RESCUER, show only messages intended for RESCUER
+
+    if(userRole){
+      const intendedForFilter = userRole === 'CITIZEN' ? 'CITIZEN' :
+                                userRole === 'ADMIN' ? 'SOS_ADMIN' :
+                                userRole === 'RESCUER' ? 'RESCUER' : 
+                                userRole === 'SOS_ADMIN' ? 'SOS_ADMIN' : null;
+      if(intendedForFilter){
+        const messages = await SosMessageModel.find({ 
+          sosId ,
+          'options.intendedFor': intendedForFilter
+        })
+        .sort({ createdAt: -1 }) // latest messages first
+        .skip(skip)
+        .limit(limit)
+        .exec();
+        const total = await SosMessageModel.countDocuments({ 
+          sosId,
+          'options.intendedFor': intendedForFilter
+          });
+        return {
+          messages: messages.map((msg) => this.mapToDTO(msg)),
+          total,
+        };
+      };
+    }
+                         
+    const messages = await SosMessageModel.find({ 
+      sosId ,
+      })
       .sort({ createdAt: -1 }) // latest messages first
       .skip(skip)
       .limit(limit)
@@ -47,6 +84,7 @@ export class MessageRepository {
       total,
     };
   }
+  
 
   async deleteMessagesBySosId(sosId: string): Promise<void> {
     await SosMessageModel.deleteMany({ sosId });
@@ -62,6 +100,7 @@ export class MessageRepository {
       contentType: message.contentType,
       content: message.content,
       createdAt: message.createdAt,
+      options: message.options,
     };
   }
 }

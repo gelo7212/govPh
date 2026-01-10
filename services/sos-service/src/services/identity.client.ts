@@ -5,7 +5,7 @@
 
 export interface CitizenInfo {
   id: string;
-  name: string;
+  displayName: string;
   email: string;
   phone: string;
 }
@@ -25,7 +25,7 @@ export class IdentityClient {
    */
   async getCitizenInfo(citizenId: string): Promise<CitizenInfo | null> {
     try {
-      const response = await fetch(`${this.identityServiceUrl}/api/citizens/${citizenId}`, {
+      const response = await fetch(`${this.identityServiceUrl}/users/${citizenId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -37,8 +37,8 @@ export class IdentityClient {
         return null;
       }
 
-      const data = await response.json();
-      return data as CitizenInfo;
+      const data = await response.json() as { data: CitizenInfo };
+      return data?.data as CitizenInfo;
     } catch (error) {
       console.error('Error fetching citizen info:', error);
       return null;

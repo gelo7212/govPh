@@ -3,6 +3,7 @@ import { SosMessage } from './message.model';
 import { Types } from 'mongoose';
 import axios from 'axios';
 import { Logger } from '../../utils/logger';
+import { UserRole } from '../../types';
 
 export class MessageService {
   private realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || 'http://govph-realtime:3000';
@@ -18,6 +19,7 @@ export class MessageService {
     senderDisplayName: string;
     contentType?: 'text' | 'system';
     content: string;
+    options?: any;
   }): Promise<SosMessage> {
     const message = await this.repository.create({
       sosId: data.sosId,
@@ -26,6 +28,7 @@ export class MessageService {
       senderDisplayName: data.senderDisplayName,
       contentType: data.contentType || 'text',
       content: data.content,
+      options: data.options || {},
     });
 
     // Broadcast to realtime service after message is persisted
@@ -80,8 +83,9 @@ export class MessageService {
     sosId: string,
     skip: number = 0,
     limit: number = 50,
+    userRole?: UserRole
   ): Promise<{ messages: SosMessage[]; total: number }> {
-    return await this.repository.findBySosId(sosId, skip, limit);
+    return await this.repository.findBySosId(sosId, skip, limit, userRole);
   }
 
   async getMessage(messageId: string): Promise<SosMessage | null> {

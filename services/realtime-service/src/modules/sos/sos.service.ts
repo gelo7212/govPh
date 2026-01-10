@@ -213,7 +213,7 @@ export class SOSService {
           const state = JSON.parse(data);
           
           // Only include active SOS requests
-          if (state.status === 'active' && state.location?.longitude && state.location?.latitude) {
+          if ((state.status === 'active' || state.status === 'arrived') && state.location?.longitude && state.location?.latitude) {
             const distance = this.calculateDistance(
               latitude,
               longitude,

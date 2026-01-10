@@ -2,12 +2,13 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface ISosMessage extends Document {
   sosId: string;
-  senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER';
+  senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER' | 'SYSTEM';
   senderId?: Types.ObjectId | null;
   senderDisplayName: string;
   contentType: 'text' | 'system';
   content: string;
   createdAt: Date;
+  options?: any;
 }
 
 const sosMessageSchema = new Schema<ISosMessage>(
@@ -19,7 +20,7 @@ const sosMessageSchema = new Schema<ISosMessage>(
     },
     senderType: {
       type: String,
-      enum: ['SOS_ADMIN', 'CITIZEN', 'RESCUER'],
+      enum: ['SOS_ADMIN', 'CITIZEN', 'RESCUER', 'SYSTEM'],
       required: true,
     },
     senderId: {
@@ -40,6 +41,10 @@ const sosMessageSchema = new Schema<ISosMessage>(
       type: String,
       required: true,
       maxlength: 2000,
+    },
+    options: {
+      type: Schema.Types.Mixed,
+      required: false,
     },
   },
   {

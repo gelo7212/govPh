@@ -93,3 +93,11 @@ export const encryptPhone = (phone: string): string => {
 export const decryptPhone = (encryptedPhone: string): string => {
   return decrypt(encryptedPhone, ENCRYPTION_KEY);
 }
+
+export const encryptEmail = (email: string): string => {
+  return encryptData(email, ENCRYPTION_KEY);
+}
+
+export const decryptEmail = (encryptedEmail: string): string => {
+  return decrypt(encryptedEmail, ENCRYPTION_KEY);
+}

@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import { UserEntity, RequestUser, UserRole } from '../../types';
 import { userService } from './user.service';
 import { inviteService } from '../../modules/invite/invite.service';
-import { AuditLoggerService } from '../../services/auditLogger';
-import { logUserCreated, logStatusChange } from '../../services/auditLogger';
+import { AuditLoggerService, logStatusChange } from '../../services/auditLogger';
 import { getCollection } from '../../config/database';
 import {
   ValidationError,
@@ -14,11 +13,11 @@ import {
   UserNotRegisteredError,
 } from '../../errors';
 import {
-  validateEmail,
   validateMunicipalityForRole,
   validateUserCreationPayload,
 } from '../../utils/validators';
 import { createLogger } from '../../utils/logger';
+import { decryptEmail, decryptPhone } from '../../utils/crypto';
 
 const logger = createLogger('UserController');
 
@@ -155,10 +154,21 @@ export class UserController {
     try {
       const userId = req.params.userId
       const user = await userService.getUserById(userId);
-
+      
       if (!user) {
         throw new NotFoundError('User', userId);
       }
+
+      const requestUser = req.user as RequestUser | undefined;
+      const isLoggedIn = requestUser && requestUser.userId === userId;
+
+      if(isLoggedIn){
+        if(user.phone)
+          user.phone = decryptPhone(user.phone);
+        if(user.email)
+         user.email = decryptEmail(user.email);
+      }
+
 
       res.status(200).json({
         success: true,

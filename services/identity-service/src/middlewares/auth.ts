@@ -185,3 +185,31 @@ export const requireActorTypes = (types: string[]) => {
     return next();
   };
 };
+
+
+export const addAuthContextOptional = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const isValid =  await AuthService.validateAccessToken(token);
+    if (isValid.valid && isValid.payload) {
+      req.user = {
+        userId: isValid.payload.identity?.userId || '',
+        firebaseUid: isValid.payload.identity?.firebaseUid || '',
+        role: isValid.payload.identity?.role || 'CITIZEN',
+        municipalityCode: isValid.payload.actor.cityCode,
+        isLoggedIn: true,
+      };
+      (req as any).jwtPayload = isValid.payload;
+      const userId = isValid.payload.identity?.userId || 'anonymous';
+      logger.info(`Authenticated user ${userId}`);
+    }
+  }
+  next();
+  return;
+};

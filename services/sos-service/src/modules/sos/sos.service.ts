@@ -1,9 +1,13 @@
 import { SOSRepository } from './sos.repository';
 import { SOS } from './sos.model';
 import { identityClient } from '../../services/identity.client';
+import { MessageService } from '../messages';
 
 export class SOSService {
-  constructor(private repository: SOSRepository) {}
+  constructor(
+    private repository: SOSRepository,
+    private messageService: MessageService
+  ) {}
 
   async createSOS(data: {
     cityId: string;
@@ -33,6 +37,30 @@ export class SOSService {
       type: data.type,
       deviceId : data.deviceId
     });
+
+    try {
+      await this.messageService.sendMessage({
+        sosId: sos.id,
+        content: `🚨 New SOS created successfully.
+
+        🆔 SOS ID: ${sos.id}
+
+        📞 For faster communication, please share your mobile number.
+
+        ℹ️ Tips to help us assist you quicker:
+        • Clearly describe your situation and urgency
+        • Share your exact location if possible
+        • Stay active in the chat for updates
+
+        Our support team has been notified and will reach out as soon as possible.`,
+        senderType: 'SYSTEM',
+        senderDisplayName: 'System',
+        contentType: 'text',
+        senderId: null,
+      });
+    }catch (error) {
+      console.error('Failed to notify identity service about new SOS:', error);
+    }
     return sos;
   }
 

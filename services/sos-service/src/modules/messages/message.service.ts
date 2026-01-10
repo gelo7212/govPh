@@ -13,7 +13,7 @@ export class MessageService {
 
   async sendMessage(data: {
     sosId: string;
-    senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER';
+    senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER' | 'SYSTEM';
     senderId?: string | null;
     senderDisplayName: string;
     contentType?: 'text' | 'system';

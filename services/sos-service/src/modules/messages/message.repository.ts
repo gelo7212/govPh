@@ -8,7 +8,7 @@ import { Types } from 'mongoose';
 export class MessageRepository {
   async create(data: {
     sosId: string;
-    senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER';
+    senderType: 'CITIZEN' | 'SOS_ADMIN' | 'RESCUER' | 'SYSTEM';
     senderId?: Types.ObjectId | null;
     senderDisplayName: string;
     contentType: 'text' | 'system';

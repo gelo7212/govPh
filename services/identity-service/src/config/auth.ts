@@ -12,7 +12,7 @@ export const authConfig = {
     shareLinkTokenExpiryDepartment: 7 * 24 * 60 * 60, // seconds :: 7 Days    
     temporaryAccessTokenExpiry: 15 * 60, // seconds :: 15 minutes
     // Access token validity: 1 hour
-    accessTokenExpiry: 60 * 2, // seconds :: 15
+    accessTokenExpiry: 60 * 60, // seconds :: 1 hour
     // Access token validity for anonymous citizens: 180 days
     anonCitizenAccessTokenExpiry: 180 * 24 * 60 * 60, // seconds :: 180 Days
     

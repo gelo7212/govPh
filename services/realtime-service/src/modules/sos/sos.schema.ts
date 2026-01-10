@@ -38,9 +38,17 @@ export const updateLocationSchema = Joi.object({
   accuracy: Joi.number().optional(),
 });
 
+export const upsertRescuerLocationSchema = Joi.object({
+  rescuerId: Joi.string().required(),
+  latitude: Joi.number().required(),
+  longitude: Joi.number().required(),
+  accuracy: Joi.number().optional(),
+});
+
 export default {
   initSOSSchema,
   closeSOSSchema,
   updateStatusSchema,
   updateLocationSchema,
+  upsertRescuerLocationSchema,
 };

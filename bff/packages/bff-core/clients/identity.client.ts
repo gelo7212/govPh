@@ -11,8 +11,11 @@ export class IdentityServiceClient extends BaseClient {
     console.log(`IdentityServiceClient initialized with baseURL: ${baseURL}`);
   }
 
-  async getUserProfile(userId: string) {
+  async getUserProfile(userId: string, token?: string) {
     try {
+       this.setUserContext({
+        authorization: token
+      });
       const response = await this.client.get(`/users/${userId}`);
       return response.data;
     } catch (error) {

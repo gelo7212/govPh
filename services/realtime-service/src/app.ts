@@ -45,8 +45,9 @@ export const createApp = (io?: SocketIOServer): Express => {
   });
 
   // Internal API routes
-  app.use('/internal/realtime/sos', sosRoutes);
+  
   if (io) {
+    app.use('/internal/realtime/sos', sosRoutes(io));
     app.use('/internal/messaging', createMessagingRoutes(io));
     app.use('/internal/participants', createParticipantsRoutes(io));
   }

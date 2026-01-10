@@ -60,7 +60,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
         field: d.path.join('.'),
         message: d.message,
       }));
-      return res.status(400).json({ error: 'Validation failed', details });
+      return res.status(400).json({ error: 'Validation failed', data: details });
     }
 
     req.body = value;

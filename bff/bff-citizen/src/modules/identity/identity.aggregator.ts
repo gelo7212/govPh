@@ -23,8 +23,8 @@ export class IdentityAggregator {
   /**
    * Get user profile
    */
-  async getProfile(userId: string) {
-    const profile = await this.identityClient.getUserProfile(userId);
+  async getProfile(userId: string, token: string) {
+    const profile = await this.identityClient.getUserProfile(userId, token);
     return profile;
   }
 

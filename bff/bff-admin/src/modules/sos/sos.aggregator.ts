@@ -136,8 +136,14 @@ export class SosAggregator {
     return result;
   }
 
-  async updateRescuerLocation(location: any, context: any): Promise<any> {
-    const result = await this.sosClient.updateRescuerLocation(location, context);
+  async updateRescuerLocation(sosId: string, rescuerId: string, latitude: number, longitude: number, accuracy?: number): Promise<any> {
+    console.log('Updating rescuer location:', { sosId, rescuerId, latitude, longitude, accuracy });
+    const result = await this.realtimeClient.upsertRescuerLocation(sosId, rescuerId, latitude, longitude, accuracy);
+    return result;
+  }
+
+  async getRescuerLocation(sosId: string, rescuerId: string): Promise<any> {
+    const result = await this.realtimeClient.getRescuerLocation(sosId, rescuerId);
     return result;
   }
 }

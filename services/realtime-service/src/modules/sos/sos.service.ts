@@ -2,12 +2,13 @@ import redisClient from '../../config/redis';
 import { logger } from '../../utils/logger';
 import { REDIS_KEYS } from '../../utils/constants';
 import { SOSMSClient } from '../../services/sos-ms.client';
-
 /**
  * SOS Service - Manages realtime SOS state
  */
 export class SOSService {
-  private sosMSClient: SOSMSClient = new SOSMSClient;
+  
+  private sosMSClient: SOSMSClient = new SOSMSClient();
+
 
   async initSOS(sosId: string, citizenId: string, location: any, address: any): Promise<any> {
     try {
@@ -245,7 +246,9 @@ export class SOSService {
     }
   }
 
-  async upsertRescuerLocation(rescuerId: string, location: any, sosId: string): Promise<void> {
+  async upsertRescuerLocation(rescuerId: string, location: any, sosId: string): Promise<{
+    rescuerArrived: boolean;
+  }> {
     try {
       const key = `${REDIS_KEYS.RESCUER_LOCATION}:${rescuerId}:${sosId}`;
       await redisClient.setEx(key, 86400, JSON.stringify({
@@ -253,9 +256,10 @@ export class SOSService {
         location,
         updatedAt: Date.now(),
         sosId,
+        rescuerArrived: false,
       }));
 
-      if(sosId){
+      if(sosId){        
         const sosState = await this.getSOSState(sosId);
         if (sosState && sosState.location?.latitude && sosState.location?.longitude) {
           const distance = this.calculateDistance(
@@ -274,12 +278,34 @@ export class SOSService {
             await redisClient.setEx(sosKey, 86400, JSON.stringify(sosState));
 
             // Update SOS status in database
-            await this.sosMSClient.updateStatus(sosId, 'ARRIVED');
+            // const userRole = req.headers['x-user-role'] as string | undefined;
+            // const userId = req.headers['x-user-id'] as string | undefined;
+            // const cityId = req.headers['x-city-id'] as string | undefined;
+            // const requestId = req.headers['x-request-id'] as string | undefined;
+            // const actorType = req.headers['x-actor-type'] as string | undefined;
+            const headerContext = {
+              'x-user-role': 'RESCUER',
+              'x-user-id': rescuerId,
+              'x-actor-type': 'USER',
+              'x-city-id': sosState.cityCode || undefined,
+              'x-request-id': `req_${Date.now()}`,
+            };
+            const data = await redisClient.get(key);
+            const locationData = data ? JSON.parse(data) : {};
+            locationData.rescuerArrived = true;
+            await redisClient.setEx(key, 86400, JSON.stringify(locationData));
+            console.log("Location data updated with rescuerArrived true",JSON.stringify(locationData));
+
+            await this.sosMSClient.updateStatus(sosId, 'ARRIVED', headerContext);
             
             logger.info('SOS status auto-transitioned to arrived', { sosId, rescuerId, distance });
+            
+            return { rescuerArrived: true };
           }
         }
       }
+
+      return { rescuerArrived: false };
     } catch (error) {
       logger.error('Error upserting rescuer location', error);
       throw error;
@@ -288,8 +314,9 @@ export class SOSService {
 
   async getRescuerLocation(rescuerId: string, sosId: string): Promise<any> {
     try {
+      console.log("Getting rescuer location for", rescuerId, sosId);
       const key = `${REDIS_KEYS.RESCUER_LOCATION}:${rescuerId}:${sosId}`;
-      const data = await redisClient.get(key);
+      const data = await redisClient.get(key);  
       return data ? JSON.parse(data) : null;
     } catch (error) {
       logger.error('Error getting rescuer location', error);

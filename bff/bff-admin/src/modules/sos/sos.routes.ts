@@ -48,7 +48,8 @@ sosRoutes.post('/:sosId/dispatch/rescue',authContextMiddleware, requireActor('US
 // Rescuer Routes
 
 sosRoutes.get('/rescuer/assignment',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getRescuerAssignment(req, res));
-sosRoutes.put('/rescuer/location',authContextMiddleware, requireActor('USER'), validate(updateLocationSchema), (req, res) => sosController.updateRescuerLocation(req, res));
+sosRoutes.post('/rescuer/location',authContextMiddleware, requireActor('USER','ANON'), validate(updateLocationSchema), (req, res) => sosController.updateRescuerLocation(req, res));
+sosRoutes.get('/rescuer/location',authContextMiddleware, requireActor('USER','ANON'), (req, res) => sosController.getRescuerLocation(req, res));
 // Message Routes - nested under SOS
 /**
  * Send a message to an SOS conversation

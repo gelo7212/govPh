@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { userController } from './user.controller';
 import { requireAuth, requireRole, requireCityAdmin } from '../../middlewares/requireRole';
 import { authMiddleware } from '../auth';
+import { addAuthContextOptional } from '../../middlewares/auth';
 
 const router = Router();
 
@@ -32,6 +33,7 @@ router.post(
 
 router.get(
   '/:userId',
+  addAuthContextOptional,
   (req, res, next) =>
     userController.getUserById(req, res).catch(next)
 );

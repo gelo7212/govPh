@@ -10,8 +10,8 @@ import axios from 'axios';
 const locationThrottle = new SocketThrottle(1000); // 1 second throttle
 const locationSampler = new LocationSampler();
 const sosMsClient = new SOSMSClient();
-const sosService = new SOSService();
 
+const sosService = new SOSService();
 // SOS service endpoint (Docker service name or env override)
 const SOS_SERVICE_URL = process.env.SOS_SERVICE_URL || 'http://govph-sos:3000';
 
@@ -19,6 +19,7 @@ const SOS_SERVICE_URL = process.env.SOS_SERVICE_URL || 'http://govph-sos:3000';
  * Handle location update events
  */
 export const registerLocationEvents = (io: Server, socket: Socket): void => {
+  
   socket.on(SOCKET_EVENTS.LOCATION_UPDATE, async (data: any) => {
     try {
       const userId = (socket as any).userId;
@@ -120,6 +121,72 @@ export const registerLocationEvents = (io: Server, socket: Socket): void => {
     const sosId = (socket as any).sosId;
     // Clean up sampler state when SOS is closed
     locationSampler.cleanup(sosId);
+  });
+
+  /**
+   * Handle rescuer location updates
+   */
+  socket.on(SOCKET_EVENTS.RESCUER_LOCATION, async (data: any) => {
+    try {
+      const rescuerId = (socket as any).userId;
+      const sosId = data.sosId;
+      const role = (socket as any).role;
+      const isArrived = data.rescuerArrived || false;
+      if( role?.toLowerCase() !== 'rescuer') {
+        socket.emit(SOCKET_EVENTS.ERROR, {
+          code: 'UNAUTHORIZED',
+          message: 'Only rescuers can send rescuer location updates',
+        });
+        return;
+      }
+
+      if (!rescuerId) {
+        socket.emit(SOCKET_EVENTS.ERROR, {
+          code: 'INVALID_RESCUER_DATA',
+          message: 'Missing rescuerId',
+        });
+        return;
+      }
+
+      // Validate location data
+      if (!data.latitude || !data.longitude) {
+        socket.emit(SOCKET_EVENTS.ERROR, {
+          code: 'INVALID_LOCATION',
+          message: 'Invalid location data',
+        });
+        return;
+      }
+
+      logger.debug('Rescuer location update received', {
+        rescuerId,
+        sosId,
+        latitude: data.latitude,
+        longitude: data.longitude,
+      });
+
+      const timestamp = Date.now();
+
+      // 1. Broadcast to SOS room (all participants in this SOS)
+      const roomName = `sos:${sosId}`;
+      io.to(roomName).emit(SOCKET_EVENTS.RESCUER_LOCATION_BROADCAST, {
+        rescuerId,
+        sosId,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        accuracy: data.accuracy,
+        timestamp,
+        rescuerArrived:isArrived,
+      });
+
+
+      logger.debug('Rescuer location updated in realtime', { rescuerId, sosId });
+    } catch (error) {
+      logger.error('Error handling rescuer location update', error);
+      socket.emit(SOCKET_EVENTS.ERROR, {
+        code: 'RESCUER_LOCATION_ERROR',
+        message: 'Failed to process rescuer location update',
+      });
+    }
   });
 };
 

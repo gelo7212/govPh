@@ -11,6 +11,10 @@ export const SOCKET_EVENTS = {
   LOCATION_UPDATE: 'location:update',
   LOCATION_BROADCAST: 'location:broadcast',
 
+  // Rescuer location events
+  RESCUER_LOCATION: 'rescuer:location',
+  RESCUER_LOCATION_BROADCAST: 'rescuer:location:broadcast',
+
   // SOS events
   SOS_INIT: 'sos:init',
   SOS_CLOSE: 'sos:close',

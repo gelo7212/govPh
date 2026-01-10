@@ -232,6 +232,7 @@ export interface RequestUser {
   firebaseUid: string;
   role: UserRole;
   municipalityCode?: string;
+  isLoggedIn?: boolean;
 }
 
 /**

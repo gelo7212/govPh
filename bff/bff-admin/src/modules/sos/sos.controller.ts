@@ -170,19 +170,40 @@ export class SosController {
   }
   async updateRescuerLocation(req: Request, res: Response): Promise<void> {
     try {
-      const { lat, lng } = req.body;
-      const location = {
-        latitude: lat,
-        longitude: lng
-      };
-      const userContext = {
-        userId: req.context?.user?.id,
-        actorType: req.context?.user?.actor?.type,
-        role: req.context?.user?.role,
-        cityId: req.context?.user?.actor?.cityCode
-      };
-      const result = await this.aggregator.updateRescuerLocation(location, userContext);
+      const { lat, lng, sosId, accuracy } = req.body;
+      const rescuerId  =req.context?.user?.id;
+
+      if(!rescuerId){
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      const result = await this.aggregator.updateRescuerLocation(
+        sosId,
+        rescuerId,
+        lat,
+        lng,
+        accuracy
+      );
       res.status(201).json(result);
+    }
+    catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  async getRescuerLocation(req: Request, res: Response): Promise<void> {
+    try {
+      
+      const { rescuerId, sosId }  = req.query;
+      if(!rescuerId){
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      const result = await this.aggregator.getRescuerLocation(
+        sosId as string,
+        rescuerId as string
+      );
+      res.status(200).json(result);
     }
     catch (error) {
       res.status(400).json({ error: (error as Error).message });

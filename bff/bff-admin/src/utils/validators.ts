@@ -105,8 +105,6 @@ export const validate = (schema: Joi.ObjectSchema) => {
         details,
       });
     }
-
-    req.body = value;
     next();
   };
 };

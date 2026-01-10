@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { SOSService } from './sos.service';
 import { StatusMachineService } from './statusMachine.service';
 import { logger } from '../../utils/logger';
-
+import { Server as SocketIOServer } from 'socket.io';
 /**
  * SOS Controller - Handles internal HTTP requests
  * These are calls from SOS MS to coordinate realtime events
@@ -10,7 +10,8 @@ import { logger } from '../../utils/logger';
 export class SOSController {
   constructor(
     private sosService: SOSService,
-    private statusMachine: StatusMachineService,
+    private statusMachine: StatusMachineService,  
+    private io : SocketIOServer
   ) {}
 
   /**
@@ -191,7 +192,14 @@ export class SOSController {
         });
         return;
       }
-      await this.sosService.upsertRescuerLocation(
+
+      const location = {
+        latitude,
+        longitude,
+        accuracy,
+      }
+      const roomName = `sos:${sosId}`;
+      const result = await this.sosService.upsertRescuerLocation(
         rescuerId,
         {
           latitude,
@@ -200,6 +208,14 @@ export class SOSController {
         },
         sosId
       );
+
+      // Broadcast rescuer location update to all clients in the SOS room
+      this.io.to(roomName).emit(`rescuer:location:broadcast`, {
+        rescuerId,
+        location,
+        sosId,
+        isArrived: result.rescuerArrived,
+      });
       res.status(200).json({
         success: true,
         message: 'Rescuer location upserted successfully',
@@ -209,6 +225,32 @@ export class SOSController {
       res.status(500).json({
         success: false,
         error: 'Failed to upsert rescuer location',
+      });
+    }
+  }
+
+  async getRescuerLocation(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const { rescuerId } = req.query;
+      if (!rescuerId) {
+        res.status(400).json({
+          success: false,
+          error: 'rescuerId is a required query parameter',
+        });
+        return;
+      }
+      const locations = await this.sosService.getRescuerLocation(rescuerId as string, sosId);
+
+      res.status(200).json({
+        success: true,
+        data: locations,
+      });
+    } catch (error) {
+      logger.error('Error getting rescuer locations', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve rescuer locations',
       });
     }
   }

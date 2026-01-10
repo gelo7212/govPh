@@ -50,7 +50,7 @@ export class SOSMSClient {
     }
   }
 
-  async updateStatus(sosId: string, status: string): Promise<void> {
+  async updateStatus(sosId: string, status: string, headerContext: any): Promise<void> {
     try {
       await axios.patch(
         `${this.baseURL}/api/sos/${sosId}/status`,
@@ -58,6 +58,7 @@ export class SOSMSClient {
         {
           headers: {
             'x-internal-token': config.INTERNAL_AUTH_TOKEN,
+            ...headerContext,
           },
         }
       );

@@ -27,6 +27,7 @@ export interface UserContext {
   cityId?: string;
   requestId?: string;
   actorType?: string;
+  authorization?: string;
 }
 
 /**
@@ -67,6 +68,9 @@ export abstract class BaseClient {
         }
         if (this.userContext.requestId) {
           config.headers['x-request-id'] = this.userContext.requestId;
+        }
+        if(this.userContext.authorization){
+          config.headers['Authorization'] = `Bearer ${this.userContext.authorization}`;
         }
       }
 

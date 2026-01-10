@@ -205,7 +205,14 @@ export class IdentityController {
         return;
       }
 
-      const profile = await this.aggregator.getProfile(userId);
+      const authHeader = req.headers.authorization as string;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        sendErrorResponse(res, 401, 'UNAUTHORIZED', 'Authorization header with Firebase token is required');
+        return;
+      }
+      const token = authHeader.replace('Bearer ', '');
+      
+      const profile = await this.aggregator.getProfile(userId, token);
       res.status(200).json({
         success: true,
         data: profile.data,

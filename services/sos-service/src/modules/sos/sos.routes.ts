@@ -6,11 +6,12 @@ import { StatusMachineService } from './statusMachine.service';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema, closeSOSSchema } from '../../utils/validators';
 import { createLogger } from '../../utils/logger';
 import { CounterService } from '../counter';
-
-const logger = createLogger('SOSRoutes');
+import { MessageRepository, MessageService } from '../messages';
+const messageRepository = new MessageRepository();
+const messageService = new MessageService(messageRepository);
 const router = Router();
 const repository = new SOSRepository();
-const service = new SOSService(repository);
+const service = new SOSService(repository,messageService);
 const statusMachine = new StatusMachineService(repository);
 const counterService = new CounterService();
 const controller = new SOSController(service, statusMachine, counterService);
@@ -47,7 +48,7 @@ router.post('/:sosId/location', validate(updateLocationSchema), (req, res, next)
   controller.updateLocation(req, res).catch(next)
 );
 
-router.patch('/:sosId/status', validate(updateLocationSchema), (req, res, next) =>
+router.patch('/:sosId/status', (req, res, next) =>
   controller.updateSOSStatus(req, res).catch(next)
 );
 

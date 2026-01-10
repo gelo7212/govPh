@@ -63,6 +63,30 @@ export class RealtimeServiceClient extends BaseClient {
       return this.handleError(error);
     }
   }
-}
 
+  async getRescuerLocation(sosId: string, rescuerId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/internal/realtime/sos/${sosId}/rescuer-location`, {
+        params: { rescuerId },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+  
+  async upsertRescuerLocation(sosId: string, rescuerId: string, latitude: number, longitude: number, accuracy?: number): Promise<any> {
+    try {
+      const response = await this.client.post(`/internal/realtime/sos/${sosId}/rescuer-location`, {
+        rescuerId,
+        latitude,
+        longitude,
+        accuracy
+      });
+      return response.data;
+    }catch (error) {
+      return this.handleError(error);
+    }
+  }
+}
 export default RealtimeServiceClient;

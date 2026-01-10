@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import axios from 'axios';
 import { Logger } from '../../utils/logger';
 import { UserRole } from '../../types';
-
+import { eventBus, MESSAGE_EVENTS, type MessageSentEvent, type MessageResponseReceivedEvent } from '../events';
 export class MessageService {
   private realtimeServiceUrl = process.env.REALTIME_SERVICE_URL || 'http://govph-realtime:3000';
   private internalToken = process.env.INTERNAL_AUTH_TOKEN || 'internal-secret-key';
@@ -34,6 +34,23 @@ export class MessageService {
     // Broadcast to realtime service after message is persisted
     try {
       await this.broadcastMessageToRealtime(data.sosId, message);
+
+      if(data.options?.answerTo){
+        const messageResponseEvent: MessageResponseReceivedEvent = {
+          messageId: message.id,
+          sosId: message.sosId,
+          answerTo: message.options?.answerTo,
+          senderType: message.senderType,
+          senderId: message.senderId ? message.senderId.toString() : '',
+          content: message.content,
+          contentType: message.contentType,
+          senderDisplayName: message.senderDisplayName,
+          createdAt: message.createdAt,
+        };
+        eventBus.emit(MESSAGE_EVENTS.RESPONSE_RECEIVED, messageResponseEvent);
+      }
+
+
     } catch (error) {
       this.logger.error('Failed to broadcast message to realtime service', error);
       // Don't fail the message creation if realtime broadcast fails

@@ -110,6 +110,7 @@ export class SosServiceClient extends BaseClient {
     contentType?: 'text' | 'system';
     content: string;
     cityId: string;
+    options?: any;
   }) {
     try {
       // Update user context from message data
@@ -131,18 +132,8 @@ export class SosServiceClient extends BaseClient {
    * Get a specific message by ID
    * GET /message/:messageId
    */
-  async getMessage(messageId: string, data: {
-    senderType: 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
-    senderId?: string | null;
-    cityId: string;
-  }) {
+  async getMessage(messageId: string) {
     try {
-       this.setUserContext({
-        userId: data.senderId || undefined,
-        actorType: data.senderType,
-        role: data.senderType,
-        cityId: data.cityId
-      });
       const response = await this.client.get(`/api/sos/message/${messageId}`);
       return response.data;
     } catch (error) {
@@ -154,8 +145,21 @@ export class SosServiceClient extends BaseClient {
    * Get messages for a specific SOS with pagination
    * GET /:sosId/messages
    */
-  async getMessagesBySosId(sosId: string, skip: number = 0, limit: number = 50) {
+  async getMessagesBySosId(sosId: string, skip: number = 0, limit: number = 50,
+    context?: {
+      role: 'APP_ADMIN' | 'CITY_ADMIN' | 'SOS_ADMIN' | 'CITIZEN' | 'RESCUER';
+      userId?: string | null;
+      cityId: string;
+      actorType: string;      
+    }) {
     try {
+      if(context)
+        this.setUserContext({
+          userId: context.userId || undefined,
+          actorType: context.actorType,
+          role: context.role,
+          cityId: context.cityId
+        });
       const response = await this.client.get(`/api/sos/${sosId}/messages`, {
         params: { skip, limit },
       });

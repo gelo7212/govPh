@@ -55,7 +55,8 @@ export class MessageController {
         senderDisplayName,
         contentType: contentType || 'text',
         content,
-        cityId: req.context?.user?.actor?.cityCode || ''
+        cityId: req.context?.user?.actor?.cityCode || '',
+        options: req.body.options
       };
 
       const message = await this.aggregator.sendMessage(sosId, messagePayload);

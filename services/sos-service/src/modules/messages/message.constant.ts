@@ -19,7 +19,7 @@ const PROMPT_TYPES = {
 // systemMessages.ts
 
 type SystemMessage = {
-  content: string | ((params: { sosId: string }) => string);
+  content: any;
   contentType: 'text' | 'system';
     options?: {
     intendedFor: keyof typeof MESSAGE_INTENDED_FOR;
@@ -29,8 +29,14 @@ type SystemMessage = {
     suggestions?: string[];
   };
 };
+const SYSTEM_MESSAGE_KEYS = {
+  SOS_CREATED: 'SOS_CREATED',
+  SHARE_PHONE_NUMBER_CONSENT: 'SHARE_PHONE_NUMBER_CONSENT',
+  CITIZEN_ACTION_REQUIRED: 'CITIZEN_ACTION_REQUIRED',
+  CITIZEN_URGENCY_CHECK: 'CITIZEN_URGENCY_CHECK'
+} as const;
 
-export const SYSTEM_MESSAGES : Record<string, SystemMessage> = {
+export const SYSTEM_MESSAGES : Record<keyof typeof SYSTEM_MESSAGE_KEYS, SystemMessage> = {
   SOS_CREATED: {
     content: ({ sosId }: { sosId: string }) =>
       [
@@ -44,6 +50,7 @@ export const SYSTEM_MESSAGES : Record<string, SystemMessage> = {
         '• Clearly describe your situation and urgency',
         '• Stay active in the chat for updates',
         '• Follow any instructions given by the rescue team',
+        '• Do not close the app until help arrives',
         '',
         'Our support team has been notified and will reach out as soon as possible.'
       ].join('\n'),
@@ -52,8 +59,13 @@ export const SYSTEM_MESSAGES : Record<string, SystemMessage> = {
   },
 
   SHARE_PHONE_NUMBER_CONSENT: {
-    content:
-      'Would you like to share your phone number with the rescuer?',
+    content:[
+      'Would you like to share your saved phone number with the rescuer for quicker communication?',
+      '',
+      'Sharing your number can help the rescue team reach you faster in case of urgent updates.',
+      '',
+      'You can type your phone number manually if you prefer not to share the saved one.'
+    ].join('\n'),
 
     contentType: 'text',
 
@@ -63,23 +75,8 @@ export const SYSTEM_MESSAGES : Record<string, SystemMessage> = {
       promptKey: 'SHARE_PHONE_NUMBER',
       suggestions: [
         'Share saved number',
-        'Use another number',
         'Cancel'
       ]
-    }
-  },
-
-  REQUEST_PHONE_NUMBER: {
-    content:
-      'Please enter the phone number you want to share with the rescuer.',
-
-    contentType: 'text',
-
-    options: {
-      intendedFor: 'CITIZEN',
-      promptType: 'INPUT_REQUEST',
-      inputType: 'PHONE_NUMBER',
-      promptKey: 'REQUEST_PHONE_NUMBER'
     }
   },
 

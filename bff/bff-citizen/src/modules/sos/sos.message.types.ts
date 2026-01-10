@@ -10,6 +10,7 @@ export interface MessagePayload {
   contentType?: 'text' | 'system';
   content: string;
   cityId: string;
+  options?: any;
 }
 
 export type UserRole ='SOS_ADMIN' | 'CITIZEN' | 'RESCUER';

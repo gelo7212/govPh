@@ -31,7 +31,8 @@ export class MessageAggregator {
         senderDisplayName: data.senderDisplayName,
         contentType: data.contentType || 'text',
         content: data.content,
-        cityId: data.cityId
+        cityId: data.cityId,
+        options: data.options || {}
       };
 
       const result = await this.sosClient.sendMessage(sosId, messageData);

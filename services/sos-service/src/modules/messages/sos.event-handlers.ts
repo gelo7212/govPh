@@ -33,22 +33,7 @@ export class SOSEventHandlers {
    */
   private async handleSOSCreated(data: SOSCreatedEvent): Promise<void> {
     try {
-        const content = [
-        '🚨 New SOS created successfully.',
-        '',
-        `🆔 SOS ID: ${data.sosId}`,
-        '',
-        '📞 For faster communication, please share your mobile number.',
-        '',
-        'ℹ️ Tips to help us assist you quicker:',
-        '• Clearly describe your situation and urgency',
-        '• Stay active in the chat for updates',
-        '• Follow any instructions given by the rescue team',
-        '',
-        'Our support team has been notified and will reach out as soon as possible.'
-        ].join('\n');
-
-
+        const content = SYSTEM_MESSAGES.SOS_CREATED.content({ sosId: data.sosId });
         console.log('Sending SOS creation message for SOS ID:', data.sosId);
         await this.messageService.sendMessage({
             sosId: data.sosId,
@@ -59,24 +44,15 @@ export class SOSEventHandlers {
             senderId: null,
             options:{
                 intendedFor: 'CITIZEN',
-                promptType: 'CONSENT_CONFIRMATION',
-                promptKey: 'SHARE_PHONE_NUMBER',
-                suggestions: [
-                    'Share saved number',
-                    'Use another number',
-                    'Cancel'
-                ]
             }
         });
         
         const sharePhoneNumberConsentMessage = SYSTEM_MESSAGES.SHARE_PHONE_NUMBER_CONSENT;
-        const messageContent = typeof sharePhoneNumberConsentMessage.content === 'function' 
-            ? sharePhoneNumberConsentMessage.content({ sosId: data.sosId })
-            : sharePhoneNumberConsentMessage.content;
-            
+        // delay to ensure message order
+        await new Promise(resolve => setTimeout(resolve, 1400));
         await this.messageService.sendMessage({
             sosId: data.sosId,
-            content: messageContent,
+            content: sharePhoneNumberConsentMessage.content,
             senderType: 'SYSTEM',
             senderDisplayName: 'System',
             contentType: sharePhoneNumberConsentMessage.contentType,

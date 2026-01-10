@@ -1,7 +1,6 @@
 import { SOSRepository } from './sos.repository';
 import { SOS } from './sos.model';
 import { identityClient } from '../../services/identity.client';
-import { MessageService } from '../messages';
 import { eventBus, SOS_EVENTS, type SOSCreatedEvent, type SOSStatusChangedEvent, type SOSTaggedEvent } from '../events';
 
 export class SOSService {

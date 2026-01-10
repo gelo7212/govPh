@@ -5,6 +5,7 @@ import { MessageRepository } from './message.repository';
 import { SOSEventHandlers } from './sos.event-handlers';
 import { SOSService } from '../sos/sos.service';
 import { SOSRepository } from '../sos/sos.repository';
+import { MessageEventHandlers } from './message.event-handlers';
 
 const router = Router({ mergeParams: true });
 const repository = new MessageRepository();
@@ -14,6 +15,7 @@ const sosRepository =  new SOSRepository();
 const sosService = new SOSService(sosRepository);
 // Initialize event handlers
 new SOSEventHandlers(service, sosService); // Initialize event handlers
+new MessageEventHandlers(service);
 /**
  * Send a message to an SOS
  * POST /:sosId/messages

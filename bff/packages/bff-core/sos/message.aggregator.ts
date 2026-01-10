@@ -33,8 +33,8 @@ export class MessageAggregator {
   /**
    * Get messages for a specific SOS with pagination
    */
-  async getMessagesBySosId(sosId: string, skip: number = 0, limit: number = 50): Promise<any> {
-    const messages = await this.sosClient.getMessagesBySosId(sosId, skip, limit);
+  async getMessagesBySosId(sosId: string, skip: number = 0, limit: number = 50, data?:any): Promise<any> {
+    const messages = await this.sosClient.getMessagesBySosId(sosId, skip, limit, data);
     return messages;
   }
 }

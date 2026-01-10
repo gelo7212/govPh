@@ -82,6 +82,14 @@ export class MessageController {
     try {
       const { sosId } = req.params;
       const { limit = '50', skip = '0' } = req.query;
+      const context = req.context;
+
+      const contextData = {
+        userId: req.context?.user?.id || req.context?.user?.userId,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
 
       if (!sosId) {
         res.status(400).json({
@@ -95,6 +103,7 @@ export class MessageController {
         sosId,
         Number(skip),
         Number(limit),
+        contextData
       );
 
       res.status(200).json({

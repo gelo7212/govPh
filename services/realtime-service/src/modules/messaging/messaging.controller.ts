@@ -18,7 +18,7 @@ export class MessagingController {
   async broadcastMessage(req: Request, res: Response): Promise<void> {
     try {
         const payload = req.body as MessageBroadcastRequest;
-        logger.info('BroadcastMessage payload', payload);
+        logger.info('BroadcastMessage payload', JSON.stringify(payload));
         
         if (!payload.sosId || !payload.message) {
             res.status(400).json({

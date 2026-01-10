@@ -51,10 +51,14 @@ export class MessageRepository {
                                 userRole === 'ADMIN' ? 'SOS_ADMIN' :
                                 userRole === 'RESCUER' ? 'RESCUER' : 
                                 userRole === 'SOS_ADMIN' ? 'SOS_ADMIN' : null;
+      // if options.intendedFor is not set, it means the message is for all roles
       if(intendedForFilter){
         const messages = await SosMessageModel.find({ 
-          sosId ,
-          'options.intendedFor': intendedForFilter
+          sosId,
+          $or: [
+            { 'options.intendedFor': intendedForFilter },
+            { 'options.intendedFor': { $exists: false } }
+          ]
         })
         .sort({ createdAt: -1 }) // latest messages first
         .skip(skip)
@@ -62,8 +66,11 @@ export class MessageRepository {
         .exec();
         const total = await SosMessageModel.countDocuments({ 
           sosId,
-          'options.intendedFor': intendedForFilter
-          });
+          $or: [
+            { 'options.intendedFor': intendedForFilter },
+            { 'options.intendedFor': { $exists: false } }
+          ]
+        });
         return {
           messages: messages.map((msg) => this.mapToDTO(msg)),
           total,

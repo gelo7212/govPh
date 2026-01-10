@@ -49,13 +49,14 @@ export class MessageAggregator {
     sosId: string,
     skip: number = 0,
     limit: number = 50,
+    context?: any
   ): Promise<MessagesListResponse> {
     try {
       if (!sosId) {
         throw new Error('Missing required field: sosId');
       }
-
-      const result = await this.sosClient.getMessagesBySosId(sosId, skip, limit);
+    
+      const result = await this.sosClient.getMessagesBySosId(sosId, skip, limit, context);
       console.log('Messages fetched:', result);
       return {
         data: result.data,
@@ -77,7 +78,7 @@ export class MessageAggregator {
         throw new Error('Missing required field: messageId');
       }
 
-      const result = await this.sosClient.getMessage(messageId);
+      const result = await this.sosClient.getMessage(messageId,);
       return result.data;
     } catch (error) {
       throw error;

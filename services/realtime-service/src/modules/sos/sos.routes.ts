@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { SOSController } from './sos.controller';
 import { SOSService } from './sos.service';
-import { StatusMachineService } from './statusMachine.service';
 import { internalAuthMiddleware } from '../../middleware/internalAuth.middleware';
 import { validate } from '../../utils/validators';
 import { initSOSSchema, closeSOSSchema, updateStatusSchema, upsertRescuerLocationSchema } from './sos.schema';
@@ -12,8 +11,7 @@ const createSosRoutes = (io: SocketIOServer): Router => {
 
   // Initialize services
   const service = new SOSService();
-  const statusMachine = new StatusMachineService();
-  const controller = new SOSController(service, statusMachine, io);
+  const controller = new SOSController(service, io);
 
   // All routes require internal authentication
   router.use(internalAuthMiddleware);
@@ -31,6 +29,10 @@ const createSosRoutes = (io: SocketIOServer): Router => {
   // Update SOS status
   router.post('/:sosId/status', validate(updateStatusSchema), (req, res) => {
     controller.updateStatus(req, res);
+  });
+
+  router.patch('/:sosId/type', async (req, res) => {
+    controller.updateSosType(req, res);
   });
 
   // get all SOS realtime sos by radius (MUST be before /:sosId routes)

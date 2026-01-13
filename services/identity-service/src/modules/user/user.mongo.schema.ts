@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema(
     firebaseUid: { type: String, required: true, unique: true, index: true },
     role: {
       type: String,
-      enum: ['app_admin', 'city_admin', 'sos_admin','sk_youth_admin', 'citizen'],
+      enum: ['app_admin', 'city_admin', 'sos_admin','sk_youth_admin', 'citizen', 'rescuer'],
       required: true,
       caseSensitive: true,
       index: true,

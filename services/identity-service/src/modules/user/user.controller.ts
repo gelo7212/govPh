@@ -275,6 +275,26 @@ export class UserController {
     }
 
   }
+
+  async getResscuerIdByCity(req: Request, res: Response): Promise<void> {
+    try {
+      const { municipalityCode } = req.params;
+      if (!municipalityCode) {
+        throw new ValidationError('Missing required parameter: municipalityCode');
+      }
+      const rescuers = await userService.getRescuersByMunicipality(municipalityCode);
+      res.status(200).json({
+        success: true,
+        data: rescuers,
+        timestamp: new Date(),
+      });
+    
+    }
+    catch (error) {
+      logger.error('Failed to get rescuers by city', error);
+      throw error;
+    }
+  }
 }
 
 export const userController = new UserController();

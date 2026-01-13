@@ -3,7 +3,7 @@ import { Schema, model, Document } from 'mongoose';
 export interface ISOS extends Document {
   cityId?: string;
   citizenId?: string;
-  status: 'ACTIVE' | 'EN_ROUTE' | 'ARRIVED' | 'RESOLVED' | 'CANCELLED';
+  status: 'ACTIVE' | 'EN_ROUTE' | 'ARRIVED' | 'RESOLVED' | 'CANCELLED' | 'REJECTED' | 'FAKE';
   assignedRescuerId?: string;
   lastKnownLocation?: {
     type: 'Point';
@@ -19,6 +19,7 @@ export interface ISOS extends Document {
   updatedAt: Date;
   soNo: string;
   deviceId?: string;
+  resolutionNote?: string;
 }
 
 const sosSchema = new Schema<ISOS>(
@@ -77,6 +78,10 @@ const sosSchema = new Schema<ISOS>(
       type: String,
       required: false,
       index: true,
+    },
+    resolutionNote: {
+      type: String,
+      maxlength: 1000,
     },
   },
   {

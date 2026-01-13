@@ -4,6 +4,7 @@ import { StatusMachineService } from '../sos/statusMachine.service';
 import { UserRole } from '../../middleware/roleGuard';
 import { ForbiddenError, NotFoundError } from '../../errors';
 import { createLogger } from '../../utils/logger';
+import { identityClient } from '../../services/identity.client';
 
 const logger = createLogger('RescuerController');
 
@@ -14,46 +15,68 @@ const logger = createLogger('RescuerController');
 export class RescuerController {
   constructor(private sosRepository: SOSRepository, private statusMachine: StatusMachineService) {}
 
+  async getRescuersByCity(req: Request, res: Response): Promise<void> {
+    try {
+      const { municipalityCode } = req.params;
+      const rescuers = await identityClient.getRescuersByCity(municipalityCode);
+      res.status(200).json({
+        success: true,
+        data: rescuers,
+        timestamp: new Date(),
+      });
+    }catch (error) {
+      logger.error('Error fetching rescuers by city:', JSON.stringify(error));
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  }
   /**
    * GET /rescuer/assignment
    * Get assigned SOS for rescuer
    */
   async getAssignment(req: Request, res: Response): Promise<void> {
-    if (!req.user || req.user.role !== UserRole.RESCUER) {
-      throw new ForbiddenError('Only rescuers can access assignments');
-    }
+    try {
+      
+      if (!req.user || req.user.role !== UserRole.RESCUER) {
+        throw new ForbiddenError('Only rescuers can access assignments');
+      }
 
-    const { id: rescuerId, cityId } = req.user;
+      const { id: rescuerId, cityId } = req.user;
 
-    if (!cityId) {
-      throw new ForbiddenError('City ID is required');
-    }
+      if (!cityId) {
+        throw new ForbiddenError('City ID is required');
+      }
 
-    if(!rescuerId){
-      throw new ForbiddenError('Rescuer ID is required');
-    }
+      if(!rescuerId){
+        throw new ForbiddenError('Rescuer ID is required');
+      }
 
-    // Find SOS assigned to this rescuer (in EN_ROUTE or ARRIVED status)
-    const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);
-    const activeAssignment = assignments.find((sos) => sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
+      // Find SOS assigned to this rescuer (in EN_ROUTE or ARRIVED status)
+      const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);
+      const activeAssignment = assignments.find((sos) => sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
 
-    if (!activeAssignment) {
-      throw new NotFoundError('Active assignment');
-    }
-
-    res.status(200).json({
-      success: true,
-      data: {
-        sosId: activeAssignment.id,
-        target: {
-          lat: activeAssignment.lastKnownLocation.coordinates[1],
-          lng: activeAssignment.lastKnownLocation.coordinates[0],
+      if (!activeAssignment) {
+        throw new NotFoundError('Active assignment');
+      }
+      logger.info(`Rescuer ${rescuerId} fetched assignment ${activeAssignment.id}`, activeAssignment);
+      const targetLat = activeAssignment.lastKnownLocation.coordinates ? activeAssignment.lastKnownLocation.coordinates[1] : null;
+      const targetLng = activeAssignment.lastKnownLocation.coordinates ? activeAssignment.lastKnownLocation.coordinates[0] : null;
+      res.status(200).json({
+        success: true,
+        data: {
+          sosId: activeAssignment.id,
+          target: {
+            lat: targetLat,
+            lng: targetLng,
+          },
+          status: activeAssignment.status,
+          // citizenPhone would come from a citizen service, omitted for now
         },
-        status: activeAssignment.status,
-        // citizenPhone would come from a citizen service, omitted for now
-      },
-      timestamp: new Date(),
-    });
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logger.error('Error in getAssignment:', JSON.stringify(error));
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
   }
 
   /**

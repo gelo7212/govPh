@@ -13,6 +13,7 @@ export interface MessageBroadcastRequest {
     contentType: 'text' | 'system';
     content: string;
     createdAt: Date;
+    options?: any;
   };
 }
 

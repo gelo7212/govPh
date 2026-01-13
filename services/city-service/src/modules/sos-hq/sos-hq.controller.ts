@@ -55,6 +55,7 @@ export class SosHQController {
         return;
       }
       sosHQ = this.mapLocationToOldFormat(sosHQ);
+      console.log('Mapped SOS HQ:', sosHQ);
       res.json({
         success: true,
         data: sosHQ,

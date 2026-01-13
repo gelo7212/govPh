@@ -71,4 +71,10 @@ router.get(
     userController.checkFirebaseUidExists(req, res).catch(next)
 );
 
+router.get(
+  '/rescuers/municipality/:municipalityCode',
+  (req, res, next) =>
+    userController.getResscuerIdByCity(req, res).catch(next)
+);
+
 export default router;

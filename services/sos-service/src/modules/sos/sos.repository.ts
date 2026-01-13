@@ -28,8 +28,100 @@ export class SOSRepository {
     return this.mapToDTO(sos);
   }
 
-  async findAll(cityId: string): Promise<SOS[]> {
-    const sosList = await SOSModel.find({ cityId }).sort({ createdAt: -1 });
+  async findAll(cityId: string, options?: {
+    filters?: {
+      date?: { startDate?: string; endDate?: string };
+      type?: string[];
+      status?: string[];
+      soNo?: string;
+      citizenId?: string;
+    };
+    search?: string;
+    sort?: {
+      field: 'createdAt' | 'type' | 'status';
+      order: 'asc' | 'desc';
+    };
+  }, hqLocation?: {
+    longitude: number;
+    latitude: number;
+    radius: number;
+  }): Promise<SOS[]> {
+    const query: any = { cityId };
+
+    // Build filter conditions (OR logic for filter fields)
+    if (options?.filters) {
+      const filterConditions: any[] = [];
+
+      if (options.filters.date?.startDate || options.filters.date?.endDate) {
+        const dateFilter: any = {};
+        if (options.filters.date.startDate) {
+          dateFilter.$gte = new Date(options.filters.date.startDate);
+        }
+        if (options.filters.date.endDate) {
+          dateFilter.$lte = new Date(options.filters.date.endDate);
+        }
+        filterConditions.push({ createdAt: dateFilter });
+      }
+
+      if (options.filters.type && options.filters.type.length > 0) {
+        filterConditions.push({ type: { $in: options.filters.type } });
+      }
+
+      if (options.filters.status && options.filters.status.length > 0) {
+        filterConditions.push({ status: { $in: options.filters.status } });
+      }
+
+      if (options.filters.soNo) {
+        filterConditions.push({ soNo: { $regex: options.filters.soNo, $options: 'i' } });
+      }
+
+      if (options.filters.citizenId) {
+        filterConditions.push({ citizenId: options.filters.citizenId });
+      }
+
+      // Apply OR condition for filters
+      if (filterConditions.length > 0) {
+        query.$or = filterConditions;
+      }
+    }
+
+    // Build search condition (AND logic with filters, searches in multiple fields)
+    if (options?.search) {
+      const searchRegex = { $regex: options.search, $options: 'i' };
+      const searchConditions = [
+        { message: searchRegex },
+        { soNo: searchRegex },
+        { citizenId: { $regex: options.search, $options: 'i' } },
+        { 'responders.departmentId': { $regex: options.search, $options: 'i' } },
+      ];
+      query.$and = query.$and || [];
+      query.$and.push({ $or: searchConditions });
+    }
+
+    // Add geospatial filter if HQ location is provided
+    if(hqLocation){
+      console.log('Applying geospatial filter with HQ location:', hqLocation);
+      query['lastKnownLocation'] = {
+        $geoWithin: {
+          $centerSphere: [
+            [hqLocation.longitude, hqLocation.latitude],
+            hqLocation.radius / 6.378137 // radius in radians (hqLocation.radius is in km, Earth radius is 6378.137 km)
+          ]
+        }
+      };
+    }
+
+    // Build sort
+    const sortObj: any = {};
+    if (options?.sort) {
+      sortObj[options.sort.field] = options.sort.order === 'asc' ? 1 : -1;
+    } else {
+      sortObj.createdAt = -1; // Default sort by creation date descending
+    }
+    console.log('Final Query:', JSON.stringify(query));
+    console.log('Sort Object:', JSON.stringify(sortObj));
+
+    const sosList = await SOSModel.find(query).sort(sortObj);
     return sosList.map((sos) => this.mapToDTO(sos));
   }
 
@@ -44,8 +136,12 @@ export class SOSRepository {
   }
 
   async findByRescuerId(cityId: string, rescuerId: string): Promise<SOS[]> {
-    const sosList = await SOSModel.find({ cityId, assignedRescuerId: rescuerId }).sort({ createdAt: -1 });
-    return sosList.map((sos) => this.mapToDTO(sos));
+    try {
+      const sosList = await SOSModel.find({ cityId, assignedRescuerId: rescuerId }).sort({ createdAt: -1 });
+      return sosList.map((sos) => this.mapToDTO(sos));
+    } catch (error) {
+      throw new Error(`Error finding SOS by rescuer ID: ${error}`);
+    }
   }
 
   async updateTag(id: string, tag: string): Promise<SOS> {
@@ -72,12 +168,12 @@ export class SOSRepository {
     return this.mapToDTO(sos);
   }
 
-  async updateStatus(sosId: string, status: string): Promise<SOS> {
+  async updateStatus(sosId: string, status: string, resolutionNote?: string): Promise<SOS> {
     const sos = await SOSModel.findOneAndUpdate(
       {
         _id: sosId,
       },
-      { status: status },
+      { status: status, ...(resolutionNote ? { resolutionNote: resolutionNote } : {}) },
       { new: true }
     );
     if (!sos) {

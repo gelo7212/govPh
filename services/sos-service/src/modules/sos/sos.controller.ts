@@ -5,10 +5,12 @@ import { UserRole } from '../../middleware/roleGuard';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../errors';
 import { createLogger } from '../../utils/logger';
 import { CounterService } from '../counter';
+import { CityClient } from '../../services/city.client';
 
 const logger = createLogger('SOSController');
 
 export class SOSController {
+  private cityClient = new CityClient();
   constructor(
     private sosService: SOSService, 
     private statusMachine: StatusMachineService,
@@ -36,6 +38,7 @@ export class SOSController {
 
       const { type, message, silent, address } = req.body;
       const { id: citizenId, cityId } = req.user || { id: '', cityId: '' };
+      let name  = 'Anonymous Citizen';
 
       const location = req.body.location;
       const barangay = address?.barangay || '';
@@ -48,6 +51,7 @@ export class SOSController {
         if (existingSOS) {
           throw new ValidationError('An active SOS request already exists for this citizen');
         }
+
     }
 
 
@@ -119,9 +123,24 @@ export class SOSController {
     });
   }
 
+  async listSosByCitizen(citizenId: string): Promise<any[]> {
+    const results = await this.sosService.listByCitizen(citizenId);
+    return results;
+  }
+
   /**
    * GET /sos
-   * List Active SOS
+   * List Active SOS with optional filters, search, and sort
+   * Query Parameters:
+   *   - filter[date][startDate]: ISO date string
+   *   - filter[date][endDate]: ISO date string
+   *   - filter[type]: comma-separated types
+   *   - filter[status]: comma-separated statuses
+   *   - filter[soNo]: SOS number
+   *   - filter[citizenId]: Citizen ID
+   *   - search: search term (searches in type, message, soNo, citizenId, id)
+   *   - sort: field name (createdAt|type|status)
+   *   - sortOrder: asc|desc
    */
   async listSOS(req: Request, res: Response): Promise<void> {
 
@@ -138,16 +157,84 @@ export class SOSController {
     if (!req.user || req.user.role !== UserRole.APP_ADMIN && req.user.role !== UserRole.CITY_ADMIN && req.user.role !== UserRole.SOS_ADMIN) {
       throw new ForbiddenError('Only admins can list SOS requests');
     }
-
-    const { cityId } = req.user;
-    const { status } = req.query;
-
-    let results;
-    if (status) {
-      results = await this.sosService.listByStatus(cityId || '', status as string);
-    } else {
-      results = await this.sosService.listSOS(cityId || '');
+    
+    const { search, sort, sortOrder, cityId, filter, sosHqID } = req.query;
+    if(!sosHqID){
+      throw new ValidationError('Missing sosHqID parameter');
     }
+
+    const SosHQ = await this.cityClient.getHQById(sosHqID as string);
+    
+    const hqLocation = {
+      longitude: SosHQ?.location.lng || 0,
+      latitude: SosHQ?.location.lat || 0,
+      radius: SosHQ?.coverageRadiusKm || 6,  // Example radius in meters, adjust as needed
+    };
+    if(!hqLocation){
+      throw new ValidationError('SOS HQ location not found');
+    }
+    if(hqLocation.latitude === 0 || hqLocation.longitude === 0){
+      throw new ValidationError('Invalid SOS HQ location coordinates');
+    }
+
+    console.log('Query Params:', req.query);
+    // Parse filters from query parameters
+    const filters: any = {};
+    
+    // Handle nested filter object from BFF
+    if (filter && typeof filter === 'object') {
+      const filterObj = filter as any;
+      
+      // Parse date filters
+      if (filterObj.date) {
+        filters.date = filterObj.date;
+      }
+
+      // Parse type filters - convert string to array if needed
+      if (filterObj.type) {
+        filters.type = Array.isArray(filterObj.type) 
+          ? filterObj.type 
+          : typeof filterObj.type === 'string'
+          ? filterObj.type.split(',').map((t: string) => t.trim())
+          : [];
+      }
+
+      // Parse status filters - convert string to array if needed
+      if (filterObj.status) {
+        filters.status = Array.isArray(filterObj.status)
+          ? filterObj.status
+          : typeof filterObj.status === 'string'
+          ? filterObj.status.split(',').map((s: string) => s.trim())
+          : [];
+      }
+
+      // Parse soNo filter
+      if (filterObj.soNo) {
+        filters.soNo = filterObj.soNo;
+      }
+
+      // Parse citizenId filter
+      if (filterObj.citizenId) {
+        filters.citizenId = filterObj.citizenId;
+      }
+    }
+
+    // Build options object
+    const options: any = {};
+    if (Object.keys(filters).length > 0) {
+      options.filters = filters;
+    }
+    if (search) {
+      options.search = search as string;
+    }
+    if (sort && (sort === 'createdAt' || sort === 'type' || sort === 'status')) {
+      options.sort = {
+        field: sort as 'createdAt' | 'type' | 'status',
+        order: (sortOrder === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
+      };
+    }
+
+    const results = await this.sosService.listSOS(cityId as string || '', options, hqLocation);
 
     res.status(200).json({
       success: true,
@@ -272,8 +359,9 @@ export class SOSController {
 
   async updateSOSStatus(req: Request, res: Response): Promise<void> {
     const { sosId } = req.params;
-    const { status } = req.body;
-    const updatedSOS = await this.sosService.updateSOSStatus(sosId, status);
+    const { status, resolutionNote  } = req.body;
+    const updatedSOS = await this.statusMachine.updateSOSStatus(sosId, status, resolutionNote);
+    
     res.status(200).json({
       success: true,
       data: updatedSOS,
@@ -282,7 +370,7 @@ export class SOSController {
   }
 
   /**
-   * POST /sos/{sosId}/close
+   * POST /sos/{sosId}/close :: resolutionNote
    * Close/Resolve SOS (ADMIN only)
    */
   async closeSOS(req: Request, res: Response): Promise<void> {

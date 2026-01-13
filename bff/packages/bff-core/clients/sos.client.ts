@@ -76,11 +76,73 @@ export class SosServiceClient extends BaseClient {
   }
 
   /**
-   * Get all SOS requests with optional filters
+   * Get all SOS requests with optional filters, search, and sort
+   * @param options - Configuration including:
+   *   - cityId: string (REQUIRED - AND condition)
+   *   - filters: { date?, type?, status?, soNo?, citizenId? } (OR conditions)
+   *   - search: string (searches type, message, soNo, citizenId, id - AND with filters)
+   *   - sort: { field: 'createdAt' | 'type' | 'status', order: 'asc' | 'desc' }
    */
-  async getAllSosRequests(filters?: any) {
+  async getAllSosRequests(options?: any, context?: any) {
     try {
-      const response = await this.client.get('/api/sos', { params: filters });
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+      const params: any = {};
+
+      // cityId is REQUIRED and has AND logic - must be present for all requests
+      if (options?.cityId) {
+        params.cityId = options.cityId;
+      }
+
+      // Build filter parameters (OR logic)
+      if (options?.filters) {
+        if (options.filters.date) {
+          if (options.filters.date.startDate) {
+            params['filter[date][startDate]'] = options.filters.date.startDate;
+          }
+          if (options.filters.date.endDate) {
+            params['filter[date][endDate]'] = options.filters.date.endDate;
+          }
+        }
+        if (options.filters.type && options.filters.type.length > 0) {
+          params['filter[type]'] = options.filters.type.join(',');
+        }
+        if (options.filters.status && options.filters.status.length > 0) {
+          params['filter[status]'] = options.filters.status.join(',');
+        }
+        if (options.filters.soNo) {
+          params['filter[soNo]'] = options.filters.soNo;
+        }
+        if (options.filters.citizenId) {
+          params['filter[citizenId]'] = options.filters.citizenId;
+        }
+      }
+
+      // Build search parameter (AND with filters)
+      if (options?.search) {
+        params.search = options.search;
+      }
+
+      // Build sort parameters
+      if (options?.sort) {
+        params.sort = options.sort.field;
+        params.sortOrder = options.sort.order || 'desc';
+      }
+
+      // Keep backward compatibility with legacy filters
+      if (options && !options.filters && !options.search && !options.sort && !options.cityId) {
+        Object.assign(params, options);
+      }
+
+      if(options?.sosHqID){
+        params.sosHqID = options.sosHqID;
+      }
+
+      const response = await this.client.get('/api/sos', { params });
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -181,7 +243,7 @@ export class SosServiceClient extends BaseClient {
         role: context.role,
         cityId: context.cityId
       });
-      const response = await this.client.post(`/api/sos/${sosId}/close`, data);
+      const response = await this.client.patch(`/api/sos/${sosId}/status`, data);
       return response.data;
     } catch (error) {
       return this.handleError(error);
@@ -242,6 +304,23 @@ export class SosServiceClient extends BaseClient {
   }
 
   // ==================== Rescuer Endpoints ====================
+
+  async getListOfRescuersByCity(municipalityCode: string, context: any): Promise<any[]> {
+    try {
+      this.setUserContext({
+        userId: context.userId || undefined,
+        actorType: context.actorType,
+        role: context.role,
+        cityId: context.cityId
+      });
+      const response = await this.client.get(`/api/rescuer/municipality/${municipalityCode}`);
+      return response.data;
+    }
+    catch(error){
+      console.log('Error fetching rescuers by city:', error);
+      return this.handleError(error);
+    }
+  }
 
   /**
    * Get assigned SOS for a rescuer

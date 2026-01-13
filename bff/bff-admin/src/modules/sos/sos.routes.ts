@@ -34,6 +34,7 @@ const messageController = new MessageController(messageAggregator);
 sosRoutes.get('/:sosId',authContextMiddleware, requireActor('USER','ANON'), (req, res) => sosController.getSosRequest(req, res));
 sosRoutes.get('/user/requests',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getUserSosRequests(req, res));
 sosRoutes.get('/citizen/active',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getActiveSosByCitizen(req, res));
+sosRoutes.get('/list/all',authContextMiddleware, requireActor('USER'), (req, res) => sosController.listSOS(req, res));
 sosRoutes.put('/:sosId/tag',authContextMiddleware, requireActor('USER'), (req, res) => sosController.updateSosTag(req, res));
 sosRoutes.post('/:sosId/close',authContextMiddleware,requireActor('USER'), (req, res) => sosController.closeSosRequest(req, res));
 sosRoutes.get('/states/nearby',authContextMiddleware,requireActor('USER'), (req: Request, res: Response) => sosController.getNearbySOSStates(req, res)); 
@@ -50,6 +51,8 @@ sosRoutes.post('/:sosId/dispatch/rescue',authContextMiddleware, requireActor('US
 sosRoutes.get('/rescuer/assignment',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getRescuerAssignment(req, res));
 sosRoutes.post('/rescuer/location',authContextMiddleware, requireActor('USER','ANON'), validate(updateLocationSchema), (req, res) => sosController.updateRescuerLocation(req, res));
 sosRoutes.get('/rescuer/location',authContextMiddleware, requireActor('USER','ANON'), (req, res) => sosController.getRescuerLocation(req, res));
+sosRoutes.get('/rescuer/municipality/:municipalityCode',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getRescuerListByCity(req, res));
+
 // Message Routes - nested under SOS
 /**
  * Send a message to an SOS conversation

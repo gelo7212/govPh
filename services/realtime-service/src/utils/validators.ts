@@ -8,7 +8,7 @@ import { logger } from './logger';
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { error, value } = schema.validate(req.body, {
+      const { error } = schema.validate(req.body, {
         abortEarly: false,
         stripUnknown: true,
       });
@@ -28,7 +28,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
         return;
       }
 
-      req.body = value;
+      // req.body = value;
       next();
     } catch (err) {
       logger.error('Validation middleware error', err);

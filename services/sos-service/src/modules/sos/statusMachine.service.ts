@@ -1,6 +1,7 @@
 import { SOSRepository } from '../sos/sos.repository';
 import { SOS, SOSStatus } from '../sos/sos.model';
 import { sosRealtimeClient } from '../../services/sos.realtime.client'
+import { eventBus, SOS_EVENTS, SOSStatusChangedEvent } from '../events';
 
 /**
  * Status Machine Service
@@ -92,6 +93,7 @@ export class StatusMachineService {
     if(oldStatus == 'ACTIVED')
       oldStatus = 'active';
     await sosRealtimeClient.closeSOS(sosId, citizenId);
+    this.publishStatusChange(updated, 'CANCELLED', cityId);
 
     return updated;
   }
@@ -108,13 +110,18 @@ export class StatusMachineService {
       notes: resolutionNote || sos.message,
     });
 
-    // eventEmitter.publishSOSEvent({
-    //   type: 'SOS_RESOLVED',
-    //   sosId: updated.id,
-    //   cityId,
-    //   timestamp: new Date(),
-    //   data: { sosId: updated.id, resolutionNote },
-    // });
+    this.publishStatusChange(updated, 'RESOLVED', cityId);
+
+    return updated;
+  }
+
+  async updateSOSStatus(sosId: string, status: SOSStatus, resolutionNote?: string): Promise<SOS | null> {
+    const sos = await this.repository.findById(sosId);
+    if (!sos) return null;
+
+    const updated = await this.repository.updateStatus(sosId, status, resolutionNote);
+    console.log(`SOS ${sosId} status updated to ${status}`);
+    this.publishStatusChange(updated, status, sos.cityId);
 
     return updated;
   }
@@ -139,16 +146,12 @@ export class StatusMachineService {
    * Publish status change event
    */
   private publishStatusChange(sos: SOS, newStatus: SOSStatus, cityId: string): void {
-    // eventEmitter.publishSOSEvent({
-    //   type: 'STATUS_CHANGED',
-    //   sosId: sos.id,
-    //   cityId,
-    //   timestamp: new Date(),
-    //   data: {
-    //     sosId: sos.id,
-    //     previousStatus: sos.status,
-    //     status: newStatus,
-    //   },
-    // });
+    const sosStatusChangedEvent: SOSStatusChangedEvent = {
+      sosId: sos.id,
+      cityId: cityId,
+      previousStatus: sos.status, // Note: You may need to fetch previous status from repo
+      newStatus: newStatus,
+    };
+    eventBus.emit(SOS_EVENTS.STATUS_CHANGED, sosStatusChangedEvent);
   }
 }

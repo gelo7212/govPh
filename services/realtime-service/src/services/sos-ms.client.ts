@@ -30,6 +30,23 @@ export class SOSMSClient {
     }
   }
 
+  async getSos(sosId: string, headerContext: any): Promise<any> {
+    try {
+      const headers = {
+        'x-internal-token': config.INTERNAL_AUTH_TOKEN,
+        ...headerContext,
+      };
+     
+      const response = await axios.get(`${this.baseURL}/api/sos/${sosId}`, {
+        headers,
+      });
+      return response.data;
+    } catch (error) {
+      logger.error('Error getting SOS', { sosId, error });
+      return null;
+    }
+  }
+
   /**
    * Notify SOS MS of realtime event
    */

@@ -99,6 +99,26 @@ export class IdentityClient {
       return null;
     }
   }
+
+  async getRescuersByCity(cityId: string): Promise<CitizenInfo[]> {
+    try {
+      const response = await fetch(`${this.identityServiceUrl}/users/rescuers/municipality/${cityId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch users by city: ${response.statusText}`);
+        return [];
+      }
+      const data = await response.json() as { data: CitizenInfo[] };
+      return data.data as CitizenInfo[];
+    } catch (error) {
+      console.error('Error fetching users by city:', error);
+      return [];
+    }
+  }
 }
 
 export const identityClient = new IdentityClient();

@@ -19,4 +19,11 @@ router.post('/location', validate(rescuerLocationSchema), (req, res, next) =>
   controller.updateRescuerLocation(req, res).catch(next)
 );
 
+// Get rescuers by city
+router.get(
+  '/municipality/:municipalityCode',
+  (req, res, next) =>
+    controller.getRescuersByCity(req, res).catch(next)
+);
+
 export default router;

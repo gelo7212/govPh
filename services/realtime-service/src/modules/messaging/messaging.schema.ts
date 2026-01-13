@@ -11,5 +11,6 @@ export const messageBroadcastSchema = Joi.object({
     contentType: Joi.string().valid('text', 'system').required(),
     content: Joi.string().required(),
     createdAt: Joi.date().required(),
+    options: Joi.object().optional(),
   }).required(),
 });

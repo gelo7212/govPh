@@ -67,7 +67,10 @@ export class SosController {
         role: req.context?.user?.role,
         cityId: req.context?.user?.actor?.cityCode
       };
-      const result = await this.aggregator.closeSosRequest(sosId, userContext);
+
+      const resolutionNote = req.body.resolutionNote;
+      const status = req.body.status;
+      const result = await this.aggregator.closeSosRequest(sosId, userContext, resolutionNote, status);
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
@@ -142,7 +145,7 @@ export class SosController {
         throw new Error('Failed to create anonymous rescuer identity');
       }
 
-      res.status(201).json({ success: true , data: {token: token}, message: 'Anonymous Rescuer Identity created successfully' });
+      res.status(201).json({ success: true , data: {token: token?.data}, message: 'Anonymous Rescuer Identity created successfully' });
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     } 
@@ -222,6 +225,170 @@ export class SosController {
       res.status(200).json(result);
     }
     catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  }
+
+  /**
+   * List all SOS requests with optional filters, search, and sort
+   * cityId is REQUIRED (AND condition)
+   * Query Parameters:
+   *   - filter[date][startDate]: ISO date string
+   *   - filter[date][endDate]: ISO date string
+   *   - filter[type]: comma-separated types
+   *   - filter[status]: comma-separated statuses
+   *   - filter[soNo]: SOS number
+   *   - filter[citizenId]: Citizen ID
+   *   - search: search term (searches in type, message, soNo, citizenId, id)
+   *   - sort: field name (createdAt|type|status)
+   *   - sortOrder: asc|desc
+   */
+  async listSOS(req: Request, res: Response): Promise<void> {
+    try {
+      // cityId is REQUIRED - comes from authenticated user context
+      const cityId = req.context?.user?.actor?.cityCode;
+      if (!cityId) {
+        res.status(401).json({ 
+          success: false,
+          error: 'Unauthorized - cityId required' 
+        });
+        return;
+      }
+
+       const context = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+
+      const { search, sort, sortOrder, sosHqID } = req.query;
+      if(!sosHqID || typeof sosHqID !== 'string'){
+        res.status(400).json({ 
+          success: false,
+          error: 'sosHqID query parameter is required' 
+        });
+        return;
+      }
+
+      // Parse filters from query parameters
+      const filters: any = {};
+
+      console.log('[listSOS] Raw req.query:', JSON.stringify(req.query, null, 2));
+      
+      // Express parses bracket notation into nested objects
+      // filter[date][startDate] → filter.date.startDate
+      const filterObj = (req.query.filter as any) || {};
+      
+      // Parse date filters
+      let startDate: string | undefined;
+      let endDate: string | undefined;
+      
+      // Handle both nested object and flat key formats
+      if (typeof filterObj === 'object' && filterObj !== null) {
+        if (filterObj.date && typeof filterObj.date === 'object') {
+          startDate = filterObj.date.startDate;
+          endDate = filterObj.date.endDate;
+        }
+      }
+      
+      console.log('[listSOS] Date filters - startDate:', startDate, 'endDate:', endDate);
+      if (startDate || endDate) {
+        filters.date = {};
+        if (startDate) filters.date.startDate = startDate;
+        if (endDate) filters.date.endDate = endDate;
+      }
+
+      // Parse type filters (comma-separated)
+      let typeFilter: string | undefined;
+      if (filterObj.type) {
+        typeFilter = Array.isArray(filterObj.type) ? filterObj.type[0] : filterObj.type;
+      }
+      console.log('[listSOS] Type filter raw:', typeFilter);
+      if (typeFilter) {
+        filters.type = typeFilter.split(',').map(t => t.trim());
+      }
+
+      // Parse status filters (comma-separated)
+      let statusFilter: string | undefined;
+      if (filterObj.status) {
+        statusFilter = Array.isArray(filterObj.status) ? filterObj.status[0] : filterObj.status;
+      }
+      console.log('[listSOS] Status filter raw:', statusFilter);
+      if (statusFilter) {
+        filters.status = statusFilter.split(',').map(s => s.trim());
+      }
+
+      // Parse soNo filter
+      let soNoFilter: string | undefined;
+      if (filterObj.soNo) {
+        soNoFilter = Array.isArray(filterObj.soNo) ? filterObj.soNo[0] : filterObj.soNo;
+      }
+      console.log('[listSOS] SoNo filter:', soNoFilter);
+      if (soNoFilter) {
+        filters.soNo = soNoFilter;
+      }
+
+      // Parse citizenId filter
+      let citizenIdFilter: string | undefined;
+      if (filterObj.citizenId) {
+        citizenIdFilter = Array.isArray(filterObj.citizenId) ? filterObj.citizenId[0] : filterObj.citizenId;
+      }
+      console.log('[listSOS] CitizenId filter:', citizenIdFilter);
+      if (citizenIdFilter) {
+        filters.citizenId = citizenIdFilter;
+      }
+
+      console.log('[listSOS] Parsed filters object:', JSON.stringify(filters, null, 2));
+
+      // Build options object with cityId as required AND condition
+      const options: any = {
+        cityId // REQUIRED - AND condition
+      };
+      if (Object.keys(filters).length > 0) {
+        options.filters = filters;
+      }
+      if (search) {
+        options.search = search as string;
+      }
+      if (sort && (sort === 'createdAt' || sort === 'type' || sort === 'status')) {
+        options.sort = {
+          field: sort as 'createdAt' | 'type' | 'status',
+          order: (sortOrder === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
+        };
+      }
+      if(sosHqID && typeof sosHqID === 'string'){
+        options.sosHqID = sosHqID;
+      }
+
+      console.log("QUERY OPTIONS:", JSON.stringify(options, null, 2));
+
+      const results = await this.aggregator.getAllSosRequests(options, context);
+
+      res.status(200).json({
+        success: true,
+        data: results.data,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      res.status(400).json({ 
+        success: false, 
+        error: (error as Error).message 
+      });
+    }
+  }
+  async getRescuerListByCity(req: Request, res: Response): Promise<void> {
+    try {
+      const { municipalityCode } = req.params;
+      const context = {
+        userId: req.context?.user?.id,
+        actorType: req.context?.user?.actor?.type,
+        role: req.context?.user?.role,
+        cityId: req.context?.user?.actor?.cityCode
+      };
+      const rescuers = await this.aggregator.getRescuerListByCity(municipalityCode, context);
+      res.status(200).json({ success: true, data: rescuers });
+    } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
   }

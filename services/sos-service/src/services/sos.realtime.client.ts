@@ -75,6 +75,19 @@ export class SOSRealtimeClient {
     }
   }
 
+  async updateSosType(sosId: string, type: string): Promise<void> {
+    try {
+      await this.axiosInstance.patch(`/internal/realtime/sos/${sosId}/type`, {
+        type,
+      });
+      this.logger.info('SOS type updated in realtime', { sosId, type });
+    }
+    catch (error) {
+      this.logger.error('Error updating SOS type in realtime', { sosId, type, error });
+      throw error;
+    }
+  }
+
   /**
    * Close SOS realtime context
    * @param sosId - The SOS ID

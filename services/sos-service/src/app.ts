@@ -12,7 +12,7 @@ import messageRoutes from './modules/messages/message.routes';
 import participantRoutes from './modules/sos_participants/participant.routes';
 
 // Import event handlers and services
-import { SOSEventHandlers } from './modules/messages/sos.event-handlers';
+import { SOSEventHandlers } from './modules/sos/sos.event-handlers';
 import { MessageService } from './modules/messages';
 import { MessageRepository } from './modules/messages';
 

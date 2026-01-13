@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { SOSService } from './sos.service';
-import { StatusMachineService } from './statusMachine.service';
 import { logger } from '../../utils/logger';
 import { Server as SocketIOServer } from 'socket.io';
 /**
@@ -10,7 +9,6 @@ import { Server as SocketIOServer } from 'socket.io';
 export class SOSController {
   constructor(
     private sosService: SOSService,
-    private statusMachine: StatusMachineService,  
     private io : SocketIOServer
   ) {}
 
@@ -19,11 +17,11 @@ export class SOSController {
    */
   async initSOS(req: Request, res: Response): Promise<void> {
     try {
-      const { sosId, citizenId, location ,address} = req.body;
+      const { sosId, citizenId, location ,address, type} = req.body;
 
       logger.info('Initializing SOS realtime context', { sosId, citizenId });
 
-      const result = await this.sosService.initSOS(sosId, citizenId, location, address);
+      const result = await this.sosService.initSOS(sosId, citizenId, location, address, type);
       res.status(200).json({
         success: true,
         data: result,
@@ -34,6 +32,16 @@ export class SOSController {
         success: false,
         error: 'Failed to initialize SOS',
       });
+    }
+  }
+
+  async updateSosType(req: Request, _res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      const { type } = req.body;
+      await this.sosService.updateSosType(sosId, type);
+    } catch (error) {
+      logger.error('Error updating SOS type', error);
     }
   }
 
@@ -68,16 +76,26 @@ export class SOSController {
   async updateStatus(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
-      const { status, updatedBy, oldStatus } = req.body;
+      const { status, updatedBy } = req.body;
 
       logger.info('Updating SOS status', { sosId, status });
 
-      const newStatus = await this.statusMachine.transition(sosId, status, updatedBy, oldStatus);
-      this.sosService.closeSOS(sosId, updatedBy);
+      // const newStatus = await this.statusMachine.transition(sosId, status, updatedBy, oldStatus);
+      if(status === 'en_route' || status === 'arrived'){
+        // Notify SOS service to handle dispatch related updates
+        await this.sosService.updateStatus(sosId, status);
+        res.status(200).json({
+          success: true,
+          data: status,
+        });
+        return;
+      }
+      await this.sosService.closeSOS(sosId, updatedBy);
       res.status(200).json({
         success: true,
-        data: newStatus,
+        data: status,
       });
+      return;
     } catch (error) {
       logger.error('Error updating status', error);
       res.status(500).json({
@@ -208,7 +226,7 @@ export class SOSController {
         },
         sosId
       );
-
+      
       // Broadcast rescuer location update to all clients in the SOS room
       this.io.to(roomName).emit(`rescuer:location:broadcast`, {
         rescuerId,

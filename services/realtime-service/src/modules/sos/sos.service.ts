@@ -10,7 +10,7 @@ export class SOSService {
   private sosMSClient: SOSMSClient = new SOSMSClient();
 
 
-  async initSOS(sosId: string, citizenId: string, location: any, address: any): Promise<any> {
+  async initSOS(sosId: string, citizenId: string, location: any, address: any, type: string): Promise<any> {
     try {
       const state = {
         sosId,
@@ -20,6 +20,7 @@ export class SOSService {
         lastLocationUpdate: Date.now(),
         location: location || null,
         address: address || null,
+        type: type || 'Other',
       };
 
       const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
@@ -42,6 +43,22 @@ export class SOSService {
       return state;
     } catch (error) {
       logger.error('Error initializing SOS', error);
+      throw error;
+    }
+  }
+
+  async updateSosType(sosId: string, type: string): Promise<void> {
+    try {
+      const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
+      const data = await redisClient.get(key);
+      if (data) {
+        const state = JSON.parse(data);
+        state.type = type;
+        await redisClient.setEx(key, 86400, JSON.stringify(state));
+        logger.info('SOS type updated in realtime', { sosId, type });
+      }
+    } catch (error) {
+      logger.error('Error updating SOS type', error);
       throw error;
     }
   }
@@ -75,13 +92,38 @@ export class SOSService {
     }
   }
 
+  async updateStatus(sosId: string, status: string): Promise<void> {
+    try {
+      console.log(`Updating SOS ${sosId} status to ${status}`);
+      const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
+      const data = await redisClient.get(key);
+      if (data) {
+        const state = JSON.parse(data);
+        console.log("Current SOS state:", state);
+        state.status = status;
+        state.lastStatusUpdate = Date.now();
+        await redisClient.setEx(key, 86400, JSON.stringify(state));
+        logger.info('SOS status updated in realtime', { sosId, status , data});
+      }
+    } catch (error) {
+      logger.error('Error updating SOS status', error);
+      throw error;
+    }
+  }
+
   /**
-   * Get current SOS state
+   * Get current SOS state & Synchronize the redis state with SOS MS if not found
    */
   async getSOSState(sosId: string): Promise<any> {
     try {
       const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
       const data = await redisClient.get(key);
+      if(!data){
+        // Sync from SOS MS
+        await this.sosSync(sosId, {});
+        const newData = await redisClient.get(key);
+        return newData ? JSON.parse(newData) : null;
+      }
       return data ? JSON.parse(data) : null;
     } catch (error) {
       logger.error('Error getting SOS state', error);
@@ -213,7 +255,7 @@ export class SOSService {
           const state = JSON.parse(data);
           
           // Only include active SOS requests
-          if ((state.status === 'active' || state.status === 'arrived') && state.location?.longitude && state.location?.latitude) {
+          if ((state.status === 'active' || state.status === 'arrived' || state.status === 'en_route') && state.location?.longitude && state.location?.latitude) {
             const distance = this.calculateDistance(
               latitude,
               longitude,
@@ -248,6 +290,7 @@ export class SOSService {
 
   async upsertRescuerLocation(rescuerId: string, location: any, sosId: string): Promise<{
     rescuerArrived: boolean;
+    details?: string;
   }> {
     try {
       const key = `${REDIS_KEYS.RESCUER_LOCATION}:${rescuerId}:${sosId}`;
@@ -261,6 +304,14 @@ export class SOSService {
 
       if(sosId){        
         const sosState = await this.getSOSState(sosId);
+        
+        console.log("Rescuer location upserted", { rescuerId, location, sosId, status: sosState?.status });
+        if(sosState.status?.toLowerCase() !== 'en_route' ){
+          // Only check for arrival if SOS is in EN_ROUTE status,
+          return { rescuerArrived: false, details: 'SOS not in EN_ROUTE status' };
+        }
+        
+        console.log("Checking arrival condition for SOS", sosId);
         if (sosState && sosState.location?.latitude && sosState.location?.longitude) {
           const distance = this.calculateDistance(
             location.latitude,
@@ -268,6 +319,7 @@ export class SOSService {
             sosState.location.latitude,
             sosState.location.longitude
           );
+          console.log("Calculated distance to SOS", distance, "km");
           
           // If within 100 meters, auto-transition to "arrived"
           if (distance < 0.1) {
@@ -276,13 +328,6 @@ export class SOSService {
             sosState.arrivedBy = rescuerId;
             const sosKey = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
             await redisClient.setEx(sosKey, 86400, JSON.stringify(sosState));
-
-            // Update SOS status in database
-            // const userRole = req.headers['x-user-role'] as string | undefined;
-            // const userId = req.headers['x-user-id'] as string | undefined;
-            // const cityId = req.headers['x-city-id'] as string | undefined;
-            // const requestId = req.headers['x-request-id'] as string | undefined;
-            // const actorType = req.headers['x-actor-type'] as string | undefined;
             const headerContext = {
               'x-user-role': 'RESCUER',
               'x-user-id': rescuerId,
@@ -321,6 +366,21 @@ export class SOSService {
     } catch (error) {
       logger.error('Error getting rescuer location', error);
       return null;
+    }
+  }
+
+  async sosSync(sosId: string, headerContext: any): Promise<void> {
+    try {
+      const sosRecord = await this.sosMSClient.getSos(sosId, headerContext);
+      if (sosRecord) {
+        console.log("Syncing SOS from SOS MS", JSON.stringify(sosRecord));
+        const location = sosRecord.location || null;
+        const address = sosRecord.address || null;
+        await this.initSOS(sosId, sosRecord.citizenId, location, address, sosRecord.type || 'Other');
+        logger.info('SOS synced from SOS MS', { sosId });
+      }
+    } catch (error) {
+      logger.error('Error syncing SOS from SOS MS', error);
     }
   }
 }

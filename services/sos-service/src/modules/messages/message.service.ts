@@ -64,6 +64,7 @@ export class MessageService {
    */
   private async broadcastMessageToRealtime(sosId: string, message: SosMessage): Promise<void> {
     try {
+      this.logger.info('Broadcasting message to realtime service', { messageId: message.id, sosId, options: message.options || {} });
       await axios.post(
         `${this.realtimeServiceUrl}/internal/messaging/broadcast`,
         {
@@ -77,6 +78,7 @@ export class MessageService {
             contentType: message.contentType,
             content: message.content,
             createdAt: message.createdAt,
+            options: message.options || {}
           },
         },
         {

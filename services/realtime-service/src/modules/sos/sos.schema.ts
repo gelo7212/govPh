@@ -16,6 +16,7 @@ export const initSOSSchema = Joi.object({
     city: Joi.string().max(100).optional(),
     barangay: Joi.string().max(100).optional(),
   }).optional(),
+  type: Joi.string().optional(),
 });
 
 export const closeSOSSchema = Joi.object({
@@ -24,11 +25,11 @@ export const closeSOSSchema = Joi.object({
 
 export const updateStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('active', 'assigned', 'responding', 'closed', 'cancelled')
+    .valid('active', 'assigned', 'responding', 'closed', 'cancelled', 'en_route', 'arrived', 'resolved', 'completed')
     .required(),
   updatedBy: Joi.string().required(),
   oldStatus: Joi.string()
-    .valid('active', 'assigned', 'responding', 'closed', 'cancelled')
+    .valid('active', 'assigned', 'responding', 'closed', 'cancelled', 'en_route', 'arrived', 'resolved', 'completed')
     .required(),
 });
 

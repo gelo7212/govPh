@@ -35,6 +35,7 @@ export const registerMessageEvents = (io: Server, socket: Socket): void => {
         sosId,
         senderType: message.senderType,
         socketId: socket.id,
+        options: message.options || {},
       });
 
       // Broadcast to all clients in SOS room
@@ -48,6 +49,7 @@ export const registerMessageEvents = (io: Server, socket: Socket): void => {
         content: message.content,
         createdAt: message.createdAt,
         timestamp: Date.now(),
+        options: message.options || {},
       });
     } catch (error) {
       logger.error('Error broadcasting message', error);

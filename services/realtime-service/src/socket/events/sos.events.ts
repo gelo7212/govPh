@@ -6,8 +6,10 @@ import { SOCKET_EVENTS } from '../../utils/constants';
  * Handle SOS-specific socket events
  */
 export const registerSOSEvents = (io: Server, socket: Socket): void => {
+
   /**
    * Join SOS room when client initializes SOS
+   * If SOS record expired (not found in Redis), reinitialize it
    */
   socket.on(SOCKET_EVENTS.SOS_INIT, async (data: any) => {
     try {
@@ -21,6 +23,7 @@ export const registerSOSEvents = (io: Server, socket: Socket): void => {
         });
         return;
       }
+
 
       // Join the SOS room
       const roomName = `sos:${sosId}`;

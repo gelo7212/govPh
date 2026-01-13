@@ -1,4 +1,4 @@
-export type SOSStatus = 'ACTIVE' | 'EN_ROUTE' | 'ARRIVED' | 'RESOLVED' | 'CANCELLED';
+export type SOSStatus = 'ACTIVE' | 'EN_ROUTE' | 'ARRIVED' | 'RESOLVED' | 'CANCELLED' | 'REJECTED' | 'FAKE';
 
 export interface GeoJsonPoint {
   type: 'Point';

@@ -19,7 +19,6 @@ export class MessagingController {
     try {
         const payload = req.body as MessageBroadcastRequest;
         logger.info('BroadcastMessage payload', JSON.stringify(payload));
-        
         if (!payload.sosId || !payload.message) {
             res.status(400).json({
             success: false,
@@ -44,6 +43,7 @@ export class MessagingController {
             content: payload.message.content,
             createdAt: payload.message.createdAt,
             timestamp: Date.now(),
+            options: payload.message.options || {}
         });
 
         res.status(200).json({

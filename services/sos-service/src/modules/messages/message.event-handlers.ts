@@ -35,7 +35,9 @@ export class MessageEventHandlers {
         case 'SHARE_PHONE_NUMBER':
           await this.handlePhoneNumberResponse(data);
           break;
-        // Add more prompt handlers as needed
+        case 'CITIZEN_URGENCY':
+          await this.handleInDangerResponse(data);
+          break;
         default:
           console.log(`No specific handler for prompt: ${data.answerTo.promptKey}`);
       }
@@ -43,6 +45,51 @@ export class MessageEventHandlers {
       console.error('Failed to process message response:', error);
     }
   }
+
+    private async handleInDangerResponse(
+        data: MessageResponseReceivedEvent
+    ): Promise<void> {
+        try {
+            console.log(
+            `Citizen responded to danger check for SOS ${data.sosId}: ${data.answerTo.action}`
+            );
+            if (data.answerTo.action === 'Immediately need help') {
+                console.log(
+                `Citizen indicated they are in danger for SOS: ${data.sosId}`
+                );
+                await this.messageService.sendMessage({
+                    sosId: data.sosId,
+                    content: 'Help is on the way. Please try to stay calm and stay safe.', 
+                    senderType: 'SYSTEM',
+                    senderDisplayName: 'System',
+                    contentType: 'text',
+                    senderId: null,
+                    options:{
+                        intendedFor: 'CITIZEN',
+                    }
+                });
+            } 
+            if(data.answerTo.action === 'Can wait' || data.answerTo.action === 'No') {
+                console.log(
+                `Citizen indicated they are not in danger for SOS: ${data.sosId}`
+                );
+                await this.messageService.sendMessage({
+                    sosId: data.sosId,
+                    content: 'Thank you for the update. If your situation changes, please let us know immediately.', 
+                    senderType: 'SYSTEM',
+                    senderDisplayName: 'System',
+                    contentType: 'text',
+                    senderId: null,
+                    options:{
+                        intendedFor: 'CITIZEN',
+                    }
+                });
+            }
+        } catch (error) {
+        console.error('Failed to handle in-danger response:', error);
+        }
+    }
+
 
   /**
    * Handle phone number sharing response

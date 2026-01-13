@@ -344,6 +344,22 @@ export class UserService {
       );
     }
   }
+
+  async getRescuersByMunicipality(municipalityCode: string): Promise<UserEntity[]> {
+    try {
+      const collection = getCollection('users');
+      const docs = await collection
+        .find({ municipalityCode, role: 'RESCUER' })
+        .toArray();
+      return docs.map(doc => this.mapDocToEntity(doc));
+    }
+    catch(error){
+      logger.error('Failed to get rescuers by municipality', error);
+      throw new DatabaseError(
+      error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
   /**
    * Map MongoDB document to UserEntity
    */
@@ -363,6 +379,8 @@ export class UserService {
       address: doc.address,
     };
   }
+
+  
 }
 
 // Export singleton instance

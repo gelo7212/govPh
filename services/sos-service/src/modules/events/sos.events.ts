@@ -29,6 +29,7 @@ export interface SOSCreatedEvent {
     city: string;
     barangay: string;
   };
+  name?: string;
 }
 
 export interface SOSStatusChangedEvent {

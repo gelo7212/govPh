@@ -15,6 +15,7 @@ export class SosAggregator {
     const result = await this.sosClient.createSosRequest(data);
     return result;
   }
+  
 
   /**
    * Get SOS request by ID
@@ -26,9 +27,15 @@ export class SosAggregator {
 
   /**
    * Get all SOS requests (admin only)
+   * Supports filtering, searching, and sorting
+   * @param options - Configuration:
+   *   - cityId: string (REQUIRED - AND condition)
+   *   - filters: { date?, type?, status?, soNo?, citizenId? } (OR logic)
+   *   - search: string (AND with filters)
+   *   - sort: { field: 'createdAt' | 'type' | 'status', order: 'asc' | 'desc' }
    */
-  async getAllSosRequests(filters?: any): Promise<SosRequest[]> {
-    const requests = await this.sosClient.getAllSosRequests(filters);
+  async getAllSosRequests(options?: any, context?:any): Promise<SosRequest[]> {
+    const requests = await this.sosClient.getAllSosRequests(options, context);
     return requests;
   }
 
@@ -78,6 +85,11 @@ export class SosAggregator {
   async assignRescuer(sosId: string, rescuerId: string, context: any): Promise<SosRequest> {
     const assigned = await this.sosClient.dispatchRescue(sosId, rescuerId, context);
     return assigned;
+  }
+
+  async getRescuerListByCity(municipalityCode: string, context: any): Promise<any[]> {
+    const rescuers = await this.sosClient.getListOfRescuersByCity(municipalityCode, context);
+    return rescuers;
   }
 
   /**

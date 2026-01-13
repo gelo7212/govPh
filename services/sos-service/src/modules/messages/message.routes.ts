@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { MessageController } from './message.controller';
 import { MessageService } from './message.service';
 import { MessageRepository } from './message.repository';
-import { SOSEventHandlers } from './sos.event-handlers';
+import { SOSEventHandlers } from '../sos/sos.event-handlers';
 import { SOSService } from '../sos/sos.service';
 import { SOSRepository } from '../sos/sos.repository';
 import { MessageEventHandlers } from './message.event-handlers';

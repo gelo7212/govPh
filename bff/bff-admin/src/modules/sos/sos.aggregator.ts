@@ -55,9 +55,15 @@ export class SosAggregator {
 
   /**
    * Get all SOS requests (supports filtering by userId in filters parameter)
+   * Supports advanced filtering, searching, and sorting
+   * @param options - Configuration:
+   *   - cityId: string (REQUIRED - AND condition)
+   *   - filters: { date?, type?, status?, soNo?, citizenId? } (OR logic)
+   *   - search: string (AND with filters)
+   *   - sort: { field: 'createdAt' | 'type' | 'status', order: 'asc' | 'desc' }
    */
-  async getAllSosRequests(filters?: any) {
-    const requests = await this.sosClient.getAllSosRequests(filters);
+  async getAllSosRequests(options?: any, context?:any) {
+    const requests = await this.sosClient.getAllSosRequests(options, context);
     return requests;
   }
 
@@ -80,27 +86,71 @@ export class SosAggregator {
   /**
    * Close SOS request
    */
-  async closeSosRequest(sosId: string, context: any) {
+  async closeSosRequest(sosId: string, context: any, resolutionNote?: string, status?: string): Promise<any> {
     const request = await this.sosClient.getSosRequest(sosId);
     if (!request) {
       throw new Error('SOS request not found');
     }
 
     const data = request.data;
-    if(data.status === 'CANCELLED' || data.status === 'CLOSED') {
-      throw new Error(`Cannot cancel an SOS request that is already ${data.status}`);
+
+    // Define allowed transitions using object mapping: current status -> allowed target statuses
+    const allowedTransitions: Record<string, { allowedStatuses: string[]; errorMessage: string }> = {
+      'ACTIVE': {
+        allowedStatuses: ['CANCELLED', 'CLOSED', 'RESOLVED', 'REJECTED', 'FAKE'],
+        errorMessage: 'Cannot transition from ACTIVE to'
+      },
+      'EN_ROUTE': {
+        allowedStatuses: ['CLOSED', 'RESOLVED', 'FAKE'],
+        errorMessage: 'Cannot transition from EN_ROUTE to'
+      },
+      'ARRIVED': {
+        allowedStatuses: ['CLOSED', 'RESOLVED', 'FAKE'],
+        errorMessage: 'Cannot transition from ARRIVED to'
+      },
+      'CANCELLED': {
+        allowedStatuses: [],
+        errorMessage: 'Cannot transition from CANCELLED to'
+      },
+      'CLOSED': {
+        allowedStatuses: [],
+        errorMessage: 'Cannot transition from CLOSED to'
+      },
+      'RESOLVED': {
+        allowedStatuses: ['RESOLVED'],
+        errorMessage: 'Cannot transition from RESOLVED to'
+      },
+      'REJECTED': {
+        allowedStatuses: [],
+        errorMessage: 'Cannot transition from REJECTED to'
+      },
+      'FAKE': {
+        allowedStatuses: [],
+        errorMessage: 'Cannot transition from FAKE to'
+      }
+    };
+
+    if (!status) {
+      throw new Error('Status is required');
     }
 
-    if(data.status === 'ACTIVE'){
-      const result = await this.sosClient.closeSosRequest(
-        sosId,
-        undefined,
-        context
-      );
-      return result;
-    } else {
-      throw new Error(`Cannot cancel an SOS request with status ${data.status}`);
+    const currentConfig = allowedTransitions[data.status];
+    if (!currentConfig) {
+      throw new Error(`Unknown current status: ${data.status}`);
     }
+
+    // Check if target status is allowed from current status
+    if (!currentConfig.allowedStatuses.includes(status)) {
+      throw new Error(`${currentConfig.errorMessage} ${status}`);
+    }
+
+    // Proceed with close
+    const result = await this.sosClient.closeSosRequest(
+      sosId,
+      { resolutionNote, status },
+      context
+    );
+    return result;
   }
 
   async updateSosTag(sosId: string, tag: string) {
@@ -145,5 +195,11 @@ export class SosAggregator {
   async getRescuerLocation(sosId: string, rescuerId: string): Promise<any> {
     const result = await this.realtimeClient.getRescuerLocation(sosId, rescuerId);
     return result;
+  }
+
+  async getRescuerListByCity(municipalityCode: string, context:any): Promise<any[]> {
+
+    const rescuers = await this.sosClient.getListOfRescuersByCity(municipalityCode, context);
+    return rescuers;
   }
 }

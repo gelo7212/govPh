@@ -38,6 +38,16 @@ export class SOSService {
     });
 
     // Emit event for other modules to handle (e.g., send initial message)
+    let citizenName = 'Anonymous Citizen';
+    try {
+      if(data.citizenId){
+        const userInfo = await identityClient.getCitizenInfo(data.citizenId);
+        citizenName = userInfo?.displayName || 'Anonymous Citizen';
+      }
+    } catch (error) {
+      console.error('Error fetching citizen info:', error);
+    }
+
     const sosCreatedEvent: SOSCreatedEvent = {
       sosId: sos.id,
       citizenId: data.citizenId,
@@ -48,6 +58,7 @@ export class SOSService {
       message: data.message,
       type: data.type,
       address: data.address,
+      name: citizenName,
     };
     eventBus.emit(SOS_EVENTS.CREATED, sosCreatedEvent);
 
@@ -71,9 +82,32 @@ export class SOSService {
     return sos;
   }
 
-  async listSOS(cityId: string): Promise<SOS[]> {
-    const sosList = await this.repository.findAll(cityId);
-    return sosList;
+  async listSOS(cityId: string, options?: {
+    filters?: {
+      date?: { startDate?: string; endDate?: string };
+      type?: string[];
+      status?: string[];
+      soNo?: string;
+      citizenId?: string;
+    };
+    search?: string;
+    sort?: {
+      field: 'createdAt' | 'type' | 'status';
+      order: 'asc' | 'desc';
+    };
+    }, 
+    hqLocation?: {
+      longitude: number;
+      latitude: number;
+      radius: number;
+    }): Promise<SOS[]> {
+    try {
+      const sosList = await this.repository.findAll(cityId, options, hqLocation);
+      return sosList;
+    } catch (error) {
+      console.error('Error listing SOS requests:', error);
+      throw error;
+    }
   }
   
   async updateSOSStatus(sosId: string,  status: string): Promise<SOS> {

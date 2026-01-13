@@ -1,4 +1,5 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
+import qs from 'qs';
 import { identityRoutes } from './modules/identity/identity.routes';
 import { sosRoutes } from './modules/sos/sos.routes';
 import { cityRoutes } from './modules/city/city.routes';
@@ -15,6 +16,12 @@ export function createApp(): Express {
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // Configure query parser for nested objects
+  app.set('query parser', (str: string) => qs.parse(str, { 
+    allowPrototypes: true,
+    depth: 10 
+  }));
   
   // Request logging middleware
   app.use(requestLogger);

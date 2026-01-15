@@ -13,13 +13,14 @@ export class RealtimeServiceClient extends BaseClient {
    * Initialize SOS realtime context
    * Called after SOS is created in the SOS service
    */
-  async initSosContext(sosId: string, citizenId: string, location?: any, type?: string): Promise<any> {
+  async initSosContext(sosId: string, citizenId: string, location?: any, type?: string, soNo?: string): Promise<any> {
     try {
       const response = await this.client.post('/internal/realtime/sos/init', {
         sosId,
         citizenId,
         location,
         type,
+        soNo
       });
       return response.data;
     } catch (error) {

@@ -10,11 +10,8 @@ import rescuerRoutes from './modules/rescuer/rescuer.routes';
 import dispatchRoutes from './modules/dispatch/dispatch.routes';
 import messageRoutes from './modules/messages/message.routes';
 import participantRoutes from './modules/sos_participants/participant.routes';
+import { loggerMiddleware } from './middleware/logger.middleware';
 
-// Import event handlers and services
-import { SOSEventHandlers } from './modules/sos/sos.event-handlers';
-import { MessageService } from './modules/messages';
-import { MessageRepository } from './modules/messages';
 
 const logger = createLogger('App');
 
@@ -34,11 +31,11 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // Role guard middleware - validates trusted headers
 app.use(roleGuard);
 // Routes
-app.use('/api/sos', sosRoutes);
-app.use('/api/sos/:sosId/messages', messageRoutes);
-app.use('/api/rescuer', rescuerRoutes);
-app.use('/api/internal/dispatch', dispatchRoutes);
-app.use('/api/sos/:sosId/participants', participantRoutes);
+app.use('/api/sos', loggerMiddleware('/api/sos') , sosRoutes);
+app.use('/api/sos/:sosId/messages', loggerMiddleware('/api/sos'), messageRoutes);
+app.use('/api/rescuer',loggerMiddleware('/api/rescuer'), rescuerRoutes);
+app.use('/api/internal/dispatch',loggerMiddleware('/api/internal/dispatch'), dispatchRoutes);
+app.use('/api/sos/:sosId/participants',loggerMiddleware('/api/sos'), participantRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -52,6 +49,7 @@ app.get('/health', (_req, res) => {
 // Error handler middleware (before 404 handler)
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const errorResponse = getErrorResponse(err);
+  logger.error('Error handler invoked', { error: errorResponse });
 
   logger.error(`Error on ${req.method} ${req.path}`, err);
 

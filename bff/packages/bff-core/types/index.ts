@@ -122,6 +122,7 @@ export interface SosResponse {
     type: string;
     createdAt: string;
     updatedAt: string;
+    sosNo?: string;
   };
   timestamp: string;
 }

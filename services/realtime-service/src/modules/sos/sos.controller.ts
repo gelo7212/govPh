@@ -18,11 +18,11 @@ export class SOSController {
    */
   async initSOS(req: Request, res: Response): Promise<void> {
     try {
-      const { sosId, citizenId, location ,address, type} = req.body;
+      const { sosId, citizenId, location ,address, type, soNo} = req.body;
 
       logger.info('Initializing SOS realtime context', { sosId, citizenId });
 
-      const result = await this.sosService.initSOS(sosId, citizenId, location, address, type);
+      const result = await this.sosService.initSOS(sosId, citizenId, location, address, type, undefined, soNo);
       res.status(200).json({
         success: true,
         data: result,
@@ -138,6 +138,7 @@ export class SOSController {
         return;
       }
       await this.sosService.closeSOS(sosId, updatedBy);
+      this.io.to(roomName).emit(SOCKET_EVENTS.SOS_CLOSE, broadcastPayload);
       res.status(200).json({
         success: true,
         data: status,

@@ -34,14 +34,16 @@ export class RescuerController {
 
   async updateRescuerSosStatus(req: Request, res: Response): Promise<void> {
     try {
+      logger.info('Updating rescuer SOS status', { body: req.body });
       if (!req.user || req.user.role !== UserRole.RESCUER) {
         throw new ForbiddenError('Only rescuers can update status');
       } 
-      // const { id: rescuerId } = req.user;
+      // const { id: rescuerId } = req.user; sosId rescuerId status
       const { status, sosId, rescuerId } = req.body;
 
       const sos = await this.sosRepository.findById(sosId);
       if(!sos){
+        logger.error('SOS not found', { sosId });
         throw new NotFoundError('SOS', sosId);
       }
       const responderIndex = sos.assignedResponders!.findIndex(r => r.userId === rescuerId);
@@ -52,6 +54,15 @@ export class RescuerController {
           await this.sosRepository.updateWithoutCity(sosId, { assignedResponders: sos.assignedResponders! });
         }
       }
+      res.status(200).json({
+        success: true,
+        data: {
+          sosId: sos.id,
+          rescuerId: rescuerId,
+          status: status
+        },
+        timestamp: new Date(),
+      });
       // const updated = await this.
     }
     catch (error) {

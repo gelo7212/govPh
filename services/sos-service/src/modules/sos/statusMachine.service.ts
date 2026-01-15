@@ -3,7 +3,8 @@ import { SOS, SOSStatus } from '../sos/sos.model';
 import { sosRealtimeClient } from '../../services/sos.realtime.client'
 import { eventBus, SOS_EVENTS, SOSStatusChangedEvent } from '../events';
 import { identityClient } from '../../services/identity.client';
-
+import { createLogger } from '../../utils/logger';
+const logger = createLogger('App');
 /**
  * Status Machine Service
  * Handles automatic status transitions based on business logic
@@ -122,23 +123,29 @@ export class StatusMachineService {
    * Cancel SOS (only allowed from ACTIVE status)
    */
   async cancelSOS(sosId: string, cityId: string, citizenId: string): Promise<SOS | null> {
-    const sos = await this.repository.findById(sosId);
-    if (!sos) return null;
+    try {
+      const sos = await this.repository.findById(sosId);
+      if (!sos) return null;
 
-    if (sos.status !== 'ACTIVE') {
-      throw new Error(`Cannot cancel SOS in ${sos.status} status`);
+      if (sos.status !== 'ACTIVE') {
+        throw new Error(`Cannot cancel SOS in ${sos.status} status`);
+      }
+
+      const updated = await this.repository.updateWithoutCity(sosId, {
+        status: 'CANCELLED',
+      });
+      let oldStatus = sos.status.toLocaleLowerCase();
+      if(oldStatus == 'ACTIVED')
+        oldStatus = 'active';
+      await sosRealtimeClient.closeSOS(sosId, citizenId);
+      this.publishStatusChange(updated, 'CANCELLED', cityId);
+
+      return updated;
+    } catch (error) {
+      logger.error('Error cancelling SOS', { sosId, error });
+      throw error;
     }
 
-    const updated = await this.repository.update(cityId, sosId, {
-      status: 'CANCELLED',
-    });
-    let oldStatus = sos.status.toLocaleLowerCase();
-    if(oldStatus == 'ACTIVED')
-      oldStatus = 'active';
-    await sosRealtimeClient.closeSOS(sosId, citizenId);
-    this.publishStatusChange(updated, 'CANCELLED', cityId);
-
-    return updated;
   }
 
   /**
@@ -148,7 +155,7 @@ export class StatusMachineService {
     const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
-    const updated = await this.repository.update(cityId, sosId, {
+    const updated = await this.repository.updateWithoutCity(sosId, {
       status: 'RESOLVED',
       notes: resolutionNote || sos.message,
     });

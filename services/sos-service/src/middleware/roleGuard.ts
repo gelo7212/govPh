@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-
+import { createLogger } from '../utils/logger';
+const logger = createLogger('RoleGuard');
 export enum UserRole {
   RESCUER = 'RESCUER',
   CITIZEN = 'CITIZEN',
@@ -92,6 +93,8 @@ export const roleGuard = (req: Request, res: Response, next: NextFunction) => {
 
     return next();
   } catch (error) {
+    
+    logger.error('Role guard validation failed', { error });
     res.status(500).json({ error: 'Role guard validation failed' });
   }
 };

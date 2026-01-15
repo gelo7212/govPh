@@ -33,11 +33,13 @@ export class SosAggregator {
       }
 
       const sosResult = await this.sosClient.createSosRequest(data);
+      console.log('SOS RESULT:', sosResult);
       const realtimeResult = await this.realtimeClient.initSosContext(
         sosResult.data.id,
         data.userId,
         data.location,
-        data.type
+        data.type,
+        sosResult.data.sosNo
       );
       
       return {

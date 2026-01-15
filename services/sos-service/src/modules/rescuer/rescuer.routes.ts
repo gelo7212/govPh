@@ -20,7 +20,7 @@ router.post('/location', validate(rescuerLocationSchema), (req, res, next) =>
 );
 
 // Update rescuer SOS status 
-router.post('/sos-status', (req, res, next) =>
+router.post('/location/sos-status', (req, res, next) =>
   controller.updateRescuerSosStatus(req, res).catch(next)
 );
 

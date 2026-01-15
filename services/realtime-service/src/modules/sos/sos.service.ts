@@ -10,7 +10,7 @@ export class SOSService {
   private sosMSClient: SOSMSClient = new SOSMSClient();
 
 
-  async initSOS(sosId: string, citizenId: string, location: any, address: any, type: string, status?: string): Promise<any> {
+  async initSOS(sosId: string, citizenId: string, location: any, address: any, type: string, status?: string, soNo?: string): Promise<any> {
     try {
       const state = {
         sosId,
@@ -21,6 +21,7 @@ export class SOSService {
         location: location || null,
         address: address || null,
         type: type || 'Other',
+        soNo: soNo || null,
       };
 
       const key = `${REDIS_KEYS.SOS_STATE}:${sosId}`;
@@ -63,7 +64,7 @@ export class SOSService {
         const location = (lat !== null && lng !== null) ? { latitude: lat, longitude: lng } : null;
         const address = sosRecord.address || null;
         const status = (sosRecord.status || 'active').toLowerCase();
-        await this.initSOS(sosId, sosRecord.citizenId, location, address, sosRecord.type || 'Other', status);
+        await this.initSOS(sosId, sosRecord.citizenId, location, address, sosRecord.type || 'Other', status, sosRecord.soNo || null);
         // await this.updateSOSLocation(sosId, location, address);
         // await this.updateStatus(sosId, status);
 

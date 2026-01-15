@@ -3,6 +3,8 @@ import { SOS } from './sos.model';
 import { identityClient } from '../../services/identity.client';
 import { eventBus, SOS_EVENTS, type SOSCreatedEvent, type SOSStatusChangedEvent, type SOSTaggedEvent } from '../events';
 import { SosParticipantService } from '../sos_participants';
+import { createLogger } from '../../utils/logger';
+const logger = createLogger('SOSService');
 
 export class SOSService {
   constructor(
@@ -99,7 +101,7 @@ export class SOSService {
       }
       sos.participants = participants || [];
     } catch (error) {
-      console.error('Error fetching SOS participants:', error);
+      logger.error('Error fetching SOS participants', { sosId: sos.id, error });
       sos.participants = [];
     }
 

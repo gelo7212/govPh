@@ -328,6 +328,7 @@ export class SOSController {
    * Cancel SOS (CITIZEN only)
    */
   async cancelSOS(req: Request, res: Response): Promise<void> {
+    logger.info('Cancel SOS request initiated');
     if (!req.user || req.user.role !== UserRole.CITIZEN) {
       throw new ForbiddenError('Only citizens can cancel SOS');
     }
@@ -346,7 +347,7 @@ export class SOSController {
     }
 
     const cancelled = await this.statusMachine.cancelSOS(sosId, cityId || '', citizenId);
-
+    
     res.status(200).json({
       success: true,
       data: {

@@ -8,7 +8,7 @@ import {
 } from '../../errors';
 import { createLogger } from '../../utils/logger';
 import mongoose from 'mongoose';
-import { decryptPhone, encryptPhone, hashString } from '../../utils/crypto';
+import { decryptEmail, decryptPhone, encryptPhone, hashString } from '../../utils/crypto';
 
 const logger = createLogger('UserService');
 
@@ -299,6 +299,53 @@ export class UserService {
     }
   }
 
+  async assignDepartment(userId: string, department: string): Promise<UserEntity> {
+    try {
+      const collection = getCollection('users');
+      const user = await collection.findOne(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { projection: { departments: 1 } }
+      );
+      if (!user) throw new Error('User not found');
+
+      if (user.departments?.length >= 3) {
+        throw new Error('Maximum of 3 departments allowed');
+      }
+      const isFirst = !user.departments || user.departments.length === 0;
+
+      const result = await collection.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(userId),
+          'departments.id': { $ne: department },
+        },
+        {
+          $push: {
+            departments: {
+              id: department,
+              isPrimary: isFirst,
+            } as any,
+          },
+          $set: {
+            updatedAt: new Date(),
+          },
+        },
+        { returnDocument: 'after' }
+      );
+
+      if (!result) {
+        throw new NotFoundError('User', userId);
+      }
+      return this.mapDocToEntity(result);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+      logger.error('Failed to assign department to user', error);
+      throw new DatabaseError(
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    }
+  }
   async assignRole(userId: string, role: string): Promise<UserEntity> {
     try {
       const collection = getCollection('users');
@@ -351,7 +398,15 @@ export class UserService {
       const docs = await collection
         .find({ municipalityCode, role: 'RESCUER' })
         .toArray();
-      return docs.map(doc => this.mapDocToEntity(doc));
+      const res =  docs.map(doc => this.mapDocToEntity(doc));
+      return res.map(docs =>{
+        docs.phone = decryptPhone(docs.phone!)
+        const maskedEmail = docs.email ? decryptEmail(docs.email).replace(/(.{2})(.*)(?=@)/, (gp1, gp2, gp3) => {
+          return gp2.replace(/./g, '*');
+        }) : undefined;
+        docs.email = maskedEmail;
+        return docs;
+      });
     }
     catch(error){
       logger.error('Failed to get rescuers by municipality', error);
@@ -377,6 +432,7 @@ export class UserService {
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
       address: doc.address,
+      departments: doc.departments || [],
     };
   }
 

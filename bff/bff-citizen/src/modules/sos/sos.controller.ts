@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import { SosAggregator } from './sos.aggregator';
+import { RealtimeServiceClient } from '@gov-ph/bff-core';
 
 export class SosController {
   private aggregator: SosAggregator;
-
+  private realtimeClient: RealtimeServiceClient;
   constructor(aggregator: SosAggregator) {
     this.aggregator = aggregator;
+    this.realtimeClient = new RealtimeServiceClient();
   }
 
   async createSosRequest(req: Request, res: Response): Promise<void> {
@@ -48,7 +50,7 @@ export class SosController {
       res.status(400).json({ error: (error as Error).message });
     }
   }
-
+  
   async getSosRequest(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
@@ -82,6 +84,9 @@ export class SosController {
         return;
       }
       const result = await this.aggregator.getActiveSosByCitizen(userId, cityCode || '');
+      // call getSosState to sync state from realtime service
+      const state = await this.realtimeClient.getSosState(result.data.id);
+      console.log("Active SOS state:", state);
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });

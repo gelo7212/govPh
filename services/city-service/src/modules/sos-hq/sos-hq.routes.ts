@@ -18,6 +18,12 @@ router.get(
     sosHQController.getAll(req, res).catch(next),
 );
 
+router.get(
+  '/user/:userId',
+  (req, res, next) =>
+    sosHQController.getByUserId(req, res).catch(next),
+)
+
 /**
  * GET /sos-hq/:id
  * Get SOS HQ details by ID

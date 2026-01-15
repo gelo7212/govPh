@@ -162,6 +162,10 @@ export interface UserEntity {
     postalCode: string;
     country: string;
   };
+  departments?: {
+    id: string;
+    isPrimary: boolean;
+  }[];
 }
 
 /**

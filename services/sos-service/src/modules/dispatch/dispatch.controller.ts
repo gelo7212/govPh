@@ -22,7 +22,7 @@ export class DispatchController {
    */
   async assignRescuer(req: Request, res: Response): Promise<void> {
     // In production, verify internal service authentication
-    const { sosId, rescuerId } = req.body;
+    const { sosId, rescuerId, departmentId, departmentName } = req.body;
     const { cityId } = req.user || { cityId: req.headers['x-city-id'] };
 
     if (!cityId) {
@@ -36,7 +36,13 @@ export class DispatchController {
     }
 
     // Assign rescuer and auto-transition to EN_ROUTE
-    const updated = await this.statusMachine.handleRescuerAssignment(sosId, cityId as string, rescuerId);
+    const updated = await this.statusMachine.handleRescuerAssignment(
+      sosId, 
+      cityId as string, 
+      rescuerId, 
+      departmentId, 
+      departmentName
+    );
 
     // Publish event
     // eventEmitter.publishSOSEvent({
@@ -71,7 +77,7 @@ export class DispatchController {
     if (!cityId) {
       throw new ValidationError('Missing city ID in headers');
     }
-    const history = await this.sosRepository.findByRescuerId(cityId as string, assignedRescuerId);
+    const history = await this.sosRepository.findByRescuerId(assignedRescuerId);
     res.status(200).json({
       success: true,
       data: history,

@@ -224,6 +224,10 @@ export class CityAggregator {
     return this.cityClient.createSosHQ(data);
   }
 
+  async getSosHQByUserId(userId: string): Promise<SosHQResponse<SosHQData[]>> {
+    return this.cityClient.getSosHQByUserId(userId);
+  }
+
   /**
    * Update SOS HQ
    */

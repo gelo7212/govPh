@@ -59,7 +59,7 @@ export class SOSController {
         type,
         message,
         citizenId,
-        cityId : cityId || '',
+        cityId : undefined,
         latitude: location?.latitude || 0, // Will be updated with first location
         longitude: location?.longitude || 0,
         address: { city, barangay },

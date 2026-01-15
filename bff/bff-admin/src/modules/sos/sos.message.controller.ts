@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import { MessageAggregator } from './sos.message.aggregator';
 import { MessagePayload, UserRole } from './sos.message.types';
+import { IdentityAggregator } from '../identity/identity.aggregator';
 
 /**
  * Message Controller - Handles HTTP requests for messaging operations
  */
 export class MessageController {
   private aggregator: MessageAggregator;
+  private identityAggregator: IdentityAggregator;
 
-  constructor(aggregator: MessageAggregator) {
+  constructor(aggregator: MessageAggregator, identityAggregator: IdentityAggregator) {
     this.aggregator = aggregator;
+    this.identityAggregator = identityAggregator;
   }
 
   /**
@@ -39,6 +42,16 @@ export class MessageController {
           return;
         }
       }
+      const userIdentity = await this.identityAggregator.getProfile(userId!);
+      if(!userIdentity) {
+        res.status(404).json({
+          success: false,
+          error: 'User profile not found',
+        });
+        return;
+      }
+      console.log('User Identity:', userIdentity);
+      const displayName = userIdentity.data.displayName || 'Unknown User';
 
       const { senderDisplayName, contentType, content } = req.body;
 
@@ -54,7 +67,7 @@ export class MessageController {
         sosId,
         senderType: (userRole as UserRole),
         senderId: userId,
-        senderDisplayName,
+        senderDisplayName: displayName,
         contentType: contentType || 'text',
         content,
         cityId: req.context?.user?.actor?.cityCode || ''

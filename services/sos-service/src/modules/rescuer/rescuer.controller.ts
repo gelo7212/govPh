@@ -29,6 +29,39 @@ export class RescuerController {
       res.status(500).json({ success: false, message: 'Internal server error' });
     }
   }
+
+
+
+  async updateRescuerSosStatus(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.user || req.user.role !== UserRole.RESCUER) {
+        throw new ForbiddenError('Only rescuers can update status');
+      } 
+      // const { id: rescuerId } = req.user;
+      const { status, sosId, rescuerId } = req.body;
+
+      const sos = await this.sosRepository.findById(sosId);
+      if(!sos){
+        throw new NotFoundError('SOS', sosId);
+      }
+      const responderIndex = sos.assignedResponders!.findIndex(r => r.userId === rescuerId);
+      if (responderIndex !== -1) {
+        if(sos.assignedResponders![responderIndex].status !== 'ARRIVED' && status === 'ARRIVED'){
+          sos.assignedResponders![responderIndex].status = 'ARRIVED';
+          // update the sos with new assignedResponders status
+          await this.sosRepository.updateWithoutCity(sosId, { assignedResponders: sos.assignedResponders! });
+        }
+      }
+      // const updated = await this.
+    }
+    catch (error) {
+      logger.error('Error updating rescuer SOS status', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update rescuer SOS status',
+      });
+    }
+  }
   /**
    * GET /rescuer/assignment
    * Get assigned SOS for rescuer
@@ -51,8 +84,9 @@ export class RescuerController {
       }
 
       // Find SOS assigned to this rescuer (in EN_ROUTE or ARRIVED status)
-      const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);
-      const activeAssignment = assignments.find((sos) => sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
+      const assignments = await this.sosRepository.findByRescuerId(rescuerId);
+      const activeAssignment = assignments
+        .find((sos) => sos.assignedResponders?.some(responder => responder.status === 'EN_ROUTE') || sos.status === 'ARRIVED');
 
       if (!activeAssignment) {
         throw new NotFoundError('Active assignment');
@@ -68,14 +102,14 @@ export class RescuerController {
             lat: targetLat,
             lng: targetLng,
           },
-          status: activeAssignment.status,
+          status: activeAssignment.assignedResponders?.find(r => r.userId === rescuerId)?.status || activeAssignment.status,
           // citizenPhone would come from a citizen service, omitted for now
         },
         timestamp: new Date(),
       });
     } catch (error) {
       logger.error('Error in getAssignment:', JSON.stringify(error));
-      res.status(500).json({ success: false, message: 'Internal server error' });
+      throw error;
     }
   }
 
@@ -100,7 +134,7 @@ export class RescuerController {
     }
 
     // Find active assignment for this rescuer
-    const assignments = await this.sosRepository.findByRescuerId(cityId, rescuerId);
+    const assignments = await this.sosRepository.findByRescuerId(rescuerId);
     const activeAssignment = assignments.find((sos) => sos.status === 'EN_ROUTE' || sos.status === 'ARRIVED');
 
     if (!activeAssignment) {
@@ -113,21 +147,8 @@ export class RescuerController {
       cityId,
       lat,
       lng,
+      rescuerId
     );
-
-    // // Publish rescuer location event
-    // eventEmitter.publishSOSEvent({
-    //   type: 'LOCATION_UPDATED',
-    //   sosId: activeAssignment.id,
-    //   cityId,
-    //   timestamp: new Date(),
-    //   data: {
-    //     sosId: activeAssignment.id,
-    //     rescuerId,
-    //     rescuerLocation: { lat, lng },
-    //     sosStatus: updated?.status,
-    //   },
-    // });
 
     res.status(201).json({
       success: true,

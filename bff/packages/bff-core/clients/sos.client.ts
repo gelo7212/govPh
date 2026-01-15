@@ -314,7 +314,7 @@ export class SosServiceClient extends BaseClient {
         cityId: context.cityId
       });
       const response = await this.client.get(`/api/rescuer/municipality/${municipalityCode}`);
-      return response.data;
+      return response.data.data;
     }
     catch(error){
       console.log('Error fetching rescuers by city:', error);
@@ -364,7 +364,7 @@ export class SosServiceClient extends BaseClient {
   /**
    * Assign a rescuer to an SOS request (internal endpoint)
    */
-  async dispatchRescue(sosId: string, rescuerId: string, context: any) {
+  async dispatchRescue(sosId: string, rescuerId: string, departmentId: string, departmentName: string, context: any) {
     try {
       this.setUserContext({
         userId: context.userId || undefined,
@@ -375,6 +375,8 @@ export class SosServiceClient extends BaseClient {
       const response = await this.client.post('/api/internal/dispatch/assign', {
         sosId,
         rescuerId,
+        departmentId, 
+        departmentName
       });
       return response.data;
     } catch (error) {

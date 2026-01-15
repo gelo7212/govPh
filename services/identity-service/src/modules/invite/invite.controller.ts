@@ -46,7 +46,7 @@ export class InviteController {
         throw new UnauthorizedError('User not authenticated');
       }
 
-      const { role, municipalityCode } = req.body as CreateInviteRequest;
+      const { role, municipalityCode, departmentId, department } = req.body as CreateInviteRequest;
 
       // Validation
       if (!role || !municipalityCode) {
@@ -68,7 +68,9 @@ export class InviteController {
         req.user.role,
         req.user.municipalityCode,
         role,
-        municipalityCode
+        municipalityCode,
+        departmentId,
+        department
       );
 
       // Audit log
@@ -233,6 +235,8 @@ export class InviteController {
         expiresAt: inv.expiresAt,
         usedByUserId: inv.usedByUserId,
         usedAt: inv.usedAt,
+        departmentId: inv.departmentId,
+        department: inv.department,
       }));
 
       const response: ApiResponse = {

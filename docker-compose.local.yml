@@ -116,7 +116,7 @@ services:
       MONGODB_URI: ${SOS_SERVICE_MONGODB_URI}
       MONGODB_URI_OPTIONS: ${SOS_SERVICE_MONGODB_URI_OPTIONS}
       DB_NAME: ${SOS_SERVICE_DB_NAME}
-
+  
   identity-service:
     build: ./services/identity-service
     container_name: govph-identity

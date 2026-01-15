@@ -105,7 +105,7 @@ export class SOSEventHandlers {
     try {
       console.log('Handling SOS status change for SOS ID:', data.sosId, 'New Status:', data.newStatus);
       let message = '';
-       await sosRealtimeClient.updateStatus(data.sosId, data.newStatus?.toLocaleLowerCase(), 'SYSTEM', data.previousStatus?.toLocaleLowerCase());
+      await sosRealtimeClient.updateStatus(data.sosId, data.newStatus?.toLocaleLowerCase(), 'SYSTEM', data.previousStatus?.toLocaleLowerCase());
 
       switch (data.newStatus) {
         case 'EN_ROUTE':

@@ -3,11 +3,12 @@ import { SosController } from './sos.controller';
 import { SosAggregator } from './sos.aggregator';
 import { MessageController } from './sos.message.controller';
 import { MessageAggregator } from './sos.message.aggregator';
-import { SosServiceClient, UserContext } from '@gov-ph/bff-core';
+import { IdentityServiceClient, SosServiceClient, UserContext } from '@gov-ph/bff-core';
 import { validate, createSOSSchema, updateLocationSchema, sendMessageSchema } from '../../utils/validators';
 import { authContextMiddleware } from '../../middlewares/authContext';
 import { requireActor } from '../../middlewares/requireActor';
 import createSosParticipantsRoutes from './sos.participants.routes';
+import { IdentityAggregator } from '../identity/identity.aggregator';
 
 export const sosRoutes = Router();
 
@@ -26,10 +27,11 @@ sosRoutes.options('/:sosId/messages', (req, res) => res.sendStatus(200));
 const sosClient = new SosServiceClient(process.env.SOS_SERVICE_URL || 'http://govph-sos:3000');
 const sosAggregator = new SosAggregator(sosClient);
 const sosController = new SosController(sosAggregator);
+const identityClient = new IdentityServiceClient(process.env.IDENTITY_SERVICE_URL || 'http://govph-identity:3000');
+const identityAggregator = new IdentityAggregator(identityClient);
 
 const messageAggregator = new MessageAggregator(sosClient);
-const messageController = new MessageController(messageAggregator);
-
+const messageController = new MessageController(messageAggregator, identityAggregator);
 // Routes
 sosRoutes.get('/:sosId',authContextMiddleware, requireActor('USER','ANON'), (req, res) => sosController.getSosRequest(req, res));
 sosRoutes.get('/user/requests',authContextMiddleware, requireActor('USER'), (req, res) => sosController.getUserSosRequests(req, res));

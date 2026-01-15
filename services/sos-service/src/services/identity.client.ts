@@ -10,12 +10,43 @@ export interface CitizenInfo {
   phone: string;
 }
 
+export interface UserInfo {
+  id: string;
+  displayName: string;
+  email: string;
+  phone: string;
+  departments?:{
+    id: string;
+    isPrimary: boolean;
+  }
+}
+
 export class IdentityClient {
   private identityServiceUrl: string;
 
   constructor() {
     this.identityServiceUrl = process.env.IDENTITY_SERVICE_URL || 'http://govph-identity:3000';
     console.log(`Identity Service URL: ${this.identityServiceUrl}`);
+  }
+
+  async getUserInfo(userId: string): Promise<UserInfo | null> {
+    try {
+      const response = await fetch(`${this.identityServiceUrl}/users/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch user info: ${response.statusText}`);
+        return null;
+      }
+      const data = await response.json() as { data: UserInfo };
+      return data?.data as UserInfo;
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+      return null;
+    }
   }
 
   /**

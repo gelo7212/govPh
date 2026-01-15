@@ -19,7 +19,7 @@ export const SOS_EVENTS = {
 export interface SOSCreatedEvent {
   sosId: string;
   citizenId?: string;
-  cityId: string;
+  cityId?: string;
   sosNo: string;
   longitude: number;
   latitude: number;
@@ -34,7 +34,7 @@ export interface SOSCreatedEvent {
 
 export interface SOSStatusChangedEvent {
   sosId: string;
-  cityId: string;
+  cityId?: string;
   previousStatus: string;
   newStatus: string;
 }

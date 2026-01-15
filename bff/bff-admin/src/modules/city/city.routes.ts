@@ -128,6 +128,16 @@ router.post(
   (req, res) => cityController.createSosHQ(req, res),
 );
 
+
+/**
+ * Get /api/admin/cities/sos-hq/user/:userId
+*/
+router.get(
+  '/sos-hq/user/:userId',
+  requireRole('APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN'),
+  (req, res) => cityController.getSosHQByUserId(req, res),
+);
+
 /**
  * PUT /api/admin/cities/sos-hq/:id
  * Update SOS HQ

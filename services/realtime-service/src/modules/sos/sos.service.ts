@@ -10,12 +10,12 @@ export class SOSService {
   private sosMSClient: SOSMSClient = new SOSMSClient();
 
 
-  async initSOS(sosId: string, citizenId: string, location: any, address: any, type: string): Promise<any> {
+  async initSOS(sosId: string, citizenId: string, location: any, address: any, type: string, status?: string): Promise<any> {
     try {
       const state = {
         sosId,
         citizenId,
-        status: 'active',
+        status: status || 'active',
         createdAt: Date.now(),
         lastLocationUpdate: Date.now(),
         location: location || null,
@@ -46,6 +46,39 @@ export class SOSService {
       throw error;
     }
   }
+  
+  async syncSOS(sosId: string, headerContext: any): Promise<void> {
+    try {
+      console.log("Syncing SOS from SOS MS for", sosId);
+      const sosData = await this.sosMSClient.getSos(sosId, headerContext);
+      const sosRecord = sosData.data;
+      if (sosRecord) {
+        console.log("SOS record fetched from SOS MS:", JSON.stringify(sosRecord));
+        const lat = sosRecord.lastKnownLocation?.coordinates ? sosRecord.lastKnownLocation.coordinates[1] : null;
+        const lng = sosRecord.lastKnownLocation?.coordinates ? sosRecord.lastKnownLocation.coordinates[0] : null;
+        if(lat === null || lng === null){
+          console.log("No valid location in SOS record, skipping sync.");
+          return;
+        }
+        const location = (lat !== null && lng !== null) ? { latitude: lat, longitude: lng } : null;
+        const address = sosRecord.address || null;
+        const status = (sosRecord.status || 'active').toLowerCase();
+        await this.initSOS(sosId, sosRecord.citizenId, location, address, sosRecord.type || 'Other', status);
+        // await this.updateSOSLocation(sosId, location, address);
+        // await this.updateStatus(sosId, status);
+
+        const sosState = await this.getSOSState(sosId);
+        console.log("SOS state after sync:", sosState);
+        logger.info('SOS synced from SOS MS', { sosId });
+      }
+    } catch (error) {
+      logger.error('Error syncing SOS from SOS MS', error);
+    }
+  }
+
+  /**
+   * Update SOS type
+   */
 
   async updateSosType(sosId: string, type: string): Promise<void> {
     try {
@@ -103,7 +136,7 @@ export class SOSService {
         state.status = status;
         state.lastStatusUpdate = Date.now();
         await redisClient.setEx(key, 86400, JSON.stringify(state));
-        logger.info('SOS status updated in realtime', { sosId, status , data});
+        logger.info('SOS status updated in redis', { sosId, status , data});
       }
     } catch (error) {
       logger.error('Error updating SOS status', error);
@@ -120,7 +153,7 @@ export class SOSService {
       const data = await redisClient.get(key);
       if(!data){
         // Sync from SOS MS
-        await this.sosSync(sosId, {});
+        await this.syncSOS(sosId, {});
         const newData = await redisClient.get(key);
         return newData ? JSON.parse(newData) : null;
       }
@@ -305,11 +338,7 @@ export class SOSService {
       if(sosId){        
         const sosState = await this.getSOSState(sosId);
         
-        console.log("Rescuer location upserted", { rescuerId, location, sosId, status: sosState?.status });
-        if(sosState.status?.toLowerCase() !== 'en_route' ){
-          // Only check for arrival if SOS is in EN_ROUTE status,
-          return { rescuerArrived: false, details: 'SOS not in EN_ROUTE status' };
-        }
+        
         
         console.log("Checking arrival condition for SOS", sosId);
         if (sosState && sosState.location?.latitude && sosState.location?.longitude) {
@@ -338,11 +367,26 @@ export class SOSService {
             const data = await redisClient.get(key);
             const locationData = data ? JSON.parse(data) : {};
             locationData.rescuerArrived = true;
+            console.log("Rescuer location upserted", { rescuerId, location, sosId, status: sosState?.status });
+            // if(sosState.status?.toLowerCase() !== 'en_route' ){
+            //   // Only check for arrival if SOS is in EN_ROUTE status,
+            //   return { rescuerArrived: false, details: 'SOS not in EN_ROUTE status' };
+            // }
+           
             await redisClient.setEx(key, 86400, JSON.stringify(locationData));
             console.log("Location data updated with rescuerArrived true",JSON.stringify(locationData));
-
-            await this.sosMSClient.updateStatus(sosId, 'ARRIVED', headerContext);
             
+            const promises = [];
+            promises.push(
+              this.sosMSClient.updateStatus(sosId, 'ARRIVED', headerContext)
+            );
+            promises.push(
+              this.sosMSClient.updateSosRescuerArrival(sosId, rescuerId, headerContext)
+            );
+            Promise.all(promises).catch(error => {
+              logger.error('Error updating SOS status after arrival', error);
+            });
+
             logger.info('SOS status auto-transitioned to arrived', { sosId, rescuerId, distance });
             
             return { rescuerArrived: true };
@@ -366,21 +410,6 @@ export class SOSService {
     } catch (error) {
       logger.error('Error getting rescuer location', error);
       return null;
-    }
-  }
-
-  async sosSync(sosId: string, headerContext: any): Promise<void> {
-    try {
-      const sosRecord = await this.sosMSClient.getSos(sosId, headerContext);
-      if (sosRecord) {
-        console.log("Syncing SOS from SOS MS", JSON.stringify(sosRecord));
-        const location = sosRecord.location || null;
-        const address = sosRecord.address || null;
-        await this.initSOS(sosId, sosRecord.citizenId, location, address, sosRecord.type || 'Other');
-        logger.info('SOS synced from SOS MS', { sosId });
-      }
-    } catch (error) {
-      logger.error('Error syncing SOS from SOS MS', error);
     }
   }
 }

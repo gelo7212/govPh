@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
 import { SosHQService } from './sos-hq.service';
+import { IdentityClient } from '../../services/identity.client';
+import { DepartmentService } from '../departments/department.service';
 
 export class SosHQController {
-  constructor(private sosHQService: SosHQService) {}
+  constructor(
+    private sosHQService: SosHQService, 
+    private identityClient: IdentityClient,
+    private departmentClient: DepartmentService,
+  ) {}
 
   private mapLocationToOldFormat(item: any): any {
     if (!item) return item;
@@ -16,6 +22,82 @@ export class SosHQController {
       };
     }
     return mapped;
+  }
+
+  async getByUserId(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const userInfo = await this.identityClient.getUserInfo(userId);
+      if (!userInfo) {
+        res.status(404).json({
+          success: false,
+          error: 'User not found',
+        });
+        return;
+      }
+      const departments = userInfo.departments || [];
+      if (departments.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'User has no associated departments',
+        });
+        return;
+      }
+      
+      const departmentIds = departments.map(dept => dept.id);
+      console.log('Department IDs:', departmentIds);
+      const departmentsDetails = await this.departmentClient.getDepartmentByIds(departmentIds);
+      console.log('Department Details:', departmentsDetails);
+      const sosHQList = await this.sosHQService.getSosHQBySupportedDepartmentIds(departmentIds);
+      
+      // Collect all unique department IDs from all supported departments
+      const allSupportedDeptIds = new Set<string>();
+      sosHQList.forEach(sosHQ => {
+        const supportedDepts = sosHQ.supportedDepartment || [];
+        supportedDepts.forEach((dept: any) => {
+          allSupportedDeptIds.add(dept.id?.toString() || dept._id?.toString());
+        });
+      });
+      
+      // Fetch complete details for all supported departments
+      const allSupportedDepts = await this.departmentClient.getDepartmentByIds(
+        Array.from(allSupportedDeptIds)
+      );
+      
+      // Create a map for faster lookup
+      const deptDetailsMap = new Map(
+        allSupportedDepts.map(d => [d._id.toString(), d])
+      );
+      
+      // merge department details into sosHQList :: sosHQ.supportedDepartment
+      const mergedDepAndSOSHQ = sosHQList.map(sosHQ => {
+        const supportedDepartment = sosHQ.supportedDepartment || [];
+        const detailedDepartments = supportedDepartment.map((dept: any) => {
+          const deptId = dept.id?.toString() || dept._id?.toString();
+          const fullDept = deptDetailsMap.get(deptId);
+          return fullDept || dept;
+        });
+        return {
+          ...sosHQ,
+          supportedDepartment: detailedDepartments,
+        };
+      });
+      
+      const mappedData = mergedDepAndSOSHQ.map(item => this.mapLocationToOldFormat(item));
+      res.json({
+        success: true,
+        data: mappedData,
+        count: mappedData.length,
+      });
+      return;
+    }
+    catch(error){
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return;
+    }
   }
 
   async getAll(req: Request, res: Response): Promise<void> {

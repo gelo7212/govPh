@@ -22,9 +22,12 @@ export class InviteAggregator {
   async createInvite(
     role: 'CITY_ADMIN' | 'SOS_ADMIN' | 'SK_ADMIN',
     municipalityCode: string,
-    accessToken: string
+    accessToken: string,
+    department?: string,
+    departmentId?: string
   ): Promise<CreateInviteResponse> {
-    const response = await this.identityClient.createInvite(role, municipalityCode, accessToken);
+    const response = await this.identityClient.createInvite(
+      role, municipalityCode, accessToken, department, departmentId);
     return response.data;
   }
 

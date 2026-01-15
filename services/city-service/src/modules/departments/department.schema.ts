@@ -1,4 +1,4 @@
-import { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IDepartment extends Document {
   cityCode: string;
@@ -75,3 +75,5 @@ export const DepartmentSchema = new Schema(
     collection: 'departments',
   },
 );
+
+export const Department = mongoose.model<IDepartment>('Department', DepartmentSchema);

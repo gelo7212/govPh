@@ -22,6 +22,13 @@ export class SosController {
       
       const { sosId } = req.params;
       const result = await this.aggregator.getSosRequest(sosId);
+      console.log('Fetched SOS Request:', result);
+      if(result.data.lastKnownLocation?.coordinates){
+        result.data.location = {
+            latitude: result.data.lastKnownLocation?.coordinates[1],
+            longitude: result.data.lastKnownLocation?.coordinates[0],
+          };
+        }
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
@@ -153,10 +160,12 @@ export class SosController {
   async dispatchRescue(req: Request, res: Response): Promise<void> {
     try {
       const { sosId } = req.params;
-      const { rescuerId } = req.body;
+      const { rescuerId, departmentId, departmentName } = req.body;
       const sosData = {
         sosId,
-        rescuerId
+        rescuerId,
+        departmentId,
+        departmentName
       };
 
       const userContext = {

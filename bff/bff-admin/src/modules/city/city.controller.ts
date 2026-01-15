@@ -192,6 +192,17 @@ export class CityController {
     }
   }
 
+  async getSosHQByUserId(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId } = req.params;
+      const result = await this.aggregator.getSosHQByUserId(userId);
+      res.json(result);
+    }
+    catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to fetch SOS HQ by user ID');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
   async updateSosHQ(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

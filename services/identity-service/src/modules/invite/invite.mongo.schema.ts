@@ -19,6 +19,16 @@ const InviteSchema = new mongoose.Schema<InviteDocument>(
       required: true,
       index: true,
     },
+    departmentId:{
+      type: String,
+      required: false,
+      index: true,
+    },
+    department:{
+      type: String,
+      required: false,
+      index: true,
+    },
     municipalityCode: {
       type: String,
       required: true,

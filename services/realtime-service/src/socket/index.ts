@@ -39,6 +39,15 @@ export const initializeSocketIO = (httpServer: any, socketIOConfig: any): Server
 
       await presenceManager.removeUserPresence((socket as any).userId);
     });
+    
+    // Debug: Log all outgoing events to this socket
+    const originalEmit = socket.emit.bind(socket);
+    socket.emit = function(eventName: string, ...args: any[]) {
+      if (eventName !== 'heartbeat:ack') {
+        console.log(`📤 Emitting to socket ${socket.id}:`, eventName, args[0]);
+      }
+      return originalEmit(eventName, ...args);
+    };
   });
 
   return io;

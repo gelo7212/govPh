@@ -92,8 +92,9 @@ export class IdentityAggregator {
   /**
    * Create a new invite
    */
-  async createInvite(role: string, municipalityCode: string, accessToken: string): Promise<any> {
-    const result = await this.identityClient.createInvite(role, municipalityCode, accessToken);
+  async createInvite(role: string, municipalityCode: string, accessToken: string, department?: string, departmentId?: string): Promise<any> {
+    const result = await this.identityClient.createInvite(
+      role, municipalityCode, accessToken, department, departmentId);
     return result;
   }
 

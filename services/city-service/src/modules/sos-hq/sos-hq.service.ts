@@ -30,6 +30,20 @@ export class SosHQService {
     return this.sosHQModel.findById(id).lean().exec();
   }
 
+  async getSosHQBySupportedDepartmentIds(departmentIds: string[]) {
+    return this.sosHQModel
+      .find({ supportedDepartment: { $elemMatch: { id: { $in: departmentIds } } }, isActive: true })
+      .lean()
+      .exec();
+  }
+  
+  async getSosHQByDepartmentId(departmentId: string) {
+    return this.sosHQModel
+      .findOne({ departmentId, isActive: true })
+      .lean()
+      .exec();
+  }
+
   async getSosHQByCity(cityCode: string) {
     return this.sosHQModel
       .find({ cityCode, isActive: true, scopeLevel: 'CITY' })
@@ -106,7 +120,7 @@ export class SosHQService {
     cityCode?: string,
   ) {
     const query: any = {
-      supportedDepartmentCodes: departmentCode,
+      supportedDepartment: { $elemMatch: { code: departmentCode } },
       isActive: true,
     };
     if (cityCode) {

@@ -1,10 +1,12 @@
 import { Socket, Server } from 'socket.io';
 import { logger } from '../../utils/logger';
 import { SOCKET_EVENTS } from '../../utils/constants';
+import { SOSService } from '../../modules/sos/sos.service';
 
 /**
  * Handle SOS-specific socket events
  */
+const sosService = new SOSService();
 export const registerSOSEvents = (io: Server, socket: Socket): void => {
 
   /**
@@ -28,6 +30,7 @@ export const registerSOSEvents = (io: Server, socket: Socket): void => {
       // Join the SOS room
       const roomName = `sos:${sosId}`;
       socket.join(roomName);
+      await sosService.syncSOS(sosId, { userId });
 
       logger.info('User joined SOS room', {
         userId,
@@ -93,10 +96,13 @@ export const registerSOSEvents = (io: Server, socket: Socket): void => {
   });
 
   /**
-   * Handle SOS status updates
+   * Handle SOS status updates from clients
+   * This is for client-side status updates (e.g., via WebSocket)
+   * Server-side status updates come via HTTP and are broadcast directly
    */
   socket.on(SOCKET_EVENTS.SOS_STATUS_UPDATE, async (data: any) => {
     try {
+      console.log('SOS_STATUS_UPDATE data received:', data);
       const userId = (socket as any).userId;
       const sosId = data.sosId;
       const status = data.status;
@@ -116,7 +122,7 @@ export const registerSOSEvents = (io: Server, socket: Socket): void => {
         sosId,
         status,
       });
-
+     
       // Broadcast status to room
       io.to(roomName).emit(SOCKET_EVENTS.SOS_STATUS_BROADCAST, {
         sosId,

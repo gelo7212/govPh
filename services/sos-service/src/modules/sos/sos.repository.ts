@@ -64,7 +64,8 @@ export class SOSRepository {
       }
 
       if (options.filters.type && options.filters.type.length > 0) {
-        filterConditions.push({ type: { $in: options.filters.type } });
+        const typeRegexes = options.filters.type.map(t => ({ type: { $regex: `^${t}$`, $options: 'i' } }));
+        filterConditions.push({ $or: typeRegexes });
       }
 
       if (options.filters.status && options.filters.status.length > 0) {
@@ -135,9 +136,13 @@ export class SOSRepository {
     return sosList.map((sos) => this.mapToDTO(sos));
   }
 
-  async findByRescuerId(cityId: string, rescuerId: string): Promise<SOS[]> {
+  async findByRescuerId( rescuerId: string): Promise<SOS[]> {
     try {
-      const sosList = await SOSModel.find({ cityId, assignedRescuerId: rescuerId }).sort({ createdAt: -1 });
+      // Find SOS where assignedResponders contains an entry with userId = rescuerId, sos main status is not CLOSED | RESOLVED | CANCELLED
+      const sosList = await SOSModel.find({
+        'assignedResponders.userId': rescuerId,
+        status: { $nin: ['CLOSED', 'RESOLVED', 'CANCELLED', 'REJECTED', 'FAKE'] }
+      }).sort({ createdAt: -1 });
       return sosList.map((sos) => this.mapToDTO(sos));
     } catch (error) {
       throw new Error(`Error finding SOS by rescuer ID: ${error}`);
@@ -155,6 +160,13 @@ export class SOSRepository {
     }
     return this.mapToDTO(sos);
   }
+  // Mark rescuer assignedResponders as LEFT
+  async rescuerLeftSOS(sosId: string, rescuerId: string): Promise<void> {
+    await SOSModel.updateOne(
+      { _id: sosId, 'assignedResponders.userId': rescuerId },
+      { $set: { 'assignedResponders.$.status': 'LEFT' } }
+    );
+  }
 
   async updateWithoutCity(id: string, data: any): Promise<SOS> {
     const sos = await SOSModel.findOneAndUpdate(
@@ -162,6 +174,7 @@ export class SOSRepository {
       data,
       { new: true }
     );
+    console.log('Updated SOS:', sos);
     if (!sos) {
       throw new Error('SOS request not found');
     }
@@ -206,7 +219,7 @@ export class SOSRepository {
       status: sos.status,
       createdAt: sos.createdAt,
       updatedAt: sos.updatedAt,
-      assignedRescuerId: sos.assignedRescuerId,
+      assignedResponders: sos.assignedResponders as unknown as SOS['assignedResponders'] || [],
       lastKnownLocation: sos.lastKnownLocation || { type: 'Point', coordinates: [0, 0] },
       message: sos.message || '',
       type: sos.type || '',

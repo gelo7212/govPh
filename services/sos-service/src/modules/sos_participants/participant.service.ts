@@ -3,14 +3,21 @@ import { SosParticipant } from './participant.model';
 import { Types } from 'mongoose';
 import RealtimeServiceClient from '../../services/realtime-service.client';
 import { createLogger } from '../../utils/logger';
+import { SOSService } from '../sos/sos.service';
+import { SOSRepository } from '../sos/sos.repository';
+import { SOSRealtimeClient } from '../../services/sos.realtime.client';
 
 const logger = createLogger('SosParticipantService');
 
 export class SosParticipantService {
   private realtimeClient: RealtimeServiceClient;
+  private sosService: SOSService;
+  private sosRepository: SOSRepository;
 
   constructor(private repository: ParticipantRepository) {
     this.realtimeClient = new RealtimeServiceClient();
+    this.sosRepository = new SOSRepository();
+    this.sosService = new SOSService(this.sosRepository);
   }
 
   /**
@@ -52,6 +59,7 @@ export class SosParticipantService {
   async leaveSos(sosId: string, userId: Types.ObjectId): Promise<void> {
     // Remove from DB
     await this.repository.markAsLeft(sosId, userId);
+    await this.sosService.rescuerLeftSOS(sosId, userId.toString());
 
     // Notify realtime service to broadcast to connected clients
     try {

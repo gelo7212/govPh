@@ -104,6 +104,10 @@ export class AdminCityAggregator {
     return this.aggregator.createSosHQ(data);
   }
 
+  async getSosHQByUserId(userId: string) {
+    return this.aggregator.getSosHQByUserId(userId);
+  }
+
   async updateSosHQ(id: string, data: any) {
     return this.aggregator.updateSosHQ(id, data);
   }

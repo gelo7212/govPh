@@ -23,8 +23,19 @@ const UserSchema = new mongoose.Schema(
     },
     department: {
       type: String,
-      enum: ['MDRRMO', 'PNP', 'BFP', 'LGU'],
+      enum: ['MDRRMO', 'PNP', 'BFP', 'LGU', 'PDRRMO'],
       sparse: true,
+    },
+    // 
+    departments:{
+      type: [
+        {
+          id: { type: String, required: true },
+          isPrimary: { type: Boolean, default: false },
+        }
+      ],
+      default: [],
+      index: true,
     },
     registrationStatus: {
       type: String,

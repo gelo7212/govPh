@@ -18,6 +18,8 @@ export interface InviteEntity {
   code: string; // 6-digit code
   role: InviteRole;
   municipalityCode: string;
+  department?: string;
+  departmentId?: string;
   createdByUserId: string;
   usedByUserId?: string;
   createdAt: Date;
@@ -31,6 +33,8 @@ export interface InviteEntity {
 export interface CreateInviteRequest {
   role: InviteRole;
   municipalityCode: string;
+  departmentId?: string;
+  department?: string;
 }
 
 /**
@@ -43,6 +47,8 @@ export interface CreateInviteResponse {
   municipalityCode: string;
   expiresAt: Date;
   inviteLink: string;
+  departmentId?: string;
+  department?: string;
 }
 
 /**
@@ -55,6 +61,8 @@ export interface ValidateInviteResponse {
   municipalityCode?: string;
   expiresAt?: Date;
   reason?: string; // 'EXPIRED' | 'USED' | 'INVALID'
+  department?: string | undefined;
+  departmentId?: string | undefined;
 }
 
 /**
@@ -109,4 +117,6 @@ export interface InviteListItem {
   expiresAt: Date;
   usedByUserId?: string;
   usedAt?: Date;
+  departmentId?: string;
+  department?: string;
 }

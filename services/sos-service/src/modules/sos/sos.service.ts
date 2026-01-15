@@ -2,14 +2,16 @@ import { SOSRepository } from './sos.repository';
 import { SOS } from './sos.model';
 import { identityClient } from '../../services/identity.client';
 import { eventBus, SOS_EVENTS, type SOSCreatedEvent, type SOSStatusChangedEvent, type SOSTaggedEvent } from '../events';
+import { SosParticipantService } from '../sos_participants';
 
 export class SOSService {
   constructor(
     private repository: SOSRepository,
+    private participantService?: SosParticipantService ,
   ) {}
 
   async createSOS(data: {
-    cityId: string;
+    cityId?: string;
     citizenId?: string;
     sosNo: string;
     longitude: number;
@@ -79,6 +81,63 @@ export class SOSService {
 
   async getSOS(id: string): Promise<SOS | null> {
     const sos = await this.repository.findById(id);
+    if (!sos) return null;
+
+    // Collect all user IDs that need to be fetched
+    const userIdsToFetch = new Set<string>();
+    if (sos.assignedResponders) sos.assignedResponders.forEach(r => userIdsToFetch.add(r.userId));
+    if (sos.citizenId) userIdsToFetch.add(sos.citizenId);
+
+    // Fetch participants first, then collect their user IDs
+    try {
+      let participants = await this.participantService?.getParticipantHistory(sos.id);
+      if (participants?.length) {
+        
+        // userType == rescuer 
+        participants = participants.filter(p => p.userType === 'rescuer');
+        participants.forEach(p => userIdsToFetch.add(p.userId.toString()));
+      }
+      sos.participants = participants || [];
+    } catch (error) {
+      console.error('Error fetching SOS participants:', error);
+      sos.participants = [];
+    }
+
+    // Batch fetch all required user info in parallel
+    const userInfoMap = new Map<string, any>();
+    if (userIdsToFetch.size > 0) {
+      const userInfoPromises = Array.from(userIdsToFetch).map(userId =>
+        identityClient.getCitizenInfo(userId)
+          .then(info => ({ userId, info }))
+          .catch(error => {
+            console.error(`Error fetching user info for ${userId}:`, error);
+            return { userId, info: null };
+          })
+      );
+
+      const results = await Promise.all(userInfoPromises);
+      results.forEach(({ userId, info }) => {
+        if (info) userInfoMap.set(userId, info);
+      });
+    }
+
+    // Attach user info to SOS fields
+    if (sos.assignedResponders && sos.assignedResponders.length > 0) {
+      sos.assignedResponders = sos.assignedResponders.map(responder => ({
+        ...responder,
+        assignedRescuer: userInfoMap.get(responder.userId),
+      }));
+    }
+    if (sos.citizenId && userInfoMap.has(sos.citizenId)) {
+      sos.citizenInfo = userInfoMap.get(sos.citizenId);
+    }
+
+    // Attach user info to participants
+    sos.participants = sos.participants.map(participant => ({
+      ...participant,
+      userInfo: userInfoMap.get(participant.userId.toString()),
+    }));
+
     return sos;
   }
 
@@ -141,7 +200,7 @@ export class SOSService {
   }
 
   async updateLocation(sosId: string, cityId: string, location: any): Promise<SOS> {
-    return await this.repository.update(cityId, sosId, {
+    return await this.repository.updateWithoutCity(sosId, {
       lastKnownLocation: {
         type: 'Point',
         coordinates: [location.lng, location.lat],
@@ -160,7 +219,7 @@ export class SOSService {
         throw new Error('City ID is required to save location snapshot');
       }
       if(location.address == undefined || location.address === null ){
-        return await this.repository.update(cityId, sosId, {
+        return await this.repository.updateWithoutCity( sosId, {
           lastKnownLocation: {
             type: 'Point',
             coordinates: [location.longitude, location.latitude],
@@ -168,8 +227,8 @@ export class SOSService {
           lastLocationUpdate: new Date(),
         });
       }
-      
-      return await this.repository.update(cityId, sosId, {
+
+      return await this.repository.updateWithoutCity(sosId, {
         lastKnownLocation: {
           type: 'Point',
           coordinates: [location.longitude, location.latitude],
@@ -194,7 +253,7 @@ export class SOSService {
   }
 
   async updateSOS(id: string, cityId: string, data: any): Promise<SOS> {
-    const sos = await this.repository.update(id, cityId, data);
+    const sos = await this.repository.updateWithoutCity(id , data);
     return sos;
   }
 
@@ -213,5 +272,17 @@ export class SOSService {
     }
     return token
   }
-  
+
+  async rescuerLeftSOS(sosId: string, rescuerId: string): Promise<void> {
+    await this.repository.rescuerLeftSOS(sosId, rescuerId);
+    // check if sos has any assigned responders left
+    const sos = await this.repository.findById(sosId);
+    if(sos){
+      const activeResponders = sos.assignedResponders?.filter(r => r.status !== 'LEFT' && r.status !== 'REJECTED');
+      if(!activeResponders || activeResponders.length === 0){
+        // if no active responders left, update sos status to ACTIVE
+        this.updateSOSStatus(sosId, 'ACTIVE');
+      }
+    }
+  }
 }

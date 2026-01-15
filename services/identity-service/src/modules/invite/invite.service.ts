@@ -44,7 +44,9 @@ export class InviteService {
     creatorRole: UserRole,
     creatorMunicipalityCode: string | undefined,
     targetRole: InviteRole,
-    targetMunicipalityCode: string
+    targetMunicipalityCode: string,
+    departmentId?: string,
+    department?: string
   ): Promise<CreateInviteResponse> {
     // Validate creator has permission to invite this role
     const allowedRoles = AUTHORITY_RULES[creatorRole];
@@ -70,7 +72,9 @@ export class InviteService {
     const invite = await this.repository.create(
       targetRole,
       targetMunicipalityCode,
-      creatorUserId
+      creatorUserId,
+      departmentId,
+      department
     );
     const INVITE_LINK_HOST = process.env.INVITE_LINK_HOST || 'https://pilot.e-citizen.click/invites'; 
 
@@ -85,6 +89,8 @@ export class InviteService {
       municipalityCode: invite.municipalityCode,
       expiresAt: invite.expiresAt,
       inviteLink: generateInviteLink(invite.id!, INVITE_LINK_HOST),
+      departmentId: departmentId,
+      department: department,
     };
   }
 
@@ -119,13 +125,15 @@ export class InviteService {
         reason: 'USED',
       };
     }
-
+    
     return {
       inviteId,
       valid: true,
       role: invite.role,
       municipalityCode: invite.municipalityCode,
       expiresAt: invite.expiresAt,
+      department: invite.department,
+      departmentId: invite.departmentId,
     };
   }
 
@@ -184,6 +192,8 @@ export class InviteService {
     // Allow role reassignment.
 
     await this.userService.assignRole(userId, invite.role);
+    if(invite.departmentId)
+      await this.userService.assignDepartment(userId, invite.departmentId || '');
 
     logger.info(
       `Invite ${inviteId} accepted by user ${userId} for role ${invite.role}`

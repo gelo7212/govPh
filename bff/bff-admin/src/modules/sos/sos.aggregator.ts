@@ -175,9 +175,11 @@ export class SosAggregator {
   async dispatchRescue(sosData: any, context: any): Promise<any> {
     const  {
         sosId,
-        rescuerId
+        rescuerId,
+        departmentId, 
+        departmentName
     } = sosData;
-    const result = await this.sosClient.dispatchRescue(sosId, rescuerId, context);
+    const result = await this.sosClient.dispatchRescue(sosId, rescuerId, departmentId, departmentName, context);
     return result;
   }
 
@@ -188,6 +190,20 @@ export class SosAggregator {
 
   async updateRescuerLocation(sosId: string, rescuerId: string, latitude: number, longitude: number, accuracy?: number): Promise<any> {
     console.log('Updating rescuer location:', { sosId, rescuerId, latitude, longitude, accuracy });
+    const sos = await this.sosClient.getSosRequest(sosId);
+    if (!sos) {
+      throw new Error('SOS request not found');
+    }
+    if(sos.data.status === 'CLOSED' || 
+      sos.data.status === 'CANCELLED' || 
+      sos.data.status === 'COMPLETED' ||
+      sos.data.status === 'RESOLVED' ||
+      sos.data.status === 'REJECTED' ||
+      sos.data.status === 'FAKE' 
+    ){
+      throw new Error('Cannot update location for completed SOS');
+    }
+   
     const result = await this.realtimeClient.upsertRescuerLocation(sosId, rescuerId, latitude, longitude, accuracy);
     return result;
   }

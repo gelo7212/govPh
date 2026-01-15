@@ -20,6 +20,13 @@ export interface ISOS extends Document {
   soNo: string;
   deviceId?: string;
   resolutionNote?: string;
+  assignedResponders?: {
+    userId: string;
+    sosHQId: string;
+    sosHQName: string;
+    assignedAt: Date;
+    status: 'ASSIGNED' | 'EN_ROUTE' | 'ARRIVED' | 'REJECTED' | 'LEFT';
+  }[];
 }
 
 const sosSchema = new Schema<ISOS>(
@@ -38,14 +45,21 @@ const sosSchema = new Schema<ISOS>(
     },
     status: {
       type: String,
-      enum: ['ACTIVE', 'EN_ROUTE', 'ARRIVED', 'RESOLVED', 'CANCELLED'],
+      enum: ['ACTIVE', 'EN_ROUTE', 'ARRIVED', 'RESOLVED', 'CANCELLED', 'REJECTED', 'FAKE'],
       default: 'ACTIVE',
       index: true,
     },
-    assignedRescuerId: {
-      type: String,
-      sparse: true,
-      index: true,
+    assignedResponders: {
+      type: [
+        {
+          userId: { type: String, required: true, index: true },
+          sosHQId: { type: String, required: true, index: true }, // sosHQ id
+          sosHQName: { type: String, required: true, index: true }, // sosHQ name
+          assignedAt: { type: Date, default: Date.now },
+          status: { type: String, enum: ['ASSIGNED', 'EN_ROUTE', 'ARRIVED', 'REJECTED'], default: 'ASSIGNED' },
+        },
+      ],
+      default: [],
     },
     address: {
       city: { type: String },
@@ -100,6 +114,8 @@ sosSchema.index({ citizenId: 1, createdAt: -1 });
 
 // Index for rescuer assignment lookup
 sosSchema.index({ assignedRescuerId: 1, status: 1 });
+sosSchema.index({ 'assignedResponders.userId': 1 });
+sosSchema.index({ 'assignedResponders.departmentId': 1 });
 
 // Pre-save hook to remove lastKnownLocation if coordinates are null/invalid
 sosSchema.pre('save', function(next) {

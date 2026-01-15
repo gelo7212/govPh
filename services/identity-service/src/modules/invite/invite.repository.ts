@@ -28,7 +28,9 @@ export class InviteRepository {
   async create(
     role: InviteRole,
     municipalityCode: string,
-    createdByUserId: string
+    createdByUserId: string,
+    departmentId?: string,
+    department?: string
   ): Promise<InviteEntity> {
     const code = generateInviteCode();
     const expiresAt = calculateExpiration();
@@ -40,6 +42,8 @@ export class InviteRepository {
       createdByUserId,
       createdAt: new Date(),
       expiresAt,
+      departmentId,
+      department,
     });
 
     logger.info(`Invite created: ${invite._id} by ${createdByUserId}`);
@@ -191,6 +195,8 @@ export class InviteRepository {
       expiresAt: doc.expiresAt,
       usedAt: doc.usedAt,
       usedByUserId: doc.usedByUserId,
+      departmentId: doc.departmentId,
+      department: doc.department,
     };
   }
 }

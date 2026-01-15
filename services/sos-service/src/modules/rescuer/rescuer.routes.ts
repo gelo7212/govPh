@@ -19,6 +19,12 @@ router.post('/location', validate(rescuerLocationSchema), (req, res, next) =>
   controller.updateRescuerLocation(req, res).catch(next)
 );
 
+// Update rescuer SOS status 
+router.post('/sos-status', (req, res, next) =>
+  controller.updateRescuerSosStatus(req, res).catch(next)
+);
+
+
 // Get rescuers by city
 router.get(
   '/municipality/:municipalityCode',

@@ -1,5 +1,5 @@
 import { Schema, Document } from 'mongoose';
-
+  
 export interface ISosHQ extends Document {
   scopeLevel: 'CITY' | 'PROVINCE';
   cityCode?: string;
@@ -13,7 +13,11 @@ export interface ISosHQ extends Document {
     coordinates: [number, number];
   };
   coverageRadiusKm?: number;
-  supportedDepartmentCodes: string[];
+  supportedDepartment: {
+    id: string;
+    name: string;
+    code: string;
+  }[];
   isMain: boolean;
   isTemporary: boolean;
   isActive: boolean;
@@ -85,8 +89,12 @@ export const SosHQSchema = new Schema(
       type: Number,
     },
 
-    supportedDepartmentCodes: {
-      type: [String],
+    supportedDepartment: {
+      type: [{
+        id: String,
+        name: String,
+        code: String,
+      }],
       default: [],
     },
 

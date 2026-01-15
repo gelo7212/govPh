@@ -17,7 +17,11 @@ export interface SosHQInfo {
     lng: number;
   };
   coverageRadiusKm?: number;
-  supportedDepartmentCodes: string[];
+  supportedDepartment: {
+    id: string;
+    name: string;
+    code: string;
+  }[];
   isMain: boolean;
   isTemporary: boolean;
   isActive: boolean;

@@ -76,7 +76,11 @@ export interface SosHQData {
   name: string;
   location: SosHQLocation;
   coverageRadiusKm?: number;
-  supportedDepartmentCodes: string[];
+  supportedDepartment: {
+    id: string;
+    name: string;
+    code: string;
+  }[];
   isMain: boolean;
   isTemporary: boolean;
   contactNumber: string;
@@ -96,7 +100,11 @@ export interface CreateSosHQRequest {
   name: string;
   location: SosHQLocation;
   coverageRadiusKm?: number;
-  supportedDepartmentCodes?: string[];
+  supportedDepartment?: {
+    id: string;
+    name: string;
+    code: string;
+  }[] ;
   isMain?: boolean;
   isTemporary?: boolean;
   contactNumber?: string;

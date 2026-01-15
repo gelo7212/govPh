@@ -9,7 +9,7 @@ export class SOSMSClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = config.SOS_MS_URL;
+    this.baseURL = config.SOS_MS_URL || 'http://govph-sos:3000';
   }
 
   /**
@@ -81,6 +81,25 @@ export class SOSMSClient {
       );
     } catch (error) {
       logger.error('Error updating SOS status', { sosId, status, error });
+      // Don't throw - log and continue
+    }
+  }
+
+  async updateSosRescuerArrival(sosId: string, rescuerId: string, headerContext: any): Promise<void> {
+    try {
+      await axios.post(
+        `${this.baseURL}/api/rescuer/location/sos-status`,
+        { sosId, rescuerId, status: 'ARRIVED' },
+        {
+          headers: {
+            'x-internal-token': config.INTERNAL_AUTH_TOKEN,
+            ...headerContext,
+          },
+        }
+      );
+    }
+    catch (error) {
+      logger.error('Error updating SOS rescuer arrival status', { sosId, rescuerId, error });
       // Don't throw - log and continue
     }
   }

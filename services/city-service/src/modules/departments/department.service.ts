@@ -1,7 +1,7 @@
-import { Model } from 'mongoose';
-import { IDepartment } from './department.schema';
+import { IDepartment , Department} from './department.schema';
 export class DepartmentService {
-  constructor(private departmentModel: Model<IDepartment>) {}
+ 
+  constructor() {}
 
   async getAllDepartments(filters?: { isActive?: boolean; cityCode?: string }) {
     const query: any = {};
@@ -11,11 +11,15 @@ export class DepartmentService {
     if (filters?.cityCode) {
       query.cityCode = filters.cityCode;
     }
-    return this.departmentModel.find(query).lean().exec();
+    return Department.find(query).lean().exec();
   }
 
   async getDepartmentById(id: string) {
-    return this.departmentModel.findById(id).lean().exec();
+    return Department.findById(id).lean().exec();
+  }
+
+  async getDepartmentByIds(ids: string[]) {
+    return Department.find({ _id: { $in: ids } }).lean().exec();
   }
 
   async getDepartmentsByCity(cityCode: string, sosCapableOnly?: boolean) {
@@ -23,27 +27,27 @@ export class DepartmentService {
     if (sosCapableOnly) {
       query.sosCapable = true;
     }
-    return this.departmentModel.find(query).lean().exec();
+    return Department.find(query).lean().exec();
   }
 
   async createDepartment(data: Partial<IDepartment>) {
-    const department = new this.departmentModel(data);
+    const department = new Department(data);
     return department.save();
   }
 
   async updateDepartment(id: string, data: Partial<IDepartment>) {
-    return this.departmentModel
+    return Department
       .findByIdAndUpdate(id, data, { new: true })
       .lean()
       .exec();
   }
 
   async deleteDepartment(id: string) {
-    return this.departmentModel.findByIdAndDelete(id).lean().exec();
+    return Department.findByIdAndDelete(id).lean().exec();
   }
 
   async getDepartmentByCode(cityCode: string, code: string) {
-    return this.departmentModel
+    return Department
       .findOne({ cityCode, code })
       .lean()
       .exec();
@@ -60,6 +64,6 @@ export class DepartmentService {
     if (cityCode) {
       query.cityCode = cityCode;
     }
-    return this.departmentModel.find(query).lean().exec();
+    return Department.find(query).lean().exec();
   }
 }

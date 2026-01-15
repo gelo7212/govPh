@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SOSService } from './sos.service';
 import { logger } from '../../utils/logger';
 import { Server as SocketIOServer } from 'socket.io';
+import { SOCKET_EVENTS } from '../../utils/constants';
 /**
  * SOS Controller - Handles internal HTTP requests
  * These are calls from SOS MS to coordinate realtime events
@@ -31,6 +32,23 @@ export class SOSController {
       res.status(500).json({
         success: false,
         error: 'Failed to initialize SOS',
+      });
+    }
+  }
+
+  async syncSOSState(req: Request, res: Response): Promise<void> {
+    try {
+      const { sosId } = req.params;
+      await this.sosService.syncSOS(sosId, req.headers);
+      res.status(200).json({
+        success: true,
+        message: 'SOS state synchronized',
+      });
+    } catch (error) {
+      logger.error('Error synchronizing SOS state', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to synchronize SOS state',
       });
     }
   }
@@ -81,7 +99,36 @@ export class SOSController {
       logger.info('Updating SOS status', { sosId, status });
 
       // const newStatus = await this.statusMachine.transition(sosId, status, updatedBy, oldStatus);
-      if(status === 'en_route' || status === 'arrived'){
+      // Broadcast status update to all clients in the SOS room
+      const roomName = `sos:${sosId}`;
+      const room = this.io.sockets.adapter.rooms.get(roomName);
+      const clientsInRoom = room ? room.size : 0;
+      
+      logger.info('Broadcasting to SOS room', { sosId, roomName, clientsInRoom });
+      
+      const broadcastPayload = {
+        sosId,
+        status,
+        updatedBy,
+        timestamp: Date.now(),
+      };
+      
+      console.log(`🔴 Emitting ${SOCKET_EVENTS.SOS_STATUS_BROADCAST} to room ${roomName}:`, broadcastPayload);
+      this.io.to(roomName).emit(SOCKET_EVENTS.SOS_STATUS_BROADCAST, broadcastPayload);
+
+      logger.info('SOS status update broadcasted', { sosId, status, clientsInRoom, eventName: SOCKET_EVENTS.SOS_STATUS_BROADCAST });
+
+      if(
+          status === 'en_route' ||
+          status === 'arrived' ||
+          status === 'active' || 
+          status !== 'closed' || 
+          status !== 'resolved' || 
+          status !== 'cancelled' || 
+          status !== 'fake' ||
+          status !== 'completed' ||
+          status !== 'rejected'
+        ){
         // Notify SOS service to handle dispatch related updates
         await this.sosService.updateStatus(sosId, status);
         res.status(200).json({

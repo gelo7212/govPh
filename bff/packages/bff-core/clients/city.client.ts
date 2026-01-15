@@ -380,6 +380,16 @@ export class CityServiceClient extends BaseClient {
     }
   }
 
+  async getSosHQByUserId(userId: string): Promise<SosHQResponse<SosHQData[]>> {
+    try {
+      const response = await this.client.get(`/api/sos-hq/user/${userId}`);
+      return response.data;
+    } catch (error) {
+        return this.handleError(error
+      );
+    }
+  }
+
   /**
    * Delete SOS HQ
    * DELETE /api/sos-hq/:id

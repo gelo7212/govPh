@@ -36,7 +36,7 @@ export class InviteController {
    */
   async createInvite(req: Request, res: Response): Promise<void> {
     try {
-      const { role, municipalityCode } = req.body;
+      const { role, municipalityCode, department, departmentId } = req.body;
 
       if (!role || !municipalityCode) {
         sendErrorResponse(res, 400, 'INVALID_REQUEST', 'role and municipalityCode are required');
@@ -44,7 +44,7 @@ export class InviteController {
       }
       const token = this.getToken(req);
 
-      const result = await this.aggregator.createInvite(role, municipalityCode, token);
+      const result = await this.aggregator.createInvite(role, municipalityCode, token, department, departmentId);
 
       res.status(201).json({
         success: true,

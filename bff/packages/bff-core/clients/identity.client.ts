@@ -171,9 +171,15 @@ export class IdentityServiceClient extends BaseClient {
   /**
    * Create a new invite
    */
-  async createInvite(role: string, municipalityCode: string, accessToken: string): Promise<any> {
+  async createInvite(
+    role: string, 
+    municipalityCode: string, 
+    accessToken: string,
+    department?: string,
+    departmentId?: string
+  ): Promise<any> {
     try {
-      const response = await this.client.post('/invites', { role, municipalityCode }, {
+      const response = await this.client.post('/invites', { role, municipalityCode, department, departmentId }, {
         headers: {
           Authorization: `Bearer ${accessToken}`
         }

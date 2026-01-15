@@ -2,6 +2,7 @@ import { SOSRepository } from '../sos/sos.repository';
 import { SOS, SOSStatus } from '../sos/sos.model';
 import { sosRealtimeClient } from '../../services/sos.realtime.client'
 import { eventBus, SOS_EVENTS, SOSStatusChangedEvent } from '../events';
+import { identityClient } from '../../services/identity.client';
 
 /**
  * Status Machine Service
@@ -16,20 +17,49 @@ export class StatusMachineService {
    * Handles status transition when rescuer is assigned
    * Sets status to EN_ROUTE automatically
    */
-  async handleRescuerAssignment(sosId: string, cityId: string, rescuerId: string): Promise<SOS | null> {
+  async handleRescuerAssignment(
+    sosId: string,
+    cityId: string, 
+    rescuerId: string,
+    departmentId: string,
+    departmentName: string
+  ): Promise<SOS | null> {
     const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
     // Only transition from ACTIVE to EN_ROUTE
-    if (sos.status !== 'ACTIVE') {
-      console.warn(`Cannot assign rescuer to SOS in ${sos.status} status`);
-      return sos;
+    if (sos.status === 'ACTIVE') {   
+      await this.repository.updateWithoutCity(sosId, {
+        status: 'EN_ROUTE',
+      });
     }
 
-    const updated = await this.repository.update(cityId, sosId, {
-      status: 'EN_ROUTE',
-      assignedRescuerId: rescuerId,
-    });
+    const updated = await this.repository.findById(sosId);
+    if (!updated) return null;
+
+
+    console.log(`SOS ${sosId} assigned to rescuer ${rescuerId}, status set to EN_ROUTE`);
+
+    // update rescuer status in assignedResponders array
+    const responderIndex = updated.assignedResponders!.findIndex(r => r.userId === rescuerId);
+    if (responderIndex !== -1) {
+      updated.assignedResponders![responderIndex].status = 'EN_ROUTE';
+      // update the sos with new assignedResponders status
+      //   
+      await this.repository.updateWithoutCity(sosId, { assignedResponders: updated.assignedResponders! });
+    }else{
+      console.warn(`Rescuer ${rescuerId} not found in assigned responders for SOS ${sosId}`);
+      
+      updated.assignedResponders!.push(
+        { 
+          userId: rescuerId,
+          status: 'EN_ROUTE',
+          assignedAt: new Date(),
+          sosHQId: departmentId,
+          sosHQName: departmentName,
+        });
+      await this.repository.updateWithoutCity(sosId, { assignedResponders: updated.assignedResponders! });
+    }
 
     // Publish event
     this.publishStatusChange(updated, 'EN_ROUTE', cityId);
@@ -46,14 +76,10 @@ export class StatusMachineService {
     cityId: string,
     rescuerLat: number,
     rescuerLng: number,
+    rescuerId: string,
   ): Promise<SOS | null> {
     const sos = await this.repository.findById(sosId);
-    if (!sos || !sos.assignedRescuerId) return null;
-
-    // Only check distance if in EN_ROUTE status
-    if (sos.status !== 'EN_ROUTE') {
-      return sos;
-    }
+    if (!sos || !sos.assignedResponders!.some(r => r.userId === rescuerId)) return null;
 
     const distance = this.calculateDistance(
       rescuerLat,
@@ -64,7 +90,24 @@ export class StatusMachineService {
 
     // Auto-transition to ARRIVED if close enough
     if (distance <= this.ARRIVAL_THRESHOLD_METERS) {
-      const updated = await this.repository.update(cityId, sosId, {
+
+      
+      //update rescuer status in assignedResponders array
+      const responderIndex = sos.assignedResponders!.findIndex(r => r.userId === rescuerId);
+      if (responderIndex !== -1) {
+        if(sos.assignedResponders![responderIndex].status !== 'ARRIVED'){
+          sos.assignedResponders![responderIndex].status = 'ARRIVED';
+          // update the sos with new assignedResponders status
+          await this.repository.updateWithoutCity(sosId, { assignedResponders: sos.assignedResponders! });
+        }
+      }
+
+
+      if (sos.status !== 'EN_ROUTE') {
+        return sos;
+      }
+      // update SOS 
+      const updated = await this.repository.updateWithoutCity(sosId, {
         status: 'ARRIVED',
       });
 
@@ -119,9 +162,13 @@ export class StatusMachineService {
     const sos = await this.repository.findById(sosId);
     if (!sos) return null;
 
+    if(sos.status === status){
+      return sos;
+    }
+
     const updated = await this.repository.updateStatus(sosId, status, resolutionNote);
     console.log(`SOS ${sosId} status updated to ${status}`);
-    this.publishStatusChange(updated, status, sos.cityId);
+    this.publishStatusChange(updated, status, sos.cityId || '');
 
     return updated;
   }

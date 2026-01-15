@@ -42,7 +42,7 @@ export async function authContextMiddleware(
       }
 
       const role = decodedToken.identity?.role;
-      if(role !== 'SOS_ADMIN' && role !== 'RESCUER' && role !=='SK_YOUTH_ADMIN' && role !== 'APP_ADMIN' && role !== 'CITY_ADMIN'){
+      if(role !== 'SOS_ADMIN' && role !== 'RESCUER' && role !=='SK_ADMIN' && role !== 'APP_ADMIN' && role !== 'CITY_ADMIN'){
         res.status(403).json({ error: 'Forbidden: Insufficient role' });
         return;
       }

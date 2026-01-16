@@ -145,14 +145,23 @@ export interface CityConfigSetup {
 export interface CityConfigData {
   cityCode: string;
   cityId: string;
-  incident: CityConfigIncidentRules;
-  sos: CityConfigSosRules;
-  visibility: CityConfigVisibilityRules;
-  setup: CityConfigSetup;
+  incident?: CityConfigIncidentRules;
+  sos?: CityConfigSosRules;
+  visibility?: CityConfigVisibilityRules;
+  setup?: CityConfigSetup;
   isActive: boolean;
   updatedByUserId?: string;
   createdAt: string;
   updatedAt: string;
+  cityEServiceConfig?: {
+    isEnabled: boolean;
+    hasOwnEServicePortal: boolean;
+    servicesPortal:{
+      url: string;
+      apiKey?: string;
+      name?: string;
+    }[];
+  };
 }
 
 export interface CreateCityConfigRequest {
@@ -161,6 +170,15 @@ export interface CreateCityConfigRequest {
   incident?: Partial<CityConfigIncidentRules>;
   sos?: Partial<CityConfigSosRules>;
   visibility?: Partial<CityConfigVisibilityRules>;
+  cityEServiceConfig?: {
+    isEnabled: boolean;
+    hasOwnEServicePortal: boolean;
+    servicesPortal:{
+      url: string;
+      apiKey?: string;
+      name?: string;
+    }[];
+  };
 }
 
 export interface UpdateCityConfigRequest extends Partial<CreateCityConfigRequest> {

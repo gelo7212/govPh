@@ -219,6 +219,38 @@ services:
       retries: 5
       start_period: 10s
 
+  # =====================
+  # File Management Service
+  # =====================
+  file-management-service:
+    build:
+      context: ./services/file-management-service
+    container_name: govph-file-management-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-local}
+      PORT: 3000
+      MONGODB_URI: ${FILE_MANAGEMENT_MONGODB_URI}
+      MONGODB_URI_OPTIONS: ${FILE_MANAGEMENT_MONGODB_URI_OPTIONS}
+      STORAGE_PROVIDER: LOCAL
+      LOCAL_STORAGE_PATH: /app/uploads
+      JWT_PUBLIC_KEY: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxRek0X1VCnmuXyXIsGz4\nVy+Eotl050LatEcWdD535zSaTlsbP3qiPPvG5xj2AX9vOitzq+L5k45dk99/MYns\n49H2oHFbNq6S4Srq6QFo19/mV/IMdwgV5svSq+dPPpiE9p0R/kjzDMtpJed1Z8IK\n/pr2PD7ap7ybnnxumpIV/R8jTtqi25WCMl05MGQfLtl/wsHeXuL10xloDB7WlUcz\nK3OjQc7pJ4D4cprkXeYT9YdCJ/cEhiaMmhjeEhed/Z9twqlBKqohvZjUpjL1zequ\nygTsriA0niEplyfUGOoirxQbnwpgCE0gGp6OQEwtyev1clmwkPEXr71s0PgBAron\n0QIDAQAB\n-----END PUBLIC KEY-----"
+      JWT_EXPIRY: 7d
+      MAX_FILE_SIZE: 52428800
+    volumes:
+      - file_uploads:/app/uploads
+    networks:
+      - govph-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
 networks:
   govph-network:
     driver: bridge
+
+volumes:
+  file_uploads:
+    driver: local

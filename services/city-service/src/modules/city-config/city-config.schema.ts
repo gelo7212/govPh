@@ -26,6 +26,27 @@ export interface ICityConfig extends Document {
     initializedAt?: Date;
     initializedByUserId?: string;
   };
+  cityEServiceConfig?: {
+    isEnabled: boolean;
+    hasOwnEServicePortal: boolean;
+    servicesPortal:{
+      url: string;
+      apiKey?: string;
+      name?: string;
+    }[];
+  };
+  officials?: 
+    {
+      name: string;
+      photoUrl?: string;
+
+      position: string;      // e.g. "Mayor", "SB Member", "Mayor’s Assistant"
+      group: string;         // e.g. "Executive", "Sangguniang Bayan", "Mayor Staff"
+
+      order?: number;        // for display sorting
+      isPrimary?: boolean;   // highlight mayor / vice mayor
+    }[];
+
   isActive: boolean;
   updatedByUserId?: string;
   createdAt: Date;
@@ -163,6 +184,53 @@ export const CityConfigSchema = new Schema(
 
     updatedByUserId: {
       type: String,
+    },
+
+    /* =========================
+       CITY OFFICIALS
+    ========================= */
+    officials: {
+      type: [
+        {
+          name: { type: String, required: true },
+          photoUrl: { type: String },
+          position: { type: String, required: true },
+          group: { type: String, required: true },
+          order: { type: Number, required: true },
+          isPrimary: { type: Boolean, default: false },
+        },
+      ],
+      default: [],
+    },
+
+    /* =========================
+       CITY E-SERVICE CONFIG
+    ========================= 
+     */
+    cityEServiceConfig: {
+      isEnabled: {
+        type: Boolean,
+        default: false,
+      },
+      hasOwnEServicePortal: {
+        type: Boolean,
+        default: false,
+      },
+      servicesPortal: [
+        {
+          url: {
+            type: String,
+            required: true,
+          },
+          apiKey: {
+            type: String,
+          },
+          name: {
+            type: String,
+            default: '',
+          },
+        },
+      ],
     },
   },
   {

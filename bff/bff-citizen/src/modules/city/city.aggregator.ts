@@ -35,5 +35,17 @@ export class AdminCityAggregator {
   async getSosHQByCity(cityCode: string) {
     return this.aggregator.getSosHQByCity(cityCode);
   }
+  
+  // city e-service config
+   async getCityConfig(cityCode: string) {
+    const result = await this.aggregator.getCityConfig(cityCode);
+
+    delete result.data?.sos;
+    delete result.data?.visibility;
+    delete result.data?.incident;
+    delete result.data?.setup;
+
+    return result;
+  }
 
 }

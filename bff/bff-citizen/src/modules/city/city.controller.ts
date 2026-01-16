@@ -84,4 +84,15 @@ export class CityController {
       sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
     }
   }
+  
+  async getCityConfig(req: Request, res: Response): Promise<void> {
+    try {
+      const { cityCode } = req.params;
+      const result = await this.aggregator.getCityConfig(cityCode);
+      res.json(result);
+    } catch (error) {
+      const errorInfo = handleServiceError(error, 'Failed to fetch city config');
+      sendErrorResponse(res, errorInfo.statusCode, errorInfo.code, errorInfo.message);
+    }
+  }
 }

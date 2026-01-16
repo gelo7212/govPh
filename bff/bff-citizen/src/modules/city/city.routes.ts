@@ -38,4 +38,9 @@ router.get(
   (req, res) => cityController.getSosHQByCity(req, res),
 );
 
+router.get(
+  '/:cityCode/config',
+  (req, res) => cityController.getCityConfig(req, res),
+);
+
 export { router as cityRoutes };

@@ -10,4 +10,5 @@ export { RealtimeServiceClient } from './realtime.client';
 export { IncidentServiceClient } from './incident.client';
 export { IncidentTimelineServiceClient } from './incident-timeline.client';
 export { CityServiceClient } from './city.client';
+export { EvacuationCenterServiceClient } from './evacuation.client';
 export { DeptTrackingClient, type CreateShareableLinkRequest, type ShareableLinkResponse, type ValidateShareableLinkResponse, type DeptTrackingLink } from './dept-tracking.client';

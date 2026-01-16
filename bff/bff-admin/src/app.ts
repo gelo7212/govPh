@@ -6,6 +6,7 @@ import { cityRoutes } from './modules/city/city.routes';
 import { geoRoutes } from './modules/geo/geo.routes';
 import { inviteRoutes } from './modules/invite/invite.routes';
 import { incidentRoutes } from './modules/incident/incident.routes';
+import { evacuationRoutes } from './modules/evacuation/evacuation.routes';
 import deptTrackingRoutes from './modules/dept-tracking/dept-tracking.routes';
 import { requestLogger } from './middlewares/requestLogger';
 
@@ -30,6 +31,7 @@ export function createApp(): Express {
   app.use('/api/identity',  identityRoutes);
   app.use('/api/sos', sosRoutes);
   app.use('/api/admin/cities', cityRoutes);
+  app.use('/api/cities/evacuation-centers', evacuationRoutes);
   app.use('/api/geo', geoRoutes);
   app.use('/api/invites', inviteRoutes);
   app.use('/api/incidents', incidentRoutes);

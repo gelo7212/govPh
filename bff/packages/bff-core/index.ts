@@ -11,6 +11,7 @@ export {
   RealtimeServiceClient,
   IncidentTimelineServiceClient,
   CityServiceClient,
+  EvacuationCenterServiceClient,
   DeptTrackingClient,
 } from './clients';
 
@@ -25,6 +26,7 @@ export { GeoAggregator } from './geo/geo.aggregator';
 export { IncidentAggregator } from './incident/incident.aggregator';
 export { IncidentTimelineAggregator } from './incident/incident-timeline.aggregator';
 export { CityAggregator } from './city/city.aggregator';
+export { EvacuationCenterAggregator } from './evacuation/evacuation.aggregator';
 export { DeptTrackingAggregator, deptTrackingAggregator } from './dept-tracking/dept-tracking.aggregator';
 
 /**

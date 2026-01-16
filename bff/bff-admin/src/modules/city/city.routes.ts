@@ -25,16 +25,6 @@ router.get(
 );
 
 /**
- * GET /api/admin/cities/:cityCode
- * Get city by code
- */
-router.get(
-  '/:cityCode',
-  requireRole('APP_ADMIN', 'CITY_ADMIN'),
-  (req, res) => cityController.getCityByCode(req, res),
-);
-
-/**
  * POST /api/admin/cities
  * Create a new city
  */
@@ -42,26 +32,6 @@ router.post(
   '/',
   requireRole('APP_ADMIN','CITY_ADMIN'),
   (req, res) => cityController.createCity(req, res),
-);
-
-/**
- * PUT /api/admin/cities/:cityCode
- * Update city
- */
-router.put(
-  '/:cityCode',
-  requireRole('APP_ADMIN', 'CITY_ADMIN'),
-  (req, res) => cityController.updateCity(req, res),
-);
-
-/**
- * DELETE /api/admin/cities/:cityCode
- * Delete city
- */
-router.delete(
-  '/:cityCode',
-  requireRole('APP_ADMIN'),
-  (req, res) => cityController.deleteCity(req, res),
 );
 
 // ==================== Departments ====================
@@ -109,6 +79,15 @@ router.delete(
 // ==================== SOS HQ ====================
 
 /**
+ * Get /api/admin/cities/sos-hq/user/:userId
+*/
+router.get(
+  '/sos-hq/user/:userId',
+  requireRole('APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN'),
+  (req, res) => cityController.getSosHQByUserId(req, res),
+);
+
+/**
  * GET /api/admin/cities/:cityCode/sos-hq
  * Get SOS HQ for a city
  */
@@ -128,16 +107,6 @@ router.post(
   (req, res) => cityController.createSosHQ(req, res),
 );
 
-
-/**
- * Get /api/admin/cities/sos-hq/user/:userId
-*/
-router.get(
-  '/sos-hq/user/:userId',
-  requireRole('APP_ADMIN', 'CITY_ADMIN', 'SOS_ADMIN'),
-  (req, res) => cityController.getSosHQByUserId(req, res),
-);
-
 /**
  * PUT /api/admin/cities/sos-hq/:id
  * Update SOS HQ
@@ -146,6 +115,36 @@ router.put(
   '/sos-hq/:id',
   requireRole('APP_ADMIN', 'CITY_ADMIN'),
   (req, res) => cityController.updateSosHQ(req, res),
+);
+
+/**
+ * GET /api/admin/cities/:cityCode
+ * Get city by code
+ */
+router.get(
+  '/:cityCode',
+  requireRole('APP_ADMIN', 'CITY_ADMIN'),
+  (req, res) => cityController.getCityByCode(req, res),
+);
+
+/**
+ * PUT /api/admin/cities/:cityCode
+ * Update city
+ */
+router.put(
+  '/:cityCode',
+  requireRole('APP_ADMIN', 'CITY_ADMIN'),
+  (req, res) => cityController.updateCity(req, res),
+);
+
+/**
+ * DELETE /api/admin/cities/:cityCode
+ * Delete city
+ */
+router.delete(
+  '/:cityCode',
+  requireRole('APP_ADMIN'),
+  (req, res) => cityController.deleteCity(req, res),
 );
 
 /**

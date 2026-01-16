@@ -4,12 +4,15 @@ import { CitySchema } from './modules/cities/city.schema';
 import { DepartmentSchema } from './modules/departments/department.schema';
 import { SosHQSchema } from './modules/sos-hq/sos-hq.schema';
 import { CityConfigSchema } from './modules/city-config/city-config.schema';
+import { EvacuationCenterSchema } from './modules/evacuation/evacuation.schema';
 import cityRouter from './modules/cities/city.routes';
 import departmentRouter from './modules/departments/department.routes';
 import sosHQRouter from './modules/sos-hq/sos-hq.routes';
 import cityConfigRouter from './modules/city-config/city-config.routes';
+import evacuationCenterRouter from './modules/evacuation/evacuation.routes';
 import { departmentController } from './modules/departments/index';
 import { sosHQController } from './modules/sos-hq/index';
+import { evacuationCenterController } from './modules/evacuation/index';
 import { requestContext } from './middlewares/auth';
 import { logger } from './utils/logger';
 
@@ -34,6 +37,7 @@ mongoose.model('City', CitySchema);
 mongoose.model('Department', DepartmentSchema);
 mongoose.model('SosHQ', SosHQSchema);
 mongoose.model('CityConfig', CityConfigSchema);
+mongoose.model('EvacuationCenter', EvacuationCenterSchema);
 
 // Initialize database and routes
 export const initializeApp = async (): Promise<Express> => {
@@ -42,6 +46,7 @@ export const initializeApp = async (): Promise<Express> => {
   app.use('/api/departments', departmentRouter);
   app.use('/api/sos-hq', sosHQRouter);
   app.use('/api/city-configs', cityConfigRouter);
+  app.use('/api/evacuation-centers', evacuationCenterRouter);
 
   // City-specific routes
   app.get('/api/cities/:cityCode/departments', (req: Request, res: Response) => {
@@ -50,6 +55,10 @@ export const initializeApp = async (): Promise<Express> => {
 
   app.get('/api/cities/:cityCode/sos-hq', (req: Request, res: Response) => {
     sosHQController.getByCity(req, res);
+  });
+
+  app.get('/api/cities/:cityId/evacuation-centers', (req: Request, res: Response) => {
+    evacuationCenterController.getByCity(req, res);
   });
 
   // Province routes

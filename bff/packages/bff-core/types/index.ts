@@ -375,3 +375,17 @@ export {
   type CityLocation,
   type SosHQLocation,
 } from './city.types';
+
+// Evacuation Center Types
+export {
+  type EvacuationCenterData,
+  type EvacuationCenterLocation,
+  type EvacuationCenterCapacity,
+  type EvacuationCenterFacilities,
+  type EvacuationCenterContactPerson,
+  type CreateEvacuationCenterRequest,
+  type UpdateEvacuationCenterRequest,
+  type EvacuationCenterResponse,
+  type UpdateCapacityRequest,
+  type UpdateStatusRequest,
+} from '../evacuation/evacuation.types';

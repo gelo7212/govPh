@@ -6,6 +6,7 @@ import { incidentRoutes} from './modules/incident/incident.routes';
 import { getErrorResponse } from './error';
 import { createLogger } from './utils/logger';
 import { cityRoutes } from './modules/city/city.routes';
+import { evacuationRoutes } from './modules/evacuation/evacuation.routes';
 
 
 const logger = createLogger('Validators');
@@ -24,6 +25,7 @@ export function createApp(): Express {
   app.use('/api/sos', sosRoutes);
   app.use('/api/geo', geoRoutes);
   app.use('/api/cities', cityRoutes);
+  app.use('/api/evacuation-centers', evacuationRoutes);
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'bff-citizen' });

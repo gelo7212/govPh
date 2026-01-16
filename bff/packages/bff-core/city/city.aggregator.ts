@@ -38,6 +38,7 @@ export class CityAggregator {
   async getAllCities(filters?: {
     isActive?: boolean;
     provinceCode?: string;
+    query?: string;
   }): Promise<CityResponse<CityData[]>> {
     return this.cityClient.getAllCities(filters);
   }

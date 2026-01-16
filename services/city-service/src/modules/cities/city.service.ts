@@ -9,13 +9,25 @@ export class CityService {
     private cityConfigService?: CityConfigService,
   ) {}
 
-  async getAllCities(filters?: { isActive?: boolean; provinceCode?: string }) {
+  async getAllCities(filters?: { isActive?: boolean; provinceCode?: string; query?: string }) {
     const query: any = {};
     if (filters?.isActive !== undefined) {
       query.isActive = filters.isActive;
     }
     if (filters?.provinceCode) {
       query.provinceCode = filters.provinceCode;
+    }
+    if (filters?.query) {
+      // Split query into words and create OR condition
+      const searchTerms = filters.query.toLowerCase().trim().split(/\s+/).filter(term => term.length > 0);
+      const conditions = searchTerms.map(term => ({
+        $or: [
+          { name: { $regex: term, $options: 'i' } },
+          { provinceCode: { $regex: term, $options: 'i' } },
+        ]
+      }));
+      
+      query.$and = conditions;
     }
     return this.cityModel.find(query).lean().exec();
   }

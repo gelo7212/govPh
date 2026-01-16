@@ -53,7 +53,8 @@ export class SOSService {
       console.log("Syncing SOS from SOS MS for", sosId);
       const sosData = await this.sosMSClient.getSos(sosId, headerContext);
       const sosRecord = sosData.data;
-      if (sosRecord) {
+      const status = sosRecord?.status ? sosRecord.status.toLowerCase() : null;
+      if (sosRecord && (status === 'active' || status === 'en_route' || status === 'arrived')) {
         console.log("SOS record fetched from SOS MS:", JSON.stringify(sosRecord));
         const lat = sosRecord.lastKnownLocation?.coordinates ? sosRecord.lastKnownLocation.coordinates[1] : null;
         const lng = sosRecord.lastKnownLocation?.coordinates ? sosRecord.lastKnownLocation.coordinates[0] : null;

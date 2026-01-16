@@ -13,6 +13,9 @@ export interface IDepartment extends Document {
   };
   handlesIncidentTypes: string[];
   sosCapable: boolean;
+  socialMediaLinks?: Map<string, string>;
+  businessHours?: string;
+  category?: string
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -64,7 +67,16 @@ export const DepartmentSchema = new Schema(
       type: Boolean,
       default: false,
     },
-
+    socialMediaLinks: {
+      type: Map,
+      of: String,
+    },
+    businessHours: {
+      type: String,
+    },
+    category: {
+      type: String,
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -1,4 +1,7 @@
 import Joi from 'joi';
+import { createLogger } from './logger';
+
+const logger = createLogger('Validators');
 
 /**
  * Validation schemas for BFF Citizen SOS requests
@@ -99,6 +102,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
         field: d.path.join('.'),
         message: d.message,
       }));
+      logger.warn('Validation failed', { details });
       return res.status(400).json({
         success: false,
         error: 'Validation failed',

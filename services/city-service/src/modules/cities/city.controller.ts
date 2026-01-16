@@ -9,6 +9,7 @@ export class CityController {
       const filters = {
         isActive: req.query.isActive === 'true' ? true : undefined,
         provinceCode: req.query.provinceCode as string | undefined,
+        query: req.query.query as string | undefined,
       };
 
       const cities = await this.cityService.getAllCities(filters);

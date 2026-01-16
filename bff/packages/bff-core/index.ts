@@ -13,6 +13,9 @@ export {
   CityServiceClient,
   EvacuationCenterServiceClient,
   DeptTrackingClient,
+  SubmissionServiceClient,
+  FileServiceClient,
+  FileServiceAggregator,
 } from './clients';
 
 /**
@@ -28,6 +31,7 @@ export { IncidentTimelineAggregator } from './incident/incident-timeline.aggrega
 export { CityAggregator } from './city/city.aggregator';
 export { EvacuationCenterAggregator } from './evacuation/evacuation.aggregator';
 export { DeptTrackingAggregator, deptTrackingAggregator } from './dept-tracking/dept-tracking.aggregator';
+export { SubmissionAggregator } from './submission/submission.aggregator';
 
 /**
  * Error Handling Utilities - Central export point
@@ -73,5 +77,31 @@ export type {
   TimelineActor,
   PaginationOptions,
 } from './types';
+
+// Submission Service Types
+export type {
+  FormField,
+  FormSchemaData,
+  CreateFormSchemaRequest,
+  UpdateFormSchemaRequest,
+  FormSchemaResponse,
+  SubmissionData,
+  CreateSubmissionRequest,
+  UpdateSubmissionRequest,
+  SubmissionResponse,
+  DraftData,
+  CreateDraftRequest,
+  UpdateDraftRequest,
+  DraftResponse,
+  ValidationResult,
+  ValidateFormDataRequest,
+  ValidationResponse,
+  PaginatedResponse,
+  ListSchemasFilters,
+  ListSubmissionsFilters,
+  ListDraftsFilters,
+  SchemaStatus,
+  SubmissionStatus,
+} from './submission/submission.types';
 
 export { UserContext } from './clients/base.client';

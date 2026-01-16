@@ -194,4 +194,7 @@ export class FileServiceClient {
   }
 }
 
+export { FileServiceAggregator } from './aggregator';
+export type { File, UploadFileResponse, ListFilesResponse, ListFilesQuery, FileServiceClientConfig, ApiResponse } from './types';
+
 export default FileServiceClient;

@@ -40,7 +40,7 @@ export async function authContextMiddleware(
       if(decodedToken.identity?.actor?.type === 'ANON'){
         user.sosAnonSosId = decodedToken.mission.sosId;
       }
-
+      console.log(`Decoded token for user ID: ${user.id}, role: ${user.role}`);
       const role = decodedToken.identity?.role;
       if(role !== 'SOS_ADMIN' && role !== 'RESCUER' && role !=='SK_ADMIN' && role !== 'APP_ADMIN' && role !== 'CITY_ADMIN'){
         res.status(403).json({ error: 'Forbidden: Insufficient role' });

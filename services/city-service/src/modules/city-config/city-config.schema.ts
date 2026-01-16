@@ -26,6 +26,13 @@ export interface ICityConfig extends Document {
     initializedAt?: Date;
     initializedByUserId?: string;
   };
+  administration?: {
+    cityHallAddress?: string;
+    officeHours?: string;
+    officialWebsite?: string;
+    officialFacebook?: string;
+    officialLogoUrl?: string;
+  };
   cityEServiceConfig?: {
     isEnabled: boolean;
     hasOwnEServicePortal: boolean;
@@ -201,6 +208,27 @@ export const CityConfigSchema = new Schema(
         },
       ],
       default: [],
+    },
+
+    /* =========================
+        CITY ADMINISTRATION
+    =========================
+
+    cityHallAddress?: string;
+    officeHours?: string;
+    officialWebsite?: string;
+    officialFacebook?: string;
+     */
+
+    administration: {
+      type: {
+        cityHallAddress: { type: String },
+        officeHours: { type: String },
+        officialWebsite: { type: String },
+        officialFacebook: { type: String },
+        officialLogoUrl: { type: String },
+      },
+      default: {},
     },
 
     /* =========================

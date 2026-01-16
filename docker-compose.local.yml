@@ -67,6 +67,7 @@ services:
       INCIDENT_MS_URL: "http://govph-incident:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
+
       
   # =====================
   # BFF – Admin (Web)
@@ -94,8 +95,10 @@ services:
       REALTIME_SERVICE_URL: "http://govph-realtime:3000"
       INCIDENT_MS_URL: "http://govph-incident:3000"
       CITY_SERVICE_URL: "http://govph-city:3000"  
+      SUBMISSION_SERVICE_URL: "http://govph-submission:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
+
 
   sos-service: 
     build: ./services/sos-service
@@ -214,6 +217,32 @@ services:
       DB_NAME: ${CITY_SERVICE_DB_NAME}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =====================
+  # Submission Service
+  # =====================
+  submission-service:
+    build: ./services/submission-service
+    container_name: govph-submission
+    networks:
+      - govph-network
+    # Internal only - accessed via Kong gateway
+    # ports:
+    #   - "3006:3006"
+    environment:
+      PORT: 3000
+      NODE_ENV: local
+      MONGODB_URI: ${SUBMISSION_SERVICE_MONGODB_URI:-mongodb://host.docker.internal:27017}
+      MONGODB_URI_OPTIONS: ${SUBMISSION_SERVICE_MONGODB_URI_OPTIONS}
+      IDENTITY_SERVICE_URL: "http://govph-identity:3000"
+      CITY_SERVICE_URL: "http://govph-city:3000"
+      LOG_LEVEL: debug
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3006/health"]
       interval: 10s
       timeout: 5s
       retries: 5

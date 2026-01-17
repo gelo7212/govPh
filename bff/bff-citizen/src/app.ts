@@ -34,7 +34,7 @@ export function createApp(): Express {
   app.use('/api/identity', identityRoutes);
   app.use('/api/sos', sosRoutes);
   app.use('/api/geo', geoRoutes);
-  app.use('/api/cities', cityRoutes);
+  app.use('/api/cities/:cityCode', cityRoutes);
   app.use('/api/evacuation-centers', evacuationRoutes);
   app.use('/api/forms', submissionRoutes);
   app.use('/api/files', fileRoutes);

@@ -389,3 +389,13 @@ export {
   type UpdateCapacityRequest,
   type UpdateStatusRequest,
 } from '../evacuation/evacuation.types';
+
+export {
+  type ServiceEntity,
+  type CreateServiceRequest,
+  type UpdateServiceRequest,
+  type ServiceResponse,
+  type ServiceCategory,
+  type ServiceFormConfig,
+  type ServiceAvailability,
+} from '../service/service.types';

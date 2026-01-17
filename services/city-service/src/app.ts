@@ -5,11 +5,13 @@ import { DepartmentSchema } from './modules/departments/department.schema';
 import { SosHQSchema } from './modules/sos-hq/sos-hq.schema';
 import { CityConfigSchema } from './modules/city-config/city-config.schema';
 import { EvacuationCenterSchema } from './modules/evacuation/evacuation.schema';
+import { ServiceSchema } from './modules/service/service.schema';
 import cityRouter from './modules/cities/city.routes';
 import departmentRouter from './modules/departments/department.routes';
 import sosHQRouter from './modules/sos-hq/sos-hq.routes';
 import cityConfigRouter from './modules/city-config/city-config.routes';
 import evacuationCenterRouter from './modules/evacuation/evacuation.routes';
+import serviceRouter from './modules/service/service.routes';
 import { departmentController } from './modules/departments/index';
 import { sosHQController } from './modules/sos-hq/index';
 import { evacuationCenterController } from './modules/evacuation/index';
@@ -38,6 +40,7 @@ mongoose.model('Department', DepartmentSchema);
 mongoose.model('SosHQ', SosHQSchema);
 mongoose.model('CityConfig', CityConfigSchema);
 mongoose.model('EvacuationCenter', EvacuationCenterSchema);
+mongoose.model('Service', ServiceSchema);
 
 // Initialize database and routes
 export const initializeApp = async (): Promise<Express> => {
@@ -47,6 +50,7 @@ export const initializeApp = async (): Promise<Express> => {
   app.use('/api/sos-hq', sosHQRouter);
   app.use('/api/city-configs', cityConfigRouter);
   app.use('/api/evacuation-centers', evacuationCenterRouter);
+  app.use('/api/services', serviceRouter);
 
   // City-specific routes
   app.get('/api/cities/:cityCode/departments', (req: Request, res: Response) => {

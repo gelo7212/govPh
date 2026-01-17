@@ -9,6 +9,7 @@ import { cityRoutes } from './modules/city/city.routes';
 import { evacuationRoutes } from './modules/evacuation/evacuation.routes';
 import { submissionRoutes } from './modules/submission/submission.routes';
 import fileRoutes from './modules/file/file.routes';
+import servicesRoutes from './modules/service/service.routes';
 
 
 const logger = createLogger('Validators');
@@ -37,6 +38,7 @@ export function createApp(): Express {
   app.use('/api/evacuation-centers', evacuationRoutes);
   app.use('/api/forms', submissionRoutes);
   app.use('/api/files', fileRoutes);
+  app.use('/api/services', servicesRoutes);
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'bff-citizen' });

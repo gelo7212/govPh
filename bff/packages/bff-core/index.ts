@@ -15,6 +15,7 @@ export {
   DeptTrackingClient,
   SubmissionServiceClient,
   FileServiceClient,
+  ServiceServiceClient,
 } from './clients';
 
 /**
@@ -32,6 +33,7 @@ export { EvacuationCenterAggregator } from './evacuation/evacuation.aggregator';
 export { DeptTrackingAggregator, deptTrackingAggregator } from './dept-tracking/dept-tracking.aggregator';
 export { SubmissionAggregator } from './submission/submission.aggregator';
 export { FileAggregator } from './file/file.aggregator';
+export { ServiceAggregator } from './service/service.aggregator';
 
 /**
  * Error Handling Utilities - Central export point

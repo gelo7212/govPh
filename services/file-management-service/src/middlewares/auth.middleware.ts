@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../errors';
-import { RequestUser } from '../types';
+import { User, RequestContext } from '../types';
 
 const JWT_PUBLIC_KEY = process.env.JWT_PUBLIC_KEY;
 if(!JWT_PUBLIC_KEY) {
@@ -18,11 +18,20 @@ export const validateAuth = (req: Request, res: Response, next: NextFunction) =>
 
     const decoded = jwt.verify(token, JWT_PUBLIC_KEY ) as any;
     
-    (req as any).user = {
-      id: decoded.id || decoded.sub,
-      role: decoded.role,
-      scopes: decoded.scopes || [],
-    } as RequestUser;
+    const user: User = {
+      id: decoded.identity?.userId || decoded.id || decoded.sub,
+      userId: decoded.identity?.userId || decoded.id || decoded.sub,
+      email: decoded.identity?.email || decoded.email,
+      role: decoded.identity?.role || decoded.role,
+      firebaseUid: decoded.identity?.firebaseUid,
+      actor: decoded.actor,
+    };
+
+    req.context = {
+      user,
+      timestamp: new Date(),
+      requestId: '',
+    } as RequestContext;
 
     next();
   } catch (error) {

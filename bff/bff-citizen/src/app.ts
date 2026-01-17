@@ -7,6 +7,8 @@ import { getErrorResponse } from './error';
 import { createLogger } from './utils/logger';
 import { cityRoutes } from './modules/city/city.routes';
 import { evacuationRoutes } from './modules/evacuation/evacuation.routes';
+import { submissionRoutes } from './modules/submission/submission.routes';
+import fileRoutes from './modules/file/file.routes';
 
 
 const logger = createLogger('Validators');
@@ -16,9 +18,16 @@ export function createApp(): Express {
 
   // Middleware
   app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // app.use(express.urlencoded({ extended: true }));
 
-  // Routes
+  // logging middleware
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    logger.info(`Incoming request: ${req.method} ${req.path}`, {
+      query: req.query,
+      params: req.params,
+    });
+    next();
+  });
   
   app.use('/api/incidents', incidentRoutes);
   app.use('/api/identity', identityRoutes);
@@ -26,6 +35,8 @@ export function createApp(): Express {
   app.use('/api/geo', geoRoutes);
   app.use('/api/cities', cityRoutes);
   app.use('/api/evacuation-centers', evacuationRoutes);
+  app.use('/api/forms', submissionRoutes);
+  app.use('/api/files', fileRoutes);
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'bff-citizen' });
@@ -43,6 +54,17 @@ export function createApp(): Express {
       error: {
         code: errorResponse.code,
         message: errorResponse.message,
+      },
+      timestamp: new Date(),
+    });
+  });
+
+  app.use((req: Request, res: Response) => {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Resource not found',
       },
       timestamp: new Date(),
     });

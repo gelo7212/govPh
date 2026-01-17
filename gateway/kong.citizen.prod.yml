@@ -1,0 +1,29 @@
+_format_version: "3.0"
+
+services:
+  # =====================
+  # BFF Citizen Service
+  # =====================
+  - name: bff-citizen
+    url: http://govph-bff-citizen-prod:3000
+    routes:
+      - name: citizen-api
+        hosts:
+          - citizen.gov.ph
+        paths:
+          - /api
+        strip_path: false
+
+plugins:
+  - name: cors
+    config:
+      origins: ["*"]
+      methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]
+      headers: ["*"]
+      exposed_headers: ["*"]
+      credentials: false
+
+  - name: rate-limiting
+    config:
+      minute: 10000
+      policy: local

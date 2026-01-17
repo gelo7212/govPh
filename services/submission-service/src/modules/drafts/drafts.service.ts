@@ -15,12 +15,13 @@ export class DraftsService {
   async getAllDrafts(
     schemaId?: string,
     skip: number = 0,
-    limit: number = 20
+    limit: number = 20,
+    createdBy?: string
   ): Promise<any> {
     try {
       const filter: any = {};
       if (schemaId) filter.schemaId = schemaId;
-
+      if (createdBy) filter.createdBy = createdBy;
       const drafts = await DraftModel.find(filter)
         .sort({ updatedAt: -1 })
         .skip(skip)
@@ -46,9 +47,9 @@ export class DraftsService {
   /**
    * Get draft by ID
    */
-  async getDraftById(id: string): Promise<IDraft> {
+  async getDraftById(id: string, createdBy: string): Promise<IDraft> {
     try {
-      const draft = await DraftModel.findById(id);
+      const draft = await DraftModel.findOne({ _id: id, createdBy });
 
       if (!draft) {
         throw new DraftNotFoundError(id);
@@ -120,7 +121,7 @@ export class DraftsService {
    */
   async updateDraft(id: string, updates: Partial<IDraft>): Promise<IDraft> {
     try {
-      const draft = await DraftModel.findById(id);
+      const draft = await DraftModel.findOne({ _id: id, createdBy: updates.updatedBy });
 
       if (!draft) {
         throw new DraftNotFoundError(id);
@@ -143,9 +144,9 @@ export class DraftsService {
   /**
    * Delete draft
    */
-  async deleteDraft(id: string): Promise<void> {
+  async deleteDraft(id: string, createdBy: string): Promise<void> {
     try {
-      const draft = await DraftModel.findById(id);
+      const draft = await DraftModel.findOne({ _id: id, createdBy });
 
       if (!draft) {
         throw new DraftNotFoundError(id);
@@ -158,6 +159,27 @@ export class DraftsService {
         throw error;
       }
       logger.error('Failed to delete draft', error);
+      throw new DatabaseError('Failed to delete draft');
+    }
+  }
+  // delete draft using createdBy and schemaId
+  async deleteDraftBySchemaAndUser(
+    schemaId: string,
+    createdBy: string
+  ): Promise<void> {
+    try {
+      const draft = await DraftModel.findOne({ schemaId, createdBy });
+      if (!draft) {
+        throw new DraftNotFoundError(`Draft with schemaId ${schemaId} not found for user ${createdBy}`);
+      }
+      await DraftModel.deleteOne({ _id: draft._id });
+      logger.info(`Draft deleted: ${draft._id}`);
+    }
+    catch (error) {
+      if (error instanceof DraftNotFoundError) {
+        throw error;
+      }
+      logger.error('Failed to delete draft by schema and user', error);
       throw new DatabaseError('Failed to delete draft');
     }
   }

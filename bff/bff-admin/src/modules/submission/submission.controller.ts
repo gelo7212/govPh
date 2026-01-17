@@ -144,6 +144,10 @@ export class AdminSubmissionController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
       };
 
+      if(req.query.schemaId === undefined  || req.query.schemaId === 'undefined') {
+        throw new Error('schemaId query parameter is required');
+      }
+
       const token = req.headers.authorization;
       const result = await this.aggregator.getAllSubmissions(filters, token);
       res.json(result);

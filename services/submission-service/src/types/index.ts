@@ -1,23 +1,30 @@
 import { Request } from 'express';
 
-/**
- * Request context with user information
- */
-export interface RequestUser {
-  id: string;
-  email: string;
-  role: string;
-  municipality?: string;
-  department?: string;
+export interface User {
+  userId?: string;
+  id: string; // userId from identity.userId
+  email?: string;
+  role?: string; // Single role from identity.role
+  firebaseUid?: string; // Firebase UID from identity.firebaseUid
+  actor?: {
+    type: string; // USER, ANON, etc.
+    cityCode: string;
+  };
 }
 
 /**
- * Extended Request type with user
+ * Request context with user information
  */
+export interface RequestContext {
+  user?: User;
+  requestId: string;
+  timestamp: Date;
+}
+
 declare global {
   namespace Express {
     interface Request {
-      user?: RequestUser;
+      context?: RequestContext;
     }
   }
 }

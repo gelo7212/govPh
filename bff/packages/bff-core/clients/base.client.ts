@@ -70,7 +70,9 @@ export abstract class BaseClient {
           config.headers['x-request-id'] = this.userContext.requestId;
         }
         if(this.userContext.authorization){
-          config.headers['Authorization'] = `Bearer ${this.userContext.authorization}`;
+          const token = this.userContext.authorization.startsWith('Bearer ') ? this.userContext.authorization.split(' ')[1] : this.userContext.authorization;
+          
+          config.headers['Authorization'] = `Bearer ${token}`;
         }
       }
 

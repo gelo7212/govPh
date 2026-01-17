@@ -16,7 +16,8 @@ services:
     volumes:
       - ./nginx/nginx.pilot.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - kong
+      - kong-citizen
+      - kong-admin
       - realtime-service
     networks:
       - govph-network
@@ -31,13 +32,33 @@ services:
       start_period: 5s
 
   # =====================
-  # API Gateway (Kong)
+  # Kong Gateway – Citizen
   # =====================
-  kong:
+  kong-citizen:
     image: kong:3.6
-    container_name: govph-kong-pilot
+    container_name: govph-kong-citizen-pilot
     volumes:
-      - ./gateway/kong.pilot.yml:/kong/declarative/kong.yml
+      - ./gateway/kong.citizen.pilot.yml:/kong/declarative/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+    networks:
+      - govph-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================
+  # Kong Gateway – Admin
+  # =====================
+  kong-admin:
+    image: kong:3.6
+    container_name: govph-kong-admin-pilot
+    volumes:
+      - ./gateway/kong.admin.pilot.yml:/kong/declarative/kong.yml
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml

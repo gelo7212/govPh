@@ -94,7 +94,7 @@ export class SchemasController {
         title,
         description,
         fields: fields || [],
-        createdBy: req.user?.id,
+        createdBy: req.context?.user?.id,
       });
 
       res.status(201).json({
@@ -138,7 +138,7 @@ export class SchemasController {
         title,
         description,
         fields,
-        updatedBy: req.user?.id,
+        updatedBy: req.context?.user?.id ,
         formKey: req.body.formKey,
       });
 

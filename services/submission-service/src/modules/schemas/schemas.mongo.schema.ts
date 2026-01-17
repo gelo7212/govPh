@@ -16,6 +16,12 @@ export interface FormField {
     hint?: string;
     width?: 'full' | 'half' | 'third';
   };
+  source?: {
+    type: 'user_data' | 'manual';
+    key: 'fullName' | 'email' | 'phone';
+    readonly?: boolean;
+    fallback?: 'empty' | 'editable';
+  };
   meta?: Record<string, any>;
   visibility?: {
     when: Array<{
@@ -63,6 +69,21 @@ const formFieldSchema = new Schema({
     width: String,
   },
   meta: Schema.Types.Mixed,
+  source: {
+    type: {
+      type: String,
+      enum: ['user_data', 'manual']
+    },
+    key: {
+      type: String,
+      enum: ['fullName', 'email', 'phone']
+    },
+    readonly: Boolean,
+    fallback: {
+      type: String,
+      enum: ['empty', 'editable']
+    },
+  },
   visibility: {
     when: [
       {

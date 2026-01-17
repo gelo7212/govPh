@@ -28,14 +28,17 @@ export class DraftsController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { schemaId, skip = 0, limit = 20 } = req.query;
+      const { schemaId, skip = 0, limit = 20} = req.query;
+
+      const { id: createdBy } = req.context?.user || {};
 
       logger.debug(`Fetching drafts - schema: ${schemaId}`);
 
       const drafts = await this.draftsService.getAllDrafts(
         schemaId as string | undefined,
         parseInt(skip as string),
-        parseInt(limit as string)
+        parseInt(limit as string),
+        createdBy as string | undefined
       );
 
       res.status(200).json({
@@ -60,11 +63,11 @@ export class DraftsController {
   ): Promise<void> {
     try {
       const { id } = req.params;
+      const { id: createdBy } = req.context?.user || {};
 
       logger.debug(`Getting draft: ${id}`);
 
-      const draft = await this.draftsService.getDraftById(id);
-
+      const draft = await this.draftsService.getDraftById(id, createdBy as string);
       res.status(200).json({
         success: true,
         data: draft,
@@ -88,14 +91,16 @@ export class DraftsController {
     try {
       const { schemaId, formKey, data } = req.body;
 
+      const { id: createdBy, id: updatedBy } = req.context?.user || {};
+
       logger.debug(`Saving draft for schema: ${schemaId}`);
 
       const draft = await this.draftsService.saveDraft({
         schemaId,
         formKey,
         data,
-        createdBy: req.user?.id,
-        updatedBy: req.user?.id,
+        createdBy: req.context?.user?.id ?? createdBy,
+        updatedBy: req.context?.user?.id ?? updatedBy,
       });
 
       res.status(201).json({
@@ -121,12 +126,12 @@ export class DraftsController {
     try {
       const { id } = req.params;
       const { data } = req.body;
-
+      const { id: updatedBy } = req.context?.user || {};
       logger.debug(`Updating draft: ${id}`);
 
       const draft = await this.draftsService.updateDraft(id, {
         data,
-        updatedBy: req.user?.id,
+        updatedBy: req.context?.user?.id ?? updatedBy,
       });
 
       res.status(200).json({
@@ -152,9 +157,10 @@ export class DraftsController {
     try {
       const { id } = req.params;
 
+      const { id: createdBy } = req.context?.user || {};
       logger.debug(`Deleting draft: ${id}`);
 
-      await this.draftsService.deleteDraft(id);
+      await this.draftsService.deleteDraft(id, createdBy as string);
 
       res.status(200).json({
         success: true,

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Joi from 'joi';
 import { SubmissionsController } from './submissions.controller';
 import { validateRequest } from '../../middlewares/schema.validator.middleware';
+import { authenticateToken } from '../../middlewares/auth.middleware';
 
 const router = Router();
 const submissionsController = new SubmissionsController();
@@ -24,16 +25,26 @@ const updateSubmissionSchema = Joi.object({
 /**
  * GET /api/submissions - List submissions
  */
-router.get('/', (req, res, next) =>
+router.get('/', authenticateToken(['CITY_ADMIN', 'SK_ADMIN']), (req, res, next) =>
   submissionsController.getAllSubmissions(req, res, next)
 );
-
 /**
  * GET /api/submissions/:id - Get submission
  */
-router.get('/:id', (req, res, next) =>
+router.get('/:id',authenticateToken(['CITY_ADMIN', 'SK_ADMIN','CITIZEN']), (req, res, next) =>
   submissionsController.getSubmissionById(req, res, next)
 );
+
+/**
+ * DELETE /api/submissions/:id - Delete submission
+ */
+router.delete('/:id', authenticateToken(['CITY_ADMIN', 'SK_ADMIN']), (req, res, next) =>
+  submissionsController.deleteSubmission(req, res, next)
+);
+
+// CITIZEN routes
+
+router.use(authenticateToken(['CITIZEN']));
 
 /**
  * POST /api/submissions - Create submission
@@ -49,11 +60,6 @@ router.put('/:id', validateRequest(updateSubmissionSchema), (req, res, next) =>
   submissionsController.updateSubmission(req, res, next)
 );
 
-/**
- * DELETE /api/submissions/:id - Delete submission
- */
-router.delete('/:id', (req, res, next) =>
-  submissionsController.deleteSubmission(req, res, next)
-);
+
 
 export default router;

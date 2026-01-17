@@ -80,11 +80,11 @@ export class FileService {
     return this.mapDocumentToFile(file as any);
   }
 
-  async downloadFile(fileId: string, userId: string): Promise<Buffer> {
+  async downloadFile(fileId: string, userId: string, role?: string): Promise<Buffer> {
     const file = await this.getFile(fileId);
 
-    // Authorization check
-    if (file.visibility === 'PRIVATE' && file.uploadedBy !== userId) {
+    // Authorization check - only uploader or admin can download PRIVATE files
+    if (file.visibility === 'PRIVATE' && file.uploadedBy !== userId && role !== 'CITY_ADMIN' && role !== 'SK_ADMIN') {
       throw new ForbiddenError('You do not have permission to access this file');
     }
 

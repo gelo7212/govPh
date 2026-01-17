@@ -31,15 +31,17 @@ router.post(
         throw new ValidationError('No file provided');
       }
 
+      console.log('Request body:', req.body);
+
       const { ownerType, ownerId, visibility, expiresAt } = req.body;
-      const userId = (req as any).user?.id;
+      const userId = req.context?.user?.userId;
 
       // Validation
       if (!ownerType || !ownerId || !userId) {
         throw new ValidationError('Missing required fields: ownerType, ownerId');
       }
 
-      const validOwnerTypes: OwnerType[] = ['INCIDENT', 'USER', 'DEPARTMENT', 'CITY', 'FOI'];
+      const validOwnerTypes: OwnerType[] = ['INCIDENT', 'USER', 'DEPARTMENT', 'CITY', 'FOI', 'FORM'];
       if (!validOwnerTypes.includes(ownerType)) {
         throw new ValidationError(`Invalid ownerType. Must be one of: ${validOwnerTypes.join(', ')}`);
       }
@@ -99,10 +101,14 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { fileId } = req.params;
-      const userId = (req as any).user?.id;
+      const userId = req.context?.user?.userId;
+      if (!userId) {
+        throw new ValidationError('User not authenticated');
+      }
+      const role = req.context?.user?.role;
 
       const file = await fileService.getFile(fileId);
-      const buffer = await fileService.downloadFile(fileId, userId);
+      const buffer = await fileService.downloadFile(fileId, userId, role);
 
       res.setHeader('Content-Type', file.mimeType);
       res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
@@ -154,7 +160,10 @@ router.delete(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { fileId } = req.params;
-      const userId = (req as any).user?.id;
+      const userId = req.context?.user?.userId;;
+      if(!userId) {
+        throw new ValidationError('User not authenticated');
+      }
 
       await fileService.deleteFile(fileId, userId);
 

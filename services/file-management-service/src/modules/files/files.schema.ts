@@ -10,7 +10,7 @@ const FileSchema = new Schema<FileDocument>(
     filename: { type: String, required: true },
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
-    checksum: { type: String, required: true, unique: true },
+    checksum: { type: String, required: true },
     
     storageProvider: { 
       type: String as any,
@@ -30,7 +30,7 @@ const FileSchema = new Schema<FileDocument>(
     metadata: {
       ownerType: {
         type: String as any,
-        enum: ['INCIDENT', 'USER', 'DEPARTMENT', 'CITY', 'FOI'] as OwnerType[],
+        enum: ['INCIDENT', 'USER', 'DEPARTMENT', 'CITY', 'FOI', 'FORM'] as OwnerType[],
         required: true,
       },
       ownerId: { type: String, required: true },
@@ -58,5 +58,7 @@ FileSchema.index({ 'metadata.ownerId': 1, 'metadata.ownerType': 1 });
 FileSchema.index({ uploadedBy: 1 });
 FileSchema.index({ deletedAt: 1 });
 FileSchema.index({ expiresAt: 1 });
+FileSchema.index({ createdAt: -1 });
+FileSchema.index({ checksum: 1 });
 
 export const FileModel = mongoose.model<FileDocument>('File', FileSchema);

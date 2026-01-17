@@ -15,7 +15,6 @@ export {
   DeptTrackingClient,
   SubmissionServiceClient,
   FileServiceClient,
-  FileServiceAggregator,
 } from './clients';
 
 /**
@@ -32,6 +31,7 @@ export { CityAggregator } from './city/city.aggregator';
 export { EvacuationCenterAggregator } from './evacuation/evacuation.aggregator';
 export { DeptTrackingAggregator, deptTrackingAggregator } from './dept-tracking/dept-tracking.aggregator';
 export { SubmissionAggregator } from './submission/submission.aggregator';
+export { FileAggregator } from './file/file.aggregator';
 
 /**
  * Error Handling Utilities - Central export point
@@ -103,5 +103,21 @@ export type {
   SchemaStatus,
   SubmissionStatus,
 } from './submission/submission.types';
+
+// File Service Types
+export type {
+  FileEntity,
+  UploadFileRequest,
+  UploadFileResponse,
+  ListFilesQuery,
+  DeleteFileRequest,
+  DeleteFileResponse,
+  FileResponse,
+  FilesListResponse,
+  FileMetadata,
+  StorageProvider,
+  Visibility,
+  OwnerType,
+} from './file/file.types';
 
 export { UserContext } from './clients/base.client';

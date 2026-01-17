@@ -1,195 +1,227 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+/**
+ * File Service Client
+ * Shared client for communicating with the file-management-service
+ */
+import { BaseClient, type UserContext } from './base.client';
 import {
-  File,
-  FileServiceClientConfig,
-  ListFilesQuery,
-  ListFilesResponse,
+  FileEntity,
+  UploadFileRequest,
   UploadFileResponse,
-  ApiResponse,
-} from '../file-client/types';
+  ListFilesQuery,
+  DeleteFileRequest,
+  DeleteFileResponse,
+  FileResponse,
+  FilesListResponse,
+} from '../file/file.types';
 
-export class FileServiceClient {
-  private client: AxiosInstance;
-  private config: FileServiceClientConfig;
+export class FileServiceClient extends BaseClient {
+  constructor(baseURL: string, userContext?: UserContext) {
+    super(baseURL, userContext);
+  }
 
-  constructor(config: FileServiceClientConfig) {
-    this.config = {
-      timeout: 30000,
-      ...config,
-    };
+  // ==================== File Endpoints ====================
 
-    this.client = axios.create({
-      baseURL: this.config.baseURL,
-      timeout: this.config.timeout,
-    });
-
-    // Add interceptor to inject token
-    this.client.interceptors.request.use(async (config) => {
-      const token = await this.getToken();
+  /**
+   * Upload a new file
+   * @param file - The file to upload with metadata
+   */
+  async uploadFile(file: UploadFileRequest, token: string): Promise<FileResponse<UploadFileResponse>> {
+    try {
       if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        this.setUserContext({ authorization: token });
       }
-      return config;
-    });
-  }
-
-  /**
-   * Upload a file
-   * @param formData FormData containing file and metadata
-   */
-  async uploadFile(formData: FormData): Promise<UploadFileResponse> {
-    try {
-      const response = await this.client.post<ApiResponse<UploadFileResponse>>(
-        '/upload',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      if (!response.data.success) {
-        throw new Error(response.data.error?.message || 'Failed to upload file');
+      const formData = new FormData();
+      
+      if (file.buffer) {
+        const blob = new Blob([file.buffer], { type: file.mimeType });
+        formData.append('file', blob, file.filename);
+      }
+      
+      formData.append('filename', file.filename);
+      formData.append('mimeType', file.mimeType);
+      formData.append('size', file.size.toString());
+      formData.append('ownerType', file.ownerType);
+      formData.append('ownerId', file.ownerId);
+      formData.append('uploadedBy', file.uploadedBy);
+      
+      if (file.visibility) {
+        formData.append('visibility', file.visibility);
+      }
+      if (file.expiresAt) {
+        formData.append('expiresAt', file.expiresAt.toString());
       }
 
-      return response.data.data!;
+      const response = await this.client.post('/api/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      return this.handleError(error);
     }
   }
 
   /**
-   * Get file metadata
-   * @param fileId File ID
+   * Get file by ID
    */
-  async getFile(fileId: string): Promise<File> {
+  async getFileById(fileId: string, token: string): Promise<FileResponse<FileEntity>> {
     try {
-      const response = await this.client.get<ApiResponse<File>>(`/${fileId}`);
-
-      if (!response.data.success) {
-        throw new Error(response.data.error?.message || 'Failed to get file metadata');
+      if (token) {
+        this.setUserContext({ authorization: token });
       }
-
-      return response.data.data!;
+      const response = await this.client.get(`/api/files/${fileId}`);
+      return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      return this.handleError(error);
     }
   }
 
   /**
-   * Download a file
-   * @param fileId File ID
-   * @returns File buffer
+   * Get file by ID for download
    */
-  async downloadFile(fileId: string): Promise<Buffer> {
+  async downloadFile(fileId: string, token: string): Promise<ArrayBuffer> {
     try {
-      const response = await this.client.get<ArrayBuffer>(
-        `/${fileId}/download`,
-        {
-          responseType: 'arraybuffer',
-        }
-      );
-
-      return Buffer.from(response.data);
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * List files with optional filters
-   * @param query Query parameters
-   */
-  async listFiles(query?: ListFilesQuery): Promise<ListFilesResponse> {
-    try {
-      const response = await this.client.get<ApiResponse<ListFilesResponse>>(
-        '/',
-        { params: query }
-      );
-
-      if (!response.data.success) {
-        throw new Error(response.data.error?.message || 'Failed to list files');
+      if (token) {
+        this.setUserContext({ authorization: token });
       }
-
-      return response.data.data!;
+      const response = await this.client.get(`/api/files/${fileId}/download`, {
+        responseType: 'arraybuffer',
+      });
+      return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      return this.handleError(error);
     }
   }
 
   /**
-   * Delete a file
-   * @param fileId File ID
+   * List files with filtering and pagination
    */
-  async deleteFile(fileId: string): Promise<void> {
+  async listFiles(query: ListFilesQuery, token: string): Promise<FilesListResponse> {
     try {
-      const response = await this.client.delete<ApiResponse<{ deleted: boolean }>>(
-        `/${fileId}`
-      );
 
-      if (!response.data.success) {
-        throw new Error(response.data.error?.message || 'Failed to delete file');
+      if (token) {
+        this.setUserContext({ authorization: token });
       }
+      const params: any = {};
+      
+      if (query.ownerType) params.ownerType = query.ownerType;
+      if (query.ownerId) params.ownerId = query.ownerId;
+      if (query.visibility) params.visibility = query.visibility;
+      if (query.limit) params.limit = query.limit;
+      if (query.skip) params.skip = query.skip;
+
+      const response = await this.client.get('/api/files', { params });
+      return response.data;
     } catch (error) {
-      throw this.handleError(error);
+      return this.handleError(error);
     }
   }
 
   /**
-   * Get list of files for a specific owner
-   * @param ownerType Type of owner (INCIDENT, USER, etc.)
-   * @param ownerId Owner ID
+   * Get files by owner
    */
-  async getFilesForOwner(
+  async getFilesByOwner(
     ownerType: string,
     ownerId: string,
-    limit: number = 10,
-    skip: number = 0
-  ): Promise<ListFilesResponse> {
-    return this.listFiles({
-      ownerType: ownerType as any,
-      ownerId,
-      limit,
-      skip,
-    });
+    limit: number = 50,
+    skip: number = 0,
+    token: string
+  ): Promise<FilesListResponse> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.get(`/api/files/owner/${ownerType}/${ownerId}`, {
+        params: { limit, skip },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
   }
 
   /**
-   * Get the current authorization token
+   * Update file metadata
    */
-  private async getToken(): Promise<string | undefined> {
-    if (this.config.token) {
-      return this.config.token;
+  async updateFile(fileId: string, data: Partial<FileEntity>, token: string): Promise<FileResponse<FileEntity>> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.patch(`/api/files/${fileId}`, data);
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
     }
-
-    if (this.config.getToken) {
-      return this.config.getToken();
-    }
-
-    return undefined;
   }
 
   /**
-   * Handle axios errors
+   * Update file visibility
    */
-  private handleError(error: any): Error {
-    if (error.response) {
-      const { data, status } = error.response;
-      const message = data?.error?.message || error.message;
-      const code = data?.error?.code || 'UNKNOWN_ERROR';
-
-      const err = new Error(message);
-      (err as any).code = code;
-      (err as any).statusCode = status;
-
-      return err;
+  async updateFileVisibility(fileId: string, visibility: string, token: string): Promise<FileResponse<FileEntity>> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.patch(`/api/files/${fileId}/visibility`, { visibility });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
     }
+  }
 
-    if (error.request) {
-      return new Error('No response from file service');
+  /**
+   * Delete file
+   */
+  async deleteFile(fileId: string, deletedBy: string, token: string): Promise<FileResponse<DeleteFileResponse>> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.delete(`/api/files/${fileId}`, {
+        data: { deletedBy },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
     }
+  }
 
-    return error;
+  /**
+   * Batch delete files by owner
+   */
+  async deleteFilesByOwner(
+    ownerType: string,
+    ownerId: string,
+    deletedBy: string,
+    token: string
+  ): Promise<FileResponse<{ deleted: number }>> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.delete(`/api/files/owner/${ownerType}/${ownerId}`, {
+        data: { deletedBy },
+      });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Verify file checksum
+   */
+  async verifyFileChecksum(fileId: string, checksum: string, token: string): Promise<FileResponse<{ valid: boolean }>> {
+    try {
+      if (token) {
+        this.setUserContext({ authorization: token });
+      }
+      const response = await this.client.post(`/api/files/${fileId}/verify`, { checksum });
+      return response.data;
+    } catch (error) {
+      return this.handleError(error);
+    }
   }
 }

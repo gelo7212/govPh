@@ -1,13 +1,32 @@
 import { Request } from 'express';
 
-export interface RequestUser {
+export interface User {
+  userId?: string;
   id: string;
-  role: string;
-  scopes: string[];
+  email?: string;
+  role?: string;
+  firebaseUid?: string;
+  actor?: {
+    type: string;
+    cityCode: string;
+  };
 }
 
-export interface AuthRequest extends Request {
-  user?: RequestUser;
+/**
+ * Request context with user information
+ */
+export interface RequestContext {
+  user?: User;
+  requestId: string;
+  timestamp: Date;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      context?: RequestContext;
+    }
+  }
 }
 
 export interface ApiResponse<T = any> {
@@ -22,7 +41,7 @@ export interface ApiResponse<T = any> {
 
 export type StorageProvider = 'LOCAL' | 'S3' | 'MINIO';
 export type Visibility = 'PRIVATE' | 'INTERNAL' | 'PUBLIC';
-export type OwnerType = 'INCIDENT' | 'USER' | 'DEPARTMENT' | 'CITY' | 'FOI';
+export type OwnerType = 'INCIDENT' | 'USER' | 'DEPARTMENT' | 'CITY' | 'FOI' | 'FORM';
 
 export interface FileMetadata {
   ownerType: OwnerType;

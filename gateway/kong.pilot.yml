@@ -2,7 +2,7 @@ _format_version: "3.0"
 
 services:
   # =====================
-  # BFF Admin Service (FIRST - More Specific)
+  # BFF Admin Service
   # =====================
   - name: bff-admin
     url: http://govph-bff-admin-pilot:3000
@@ -15,7 +15,7 @@ services:
         strip_path: false
 
   # =====================
-  # BFF Citizen Service (SECOND - Fallback)
+  # BFF Citizen Service
   # =====================
   - name: bff-citizen
     url: http://govph-bff-citizen-pilot:3000

@@ -9,6 +9,7 @@ import { incidentRoutes } from './modules/incident/incident.routes';
 import { evacuationRoutes } from './modules/evacuation/evacuation.routes';
 import deptTrackingRoutes from './modules/dept-tracking/dept-tracking.routes';
 import { submissionRoutes } from './modules/submission/submission.routes';
+import { fileRoutes } from './modules/file/file.routes';
 import { requestLogger } from './middlewares/requestLogger';
 
 
@@ -38,6 +39,7 @@ export function createApp(): Express {
   app.use('/api/incidents', incidentRoutes);
   app.use('/api/sharelink', deptTrackingRoutes);
   app.use('/api/admin/forms', submissionRoutes);
+  app.use('/api/admin/files', fileRoutes);
   
   // Health check
   app.get('/health', (req, res) => {

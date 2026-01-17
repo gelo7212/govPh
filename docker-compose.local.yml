@@ -13,7 +13,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - kong
+      - kong-citizen
+      - kong-admin
       - realtime-service
     networks:
       - govph-network
@@ -26,11 +27,14 @@ services:
       retries: 3
       start_period: 5s
 
-  kong:
+  # =====================
+  # Kong Gateway – Citizen
+  # =====================
+  kong-citizen:
     image: kong:3.6
-    container_name: govph-kong
+    container_name: govph-kong-citizen
     volumes:
-      - ./gateway/kong.local.yml:/kong/declarative/kong.yml
+      - ./gateway/kong.citizen.local.yml:/kong/declarative/kong.yml
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
@@ -39,6 +43,23 @@ services:
     # Remove port mapping - access through nginx
     # ports:
     #   - "8000:8000"
+
+  # =====================
+  # Kong Gateway – Admin
+  # =====================
+  kong-admin:
+    image: kong:3.6
+    container_name: govph-kong-admin
+    volumes:
+      - ./gateway/kong.admin.local.yml:/kong/declarative/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+    networks:
+      - govph-network
+    # Remove port mapping - access through nginx
+    # ports:
+    #   - "8001:8000"
 
   # =====================
   # BFF – Citizen (Mobile)
@@ -67,8 +88,7 @@ services:
       INCIDENT_MS_URL: "http://govph-incident:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
-
-      
+      FILE_SERVICE_URL: "http://govph-file-management-service:3000"
   # =====================
   # BFF – Admin (Web)
   # =====================
@@ -98,6 +118,7 @@ services:
       SUBMISSION_SERVICE_URL: "http://govph-submission:3000"
       CLIENT_ID_ADMIN: 'gov-ph-admin-client'
       CLIENT_ID_RESCUE: 'gov-ph-rescue-client'
+      FILE_SERVICE_URL: "http://govph-file-management-service:3000"
 
 
   sos-service: 
@@ -236,6 +257,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: local
+      JWT_PUBLIC_KEY: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxRek0X1VCnmuXyXIsGz4\nVy+Eotl050LatEcWdD535zSaTlsbP3qiPPvG5xj2AX9vOitzq+L5k45dk99/MYns\n49H2oHFbNq6S4Srq6QFo19/mV/IMdwgV5svSq+dPPpiE9p0R/kjzDMtpJed1Z8IK\n/pr2PD7ap7ybnnxumpIV/R8jTtqi25WCMl05MGQfLtl/wsHeXuL10xloDB7WlUcz\nK3OjQc7pJ4D4cprkXeYT9YdCJ/cEhiaMmhjeEhed/Z9twqlBKqohvZjUpjL1zequ\nygTsriA0niEplyfUGOoirxQbnwpgCE0gGp6OQEwtyev1clmwkPEXr71s0PgBAron\n0QIDAQAB\n-----END PUBLIC KEY-----"
       MONGODB_URI: ${SUBMISSION_SERVICE_MONGODB_URI:-mongodb://host.docker.internal:27017}
       MONGODB_URI_OPTIONS: ${SUBMISSION_SERVICE_MONGODB_URI_OPTIONS}
       IDENTITY_SERVICE_URL: "http://govph-identity:3000"

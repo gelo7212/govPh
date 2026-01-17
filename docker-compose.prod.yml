@@ -16,7 +16,8 @@ services:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/letsencrypt:ro
     depends_on:
-      - kong
+      - kong-citizen
+      - kong-admin
       - realtime-service
     networks:
       - govph-network
@@ -31,13 +32,35 @@ services:
       start_period: 5s
 
   # =====================
-  # API Gateway (Kong)
+  # Kong Gateway – Citizen
   # =====================
-  kong:
+  kong-citizen:
     image: kong:3.6
-    container_name: govph-kong-prod
+    container_name: govph-kong-citizen-prod
     volumes:
-      - ./gateway/kong.prod.yml:/kong/declarative/kong.yml
+      - ./gateway/kong.citizen.prod.yml:/kong/declarative/kong.yml
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      JWT_SECRET: ${JWT_SECRET}
+      KONG_LOG_LEVEL: warn
+    networks:
+      - govph-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================
+  # Kong Gateway – Admin
+  # =====================
+  kong-admin:
+    image: kong:3.6
+    container_name: govph-kong-admin-prod
+    volumes:
+      - ./gateway/kong.admin.prod.yml:/kong/declarative/kong.yml
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml

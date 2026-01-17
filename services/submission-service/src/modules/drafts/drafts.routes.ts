@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Joi from 'joi';
 import { DraftsController } from './drafts.controller';
 import { validateRequest } from '../../middlewares/schema.validator.middleware';
+import { authenticateToken } from '../../middlewares/auth.middleware';
 
 const router = Router();
 const draftsController = new DraftsController();
@@ -17,17 +18,32 @@ const updateDraftSchema = Joi.object({
   data: Joi.object().required(),
 });
 
+const getAllDraftsSchema = Joi.object({
+  schemaId: Joi.string().required(),
+  skip  : Joi.number().integer().min(0).default(0),
+  limit: Joi.number().integer().min(0).default(0),
+});
+
+const getDraftByIdSchema = Joi.object({
+});
+
+const deleteDraftSchema = Joi.object({
+});
+
+
+router.use(authenticateToken(['CITIZEN']));
+
 /**
  * GET /api/drafts - List drafts
  */
-router.get('/', (req, res, next) =>
+router.get('/', validateRequest(getAllDraftsSchema), (req, res, next) =>
   draftsController.getAllDrafts(req, res, next)
 );
 
 /**
  * GET /api/drafts/:id - Get draft
  */
-router.get('/:id', (req, res, next) =>
+router.get('/:id', validateRequest(getDraftByIdSchema), (req, res, next) =>
   draftsController.getDraftById(req, res, next)
 );
 
@@ -48,7 +64,7 @@ router.put('/:id', validateRequest(updateDraftSchema), (req, res, next) =>
 /**
  * DELETE /api/drafts/:id - Delete draft
  */
-router.delete('/:id', (req, res, next) =>
+router.delete('/:id', validateRequest(deleteDraftSchema), (req, res, next) =>
   draftsController.deleteDraft(req, res, next)
 );
 

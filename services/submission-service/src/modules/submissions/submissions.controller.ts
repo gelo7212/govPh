@@ -8,14 +8,17 @@ import { SubmissionsService } from './submissions.service';
 import { ApiResponse } from '../../types';
 import { ISubmission } from './submissions.mongo.schema';
 import { createLogger } from '../../utils/logger';
+import { DraftsService } from '../drafts';
 
 const logger = createLogger('SubmissionsController');
 
 export class SubmissionsController {
   private submissionsService: SubmissionsService;
+  private draftService: DraftsService;
 
   constructor() {
     this.submissionsService = new SubmissionsService();
+    this.draftService = new DraftsService();
   }
 
   /**
@@ -91,12 +94,23 @@ export class SubmissionsController {
 
       logger.debug(`Creating submission for schema: ${schemaId}`);
 
+      if(req.context?.user?.id === undefined) {
+        throw new Error('User context is missing');
+      }
+
       const submission = await this.submissionsService.createSubmission({
         schemaId,
         formKey,
         data,
-        createdBy: req.user?.id,
+        createdBy: req.context?.user?.id,
       });
+
+      
+      // delete draft using createdBy and schemaId
+      await this.draftService.deleteDraftBySchemaAndUser(
+        schemaId,
+        req.context?.user?.id || ''
+      );
 
       res.status(201).json({
         success: true,
@@ -128,7 +142,7 @@ export class SubmissionsController {
         status,
         data,
         notes,
-        updatedBy: req.user?.id,
+        updatedBy: req.context?.user?.id,
       });
 
       res.status(200).json({

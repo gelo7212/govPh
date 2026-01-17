@@ -30,7 +30,7 @@ export async function authContextMiddleware(
       const decodedToken = jwt.verify(token, publicKey) as any;
       const role = decodedToken.identity?.role;
       if(role !== 'CITIZEN'){
-        res.status(403).json({ error: 'Forbidden: Insufficient role' });
+        res.status(403).json({ error: 'Forbidden: Invalid role' });
         return;
       }
 
@@ -72,4 +72,51 @@ export async function authContextMiddleware(
     res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
     return;
   }
+}
+
+export const queryAuthContextMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+)=>{
+  const token = req.query.token as string;
+  let user = undefined;
+  const requestId = uuidv4();
+  if(token){
+    try {
+      const publicKey = process.env.JWT_PUBLIC_KEY;
+      if (!publicKey) {
+        throw new Error('JWT_PUBLIC_KEY environment variable is not set');
+      }
+      // Verify and decode JWT token using public key
+      const decodedToken = jwt.verify(token, publicKey) as any;
+      const role = decodedToken.identity?.role;
+      if(role !== 'CITIZEN'){
+        res.status(403).json({ error: 'Forbidden: Invalid role' });
+        return;
+      }
+      user = {
+        id: decodedToken.identity?.userId || decodedToken.uid || decodedToken.sub,
+        email: decodedToken.identity?.email || decodedToken.email,
+        role: decodedToken.identity?.role,
+        firebaseUid: decodedToken.identity?.firebaseUid,
+        actor: decodedToken.actor,
+      };
+      
+      req.context = {
+        user,
+        requestId,
+        timestamp: new Date(),
+      };
+      next();
+      return;
+    }
+    catch (error) {
+      console.error('Failed to parse auth token from query', error);
+      res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return;
+    }
+  }
+  // No token in query, proceed without auth context
+  next();
 }
